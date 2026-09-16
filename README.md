@@ -12,8 +12,10 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # then fill it in
 python manage.py migrate
+python manage.py seed         # units, categories, locations, break policy
+python manage.py createsuperuser
 python manage.py test apps    # 9 tests, all green
-python manage.py runserver
+python manage.py runserver    # admin at /admin/
 ```
 
 `requirements.txt` is deliberately small and pure-Python, so a missing compiler
@@ -114,6 +116,21 @@ security.
 
 **Labour does not do payroll.** Clock in, clock out, owners see hours. That is the whole
 scope, and it is deliberate.
+
+## The admin
+
+`/admin/` is a working back-office from day one — enough to load the item master, define
+recipes, and record production before any custom screen exists.
+
+Two things there are deliberately **read-only, including for a superuser**:
+
+- **StockMovement** — the ledger. If it can be edited through the admin then it is not
+  append-only, and every guarantee built on it quietly stops being true. Movements are
+  created by `services.post_movement` and corrected by `services.reverse_movement`.
+- **StockBalance** — a cache of the ledger, not a place to type.
+
+`PosItem` has a **"Needs mapping"** filter. That is the work queue: every unmapped POS
+name blocks its sales import from posting, on purpose.
 
 ## Not built yet
 
