@@ -7,3 +7,9 @@ db.sqlite3
 /media/
 /staticfiles/
 .DS_Store
+
+# Editor / session files
+.Rhistory
+.Rapp.history
+.vscode/
+.idea/
