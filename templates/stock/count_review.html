@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Count review{% endblock %}
+{% block content %}
+
+{% if posted %}
+  <p class="done">Counted</p>
+{% else %}
+  <h1>Before you commit</h1>
+{% endif %}
+
+<p class="muted">
+  {{ count.location.name }} · {{ count.get_cadence_display }} · {{ count.counted_at|date:"D j M, H:i" }}<br>
+  {{ counted }} counted{% if uncounted %}, <strong>{{ uncounted }} not counted</strong>{% endif %}
+</p>
+
+{% if rows %}
+  <h2 class="h2">Biggest differences first</h2>
+  <ul class="lines">
+    {% for row in rows %}
+      <li class="lines__row">
+        <span class="lines__qty
+          {% if row.variance > 0 %}var--over{% elif row.variance < 0 %}var--under{% endif %}">
+          {% if row.variance > 0 %}+{% endif %}{{ row.variance|floatformat:"-3" }}
+        </span>
+        <span class="lines__name">
+          {{ row.line.item.name }}
+          <small class="muted">
+            counted {{ row.line.counted_quantity|floatformat:"-3" }},
+            expected {{ row.line.expected_quantity|floatformat:"-3" }}
+            {{ row.line.item.base_unit.code }}
+          </small>
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="muted">Nothing counted yet.</p>
+{% endif %}
+
+{% if not posted and rows %}
+  <form method="post" action="{% url 'count_post' count.pk %}">
+    {% csrf_token %}
+    <button class="btn btn--primary btn--big" type="submit">Commit this count</button>
+  </form>
+  <a class="btn btn--ghost" href="{% url 'count_sheet' count.pk %}">Back to counting</a>
+{% else %}
+  <a class="btn btn--ghost" href="{% url 'home' %}">Done</a>
+{% endif %}
+{% endblock %}

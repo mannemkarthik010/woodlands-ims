@@ -228,3 +228,83 @@ def explode(item: Item, quantity: Decimal, *, _seen=None, _depth=0) -> list[Expl
             )
         )
     return out
+
+
+@transaction.atomic
+def post_count(count, *, user=None) -> list[StockMovement]:
+    """
+    Commit a physical count.
+
+    A count does not set stock to the counted figure -- it writes the
+    difference as an adjustment movement, so the ledger still explains how
+    the balance got where it is. Setting a balance directly would lose that,
+    and losing it is the whole reason the restaurant cannot currently say
+    where anything went.
+
+    Lines left blank were not counted. They are skipped rather than treated
+    as zero, which is the single most destructive assumption a counting
+    system can make.
+    """
+    from apps.stock.models import DocumentStatus
+
+    if count.status == DocumentStatus.POSTED:
+        raise StockError("This count has already been posted.")
+
+    movements = []
+    for line in count.lines.select_related("item"):
+        if line.counted_quantity is None:
+            continue
+        difference = line.counted_quantity - line.expected_quantity
+        if difference == 0:
+            continue
+        movements.append(
+            post_movement(
+                item=line.item,
+                location=count.location,
+                quantity=difference,
+                movement_type=MovementType.COUNT_ADJUSTMENT,
+                occurred_at=count.counted_at,
+                source=count,
+                user=user,
+                note=line.note or f"Counted {line.counted_quantity}, expected {line.expected_quantity}",
+            )
+        )
+
+    count.status = DocumentStatus.POSTED
+    count.save(update_fields=["status"])
+    return movements
+
+
+def build_count_sheet(count, *, items=None) -> int:
+    """
+    Fill a count sheet with the items to be counted, and snapshot what the
+    system believes is there at this moment.
+
+    Snapshotting at generation rather than at posting matters: the variance
+    should be measured against what was believed when somebody walked the
+    shelves, not against what it drifted to while the sheet sat half-finished
+    in a pocket.
+    """
+    from apps.catalog.models import Item
+    from apps.stock.models import StockCountLine
+
+    if items is None:
+        items = (
+            Item.objects.filter(is_active=True, is_stocked=True)
+            .select_related("base_unit", "category")
+            .order_by("category__sort_order", "name")
+        )
+
+    balances = {b.item_id: b.quantity for b in StockBalance.objects.filter(location=count.location)}
+
+    StockCountLine.objects.bulk_create(
+        [
+            StockCountLine(
+                count=count,
+                item=item,
+                expected_quantity=balances.get(item.pk, Decimal("0")),
+            )
+            for item in items
+        ]
+    )
+    return count.lines.count()

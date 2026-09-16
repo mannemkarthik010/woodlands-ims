@@ -31,8 +31,14 @@ from django.views.decorators.http import require_POST
 
 from apps.catalog.models import Item
 from apps.core.models import Location
-from apps.stock.models import DocumentStatus, Transfer, TransferLine
-from apps.stock.services import StockError, on_hand, post_transfer
+from apps.stock.models import DocumentStatus, StockCount, Transfer, TransferLine
+from apps.stock.services import (
+    StockError,
+    build_count_sheet,
+    on_hand,
+    post_count,
+    post_transfer,
+)
 
 
 @login_required
@@ -193,3 +199,120 @@ def transfer_done(request, pk):
         for line in lines
     ]
     return render(request, "stock/transfer_done.html", {"transfer": transfer, "rows": rows})
+
+
+# ---------------------------------------------------------------------------
+# Stock counts
+# ---------------------------------------------------------------------------
+#
+# One screen doing four jobs: the opening balance when the system is first
+# filled, the short daily check on the things that move fast, the weekly
+# restaurant count, and the monthly count that includes the storage unit.
+#
+# The important design decision here is that THE EXPECTED QUANTITY IS NOT
+# SHOWN WHILE COUNTING. If a sheet says "we think there are 18", a tired
+# person at the end of a shift writes 18. That is not counting, it is
+# confirming, and it produces numbers that agree with themselves and with
+# nothing on the shelf. The variance is shown afterwards, on the review
+# screen, where it belongs.
+
+
+@login_required
+def count_new(request):
+    """Pick a location and cadence, then build the sheet."""
+    if request.method == "POST":
+        location = get_object_or_404(Location, pk=request.POST.get("location"))
+        cadence = request.POST.get("cadence") or StockCount.Cadence.WEEKLY
+        count = StockCount.objects.create(
+            location=location,
+            cadence=cadence,
+            counted_at=timezone.now(),
+            created_by=request.user,
+        )
+        build_count_sheet(count)
+        return redirect("count_sheet", pk=count.pk)
+
+    return render(
+        request,
+        "stock/count_new.html",
+        {
+            "locations": Location.objects.filter(is_active=True),
+            "cadences": StockCount.Cadence.choices,
+        },
+    )
+
+
+@login_required
+def count_sheet(request, pk):
+    count = get_object_or_404(StockCount.objects.select_related("location"), pk=pk)
+    if count.status != DocumentStatus.DRAFT:
+        return redirect("count_review", pk=count.pk)
+
+    lines = count.lines.select_related("item", "item__base_unit", "item__category")
+    done = lines.exclude(counted_quantity__isnull=True).count()
+    return render(
+        request,
+        "stock/count_sheet.html",
+        {"count": count, "lines": lines, "done": done, "total": lines.count()},
+    )
+
+
+@login_required
+@require_POST
+def count_save_line(request, pk, line_pk):
+    """Save one line as it is typed. A count is done standing up, over time."""
+    count = get_object_or_404(StockCount, pk=pk, status=DocumentStatus.DRAFT)
+    line = get_object_or_404(count.lines.select_related("item", "item__base_unit"), pk=line_pk)
+
+    raw = (request.POST.get("counted") or "").strip()
+    if raw == "":
+        line.counted_quantity = None
+    else:
+        from decimal import Decimal, InvalidOperation
+
+        try:
+            line.counted_quantity = Decimal(raw)
+        except (InvalidOperation, ValueError):
+            return render(request, "stock/_count_line.html", {"line": line, "bad": True})
+    line.save(update_fields=["counted_quantity"])
+
+    remaining = count.lines.filter(counted_quantity__isnull=True).count()
+    return render(
+        request,
+        "stock/_count_line.html",
+        {"line": line, "saved": True, "remaining": remaining},
+    )
+
+
+@login_required
+def count_review(request, pk):
+    """Variance, shown only once counting is finished."""
+    count = get_object_or_404(StockCount.objects.select_related("location"), pk=pk)
+    lines = count.lines.select_related("item", "item__base_unit").exclude(counted_quantity__isnull=True)
+    rows = sorted(
+        ({"line": line, "variance": line.variance} for line in lines),
+        key=lambda r: abs(r["variance"] or 0),
+        reverse=True,
+    )
+    return render(
+        request,
+        "stock/count_review.html",
+        {
+            "count": count,
+            "rows": rows,
+            "counted": len(rows),
+            "uncounted": count.lines.filter(counted_quantity__isnull=True).count(),
+            "posted": count.status == DocumentStatus.POSTED,
+        },
+    )
+
+
+@login_required
+@require_POST
+def count_post(request, pk):
+    count = get_object_or_404(StockCount, pk=pk)
+    try:
+        post_count(count, user=request.user)
+    except StockError:
+        return redirect("count_review", pk=count.pk)
+    return redirect("count_review", pk=count.pk)

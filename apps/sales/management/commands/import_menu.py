@@ -167,6 +167,9 @@ class Command(BaseCommand):
 
         multi = {k: v for k, v in groups.items() if len(v) > 1}
 
+        if options.get("verbosity", 1) == 0:
+            return
+
         w = self.stdout.write
         w("")
         w(self.style.SUCCESS(f"{created} new, {updated} updated" + (" (dry run)" if dry else "")))

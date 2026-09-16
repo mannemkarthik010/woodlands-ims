@@ -8,6 +8,11 @@
   <span class="tile__sub">Record stock coming from Devonshire Street</span>
 </a>
 
+<a class="tile" href="{% url 'count_new' %}">
+  <span class="tile__title">Count stock</span>
+  <span class="tile__sub">Opening balance, or the daily and weekly counts</span>
+</a>
+
 {% if open_transfers %}
   <h2 class="h2">Unfinished</h2>
   <ul class="list">

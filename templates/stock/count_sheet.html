@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Counting{% endblock %}
+{% block content %}
+
+<div class="route">
+  <strong>{{ count.location.name }}</strong>
+  <span class="muted">{{ count.get_cadence_display }}</span>
+  <span class="route__swap muted" id="progress">{{ done }} of {{ total }}</span>
+</div>
+
+<p class="muted small">
+  Count what is on the shelf. Leave anything you have not counted blank —
+  blank means not counted, not zero.
+</p>
+
+<ul class="lines">
+  {% for line in lines %}
+    <li id="line-{{ line.pk }}">{% include "stock/_count_line.html" %}</li>
+  {% endfor %}
+</ul>
+
+<a class="btn btn--primary btn--big" href="{% url 'count_review' count.pk %}">
+  Finish and review
+</a>
+{% endblock %}
