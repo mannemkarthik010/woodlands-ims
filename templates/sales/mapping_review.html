@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Second look{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+
+<h1 class="h1">Second look</h1>
+
+<p class="muted small">
+  Two hundred and fifty decisions in one sitting produces a predictable set of
+  mistakes, and none of them are carelessness. Everything below is a question,
+  not a correction — nothing changes until you press something.
+</p>
+
+{% for message in messages %}
+  <p class="{% if message.tags == 'error' %}alert{% else %}ok{% endif %}" role="status">{{ message }}</p>
+{% endfor %}
+
+<div class="tabs">
+  <a class="tabs__tab" href="{% url 'mapping_queue' %}">To decide</a>
+  <a class="tabs__tab" href="{% url 'mapping_queue' %}?show=done">Decided</a>
+  <a class="tabs__tab tabs__tab--on" href="{% url 'mapping_review' %}">Second look</a>
+</div>
+
+{% if not flags %}
+  <p class="done">Nothing looks wrong. That is not the same as nothing being wrong, but it is a good sign.</p>
+{% endif %}
+
+{% for flag in flags %}
+  <div class="card">
+    <div class="card__head">
+      <h2 class="card__title">{{ flag.headline }}</h2>
+    </div>
+    <p class="muted small">{{ flag.detail }}</p>
+
+    {% if flag.lines %}
+      <ul class="poslines">
+        {% for line in flag.lines %}
+          <li>
+            <span class="poslines__name">{{ line.pos_name }}</span>
+            <span class="poslines__price">
+              {{ line.quantity_per_sale|floatformat:"-3" }} {{ line.item.base_unit.code }}
+              {% if flag.kind == 'quantity' %}· {{ line.item.name }}{% endif %}
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if flag.kind == 'sized' or flag.kind == 'sized-drink' %}
+      <form class="card__actions" method="post" action="{% url 'item_convert' %}">
+        {% csrf_token %}
+        <input type="hidden" name="item" value="{{ flag.item.pk }}">
+        <label class="inline-label">
+          Hold it in
+          <select name="unit" aria-label="Unit to hold {{ flag.item.name }} in">
+            {% for unit in units %}
+              <option value="{{ unit.pk }}" {% if unit.code == 'floz' %}selected{% endif %}>
+                {{ unit.code }} — {{ unit.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+        <button class="btn btn--primary btn--small" type="submit">Make it a prepared component</button>
+      </form>
+    {% elif flag.kind == 'duplicate' %}
+      <form class="card__actions" method="post" action="{% url 'item_merge' %}">
+        {% csrf_token %}
+        <input type="hidden" name="source" value="{{ flag.item.pk }}">
+        <input type="hidden" name="target" value="{{ flag.other.pk }}">
+        <button class="btn btn--primary btn--small" type="submit">
+          Fold “{{ flag.item.name }}” into “{{ flag.other.name }}”
+        </button>
+      </form>
+      <form method="post" action="{% url 'item_merge' %}">
+        {% csrf_token %}
+        <input type="hidden" name="source" value="{{ flag.other.pk }}">
+        <input type="hidden" name="target" value="{{ flag.item.pk }}">
+        <button class="btn btn--ghost btn--small" type="submit">Other way round</button>
+      </form>
+    {% elif flag.kind == 'orphan' %}
+      <form class="card__actions" method="post" action="{% url 'item_retire' %}">
+        {% csrf_token %}
+        <input type="hidden" name="item" value="{{ flag.item.pk }}">
+        <button class="btn btn--ghost btn--small" type="submit">Retire it</button>
+      </form>
+    {% elif flag.kind == 'quantity' %}
+      <p class="muted small">
+        Nothing to press here — these are the serving sizes only the chef can
+        settle. Fix each one from <a href="{% url 'mapping_queue' %}?show=done">Decided</a>.
+      </p>
+    {% endif %}
+  </div>
+{% endfor %}
+
+{% endblock %}

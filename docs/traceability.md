@@ -10,7 +10,7 @@ Write `FR-403` in a docstring, a comment or a test name and it appears here.
 Nothing is inferred from a function looking roughly relevant — that would
 make this table reassuring and wrong, which is worse than an empty one.
 
-**68 of 148** requirements referenced in code · **24** covered by a test.
+**69 of 148** requirements referenced in code · **25** covered by a test.
 
 ## M1 — Time and attendance
 
@@ -36,16 +36,16 @@ make this table reassuring and wrong, which is worse than an empty one.
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
 | **FR-201** | Every stock item has a unique code, a name, an optional local-language name, and a category. | Must | `apps/catalog/models.py` | `apps/sales/tests/test_mapping.py` |
-| **FR-202** | An item may have several names in use — supplier's name, chef's name, menu name — all searchable. | Should | `apps/catalog/models.py`<br>`apps/sales/views.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_transfer_flow.py` |
-| **FR-203** | Each item has a base unit in which stock is held (for example: pound, gram, litre, each). | Must | `apps/catalog/models.py` | `apps/sales/tests/test_mapping.py` |
+| **FR-202** | An item may have several names in use — supplier's name, chef's name, menu name — all searchable. | Should | `apps/catalog/models.py`<br>`apps/catalog/services.py`<br>`apps/sales/views.py`<br>`apps/stock/views.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_mapping.py`<br>`apps/stock/tests/test_transfer_flow.py` |
+| **FR-203** | Each item has a base unit in which stock is held (for example: pound, gram, litre, each). | Must | `apps/catalog/models.py`<br>`apps/sales/views.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_mapping.py` |
 | **FR-204** | Each item may have any number of purchase units with a stated conversion to the base unit (for example: 1 sack = 25 lb; 1 case = 24 tins; 1 tin = 400 g). | Must | `apps/catalog/models.py` | — |
 | **FR-205** | Conversions that are not fixed — "one bunch of curry leaves" — are supported with an agreed nominal weight, and flagged as approximate. | Should | `apps/catalog/models.py` | — |
 | **FR-206** | Each item carries a shelf life or a best-before behaviour appropriate to its type. | Should | `apps/catalog/models.py` | — |
 | **FR-207** | Each item carries a current cost per base unit, updated from goods receipts. | Must | `apps/catalog/models.py` | — |
 | **FR-208** | The system supports the cost basis chosen in D-15 (latest cost, weighted average, or FIFO). | Must | — | — |
-| **FR-209** | Items can be marked as raw material, prepared component, packaging, consumable or non-stock. | Must | `apps/catalog/models.py` | `apps/sales/tests/test_mapping.py` |
+| **FR-209** | Items can be marked as raw material, prepared component, packaging, consumable or non-stock. | Must | `apps/catalog/models.py`<br>`apps/sales/views.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_mapping.py` |
 | **FR-210** | Items can be marked as allergen-relevant, and dishes inherit that flag through their recipe. | Should | — | — |
-| **FR-211** | An item can be deactivated without deleting its history. | Must | `apps/catalog/models.py` | `apps/sales/tests/test_import_menu.py` |
+| **FR-211** | An item can be deactivated without deleting its history. | Must | `apps/catalog/models.py`<br>`apps/sales/views.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_import_menu.py`<br>`apps/sales/tests/test_mapping.py` |
 | **FR-212** | Each item has a par level per location — the quantity that should be on hand. | Should | `apps/catalog/models.py` | — |
 
 ## M3 — Purchasing and goods receipt
@@ -82,7 +82,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **FR-501** | A prepared component — dosa batter, idli batter, sambar, chutney, spice blend — exists as a stock item in its own right. | Must | — | — |
+| **FR-501** | A prepared component — dosa batter, idli batter, sambar, chutney, spice blend — exists as a stock item in its own right. | Must | `apps/sales/views.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_mapping.py` |
 | **FR-502** | Each prepared component has a production formula listing its raw materials and quantities. | Must | `apps/catalog/models.py`<br>`apps/production/models.py` | — |
 | **FR-503** | Recording a production batch decreases the raw materials and increases the prepared component, in one action. | Must | `apps/production/models.py` | — |
 | **FR-504** | Each production batch has its own batch or lot identifier. | Must | `apps/production/models.py` | — |
@@ -195,8 +195,8 @@ make this table reassuring and wrong, which is worse than an empty one.
 |---|---|---|---|---|
 | **FR-1201** | Users are created, deactivated and assigned roles by an administrator. | Must | `apps/core/models.py` | — |
 | **FR-1202** | Access is enforced by role, per Section~{sec:roles}. | Must | `apps/core/models.py` | `apps/sales/tests/test_mapping.py`<br>`apps/stock/tests/test_transfer_flow.py` |
-| **FR-1203** | Every change to stock, time records, recipes or costs is logged with user, timestamp and previous value. | Must | `apps/stock/models.py`<br>`apps/stock/services.py` | `apps/stock/tests/test_count_flow.py`<br>`apps/stock/tests/test_ledger.py` |
-| **FR-1204** | The audit log cannot be edited or deleted by any user, including the administrator. | Must | `apps/stock/admin.py`<br>`apps/stock/models.py`<br>`apps/stock/services.py` | `apps/stock/tests/test_ledger.py` |
+| **FR-1203** | Every change to stock, time records, recipes or costs is logged with user, timestamp and previous value. | Must | `apps/stock/models.py`<br>`apps/stock/services.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/stock/tests/test_count_flow.py`<br>`apps/stock/tests/test_ledger.py` |
+| **FR-1204** | The audit log cannot be edited or deleted by any user, including the administrator. | Must | `apps/stock/admin.py`<br>`apps/stock/models.py`<br>`apps/stock/services.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/stock/tests/test_ledger.py` |
 | **FR-1205** | Locations, categories, waste reasons, par levels and shelf lives are configurable without developer involvement. | Should | — | — |
 | **FR-1206** | Data is backed up automatically, and a restore has been tested and documented. | Must | — | — |
 | **FR-1207** | The client can export all of their data, in full, at any time, without asking us. | Must | — | — |

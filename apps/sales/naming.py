@@ -35,7 +35,10 @@ PROMO_SUFFIXES = [
 ]
 
 # "Coconut Chutney 16 oz" -> 16. The tub size, not the dish.
-SIZE_RE = re.compile(r"\b(\d+(?:\.\d+)?)\s*oz\b", re.I)
+#
+# "0z" is not a typo in this file. The menu really does contain "Mint Chutney
+# 4 0z", and a size the system cannot read is a tub that depletes nothing.
+SIZE_RE = re.compile(r"\b(\d+(?:\.\d+)?)\s*[o0]z\b", re.I)
 
 # What an ounce is, in the canonical units the Unit table converts to:
 # millilitres for volume, grams for weight. Kept as constants rather than

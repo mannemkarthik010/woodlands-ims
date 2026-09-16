@@ -251,3 +251,8 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 .settled { font-size: 16px; margin: 8px 0 0; }
 .sizes__field { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
 .sizes__unit { color: var(--grey); font-size: 14px; width: 20px; }
+.inline-label { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--grey); }
+.inline-label select {
+  min-height: 44px; padding: 0 10px; font-size: 16px; color: var(--ink);
+  border: 1px solid var(--rule); border-radius: var(--radius); background: #fff;
+}

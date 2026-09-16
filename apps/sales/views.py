@@ -30,12 +30,15 @@ Nothing here maps anything by itself. See docs/architecture.md §3.3.
 
 from decimal import Decimal, InvalidOperation
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from apps.catalog.models import Item, ItemKind
+from apps.catalog import services as catalog
+from apps.catalog.models import Item, ItemKind, Unit
 from apps.sales import services
 from apps.sales.models import PosItem
 
@@ -185,7 +188,66 @@ def mapping_reopen(request, key):
     return _card(request, key, message="Back in the queue")
 
 
+# Implements: FR-202, FR-209, FR-211.
 @login_required
-def mapping_done(request):
-    """Everything already decided, for checking and for changing one's mind."""
-    return redirect("/mapping/?show=done")
+def mapping_review(request):
+    """
+    The second look.
+
+    Two hundred and fifty decisions in one sitting produces a predictable set
+    of mistakes, none of which are carelessness -- a tub counted in "each", one
+    food spelled two ways, an item left behind when a decision was changed.
+    This finds them and offers the fix. It corrects nothing on its own.
+    """
+    units = Unit.objects.filter(code__in=["floz", "oz", "g", "lb", "ml", "l"]).order_by("code")
+    return render(
+        request,
+        "sales/mapping_review.html",
+        {"flags": services.review(), "units": units, "progress": services.progress()},
+    )
+
+
+# Implements: FR-202, FR-211.
+@require_POST
+@login_required
+def item_merge(request):
+    """Fold one item into another, keeping the old name as a searchable alias."""
+    source = get_object_or_404(Item, pk=request.POST.get("source"))
+    target = get_object_or_404(Item, pk=request.POST.get("target"))
+    try:
+        catalog.merge_items(source, target, user=request.user)
+    except catalog.CatalogError as problem:
+        messages.error(request, str(problem))
+    else:
+        messages.success(request, f"{source.name} folded into {target.name}, and kept as a name for it.")
+    return redirect("mapping_review")
+
+
+# Implements: FR-203, FR-209, FR-501.
+@require_POST
+@login_required
+def item_convert(request):
+    """Turn a dish sold by the ounce into the prepared component it actually is."""
+    item = get_object_or_404(Item, pk=request.POST.get("item"))
+    unit = get_object_or_404(Unit, pk=request.POST.get("unit"))
+    try:
+        changed = catalog.convert_to_component(item, unit, user=request.user)
+    except (catalog.CatalogError, ValidationError) as problem:
+        messages.error(request, str(problem))
+    else:
+        messages.success(
+            request,
+            f"{item.name} is now a prepared component measured in {unit.code}; "
+            f"{changed} till line(s) now deplete their own size.",
+        )
+    return redirect("mapping_review")
+
+
+# Implements: FR-211.
+@require_POST
+@login_required
+def item_retire(request):
+    item = get_object_or_404(Item, pk=request.POST.get("item"))
+    catalog.retire_item(item, reason="Retired from the mapping review.")
+    messages.success(request, f"{item.name} retired. Nothing is deleted; it stops appearing.")
+    return redirect("mapping_review")

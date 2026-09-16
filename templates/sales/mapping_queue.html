@@ -32,6 +32,7 @@
      href="{% url 'mapping_queue' %}{% if category %}?category={{ category }}{% endif %}">To decide</a>
   <a class="tabs__tab {% if done %}tabs__tab--on{% endif %}"
      href="{% url 'mapping_queue' %}?show=done{% if category %}&category={{ category }}{% endif %}">Decided</a>
+  <a class="tabs__tab" href="{% url 'mapping_review' %}">Second look</a>
 </div>
 
 {% if not groups %}

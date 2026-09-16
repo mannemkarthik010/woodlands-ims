@@ -171,7 +171,15 @@ make that manageable rather than to guess at it:
   in quarts is 0.5, not 16 — the conversion is the point, because carrying the
   number across would be a thirty-twofold error in a figure nobody re-checks.
 - A dish is one dish whatever size the tub is. A bigger plate is a different
-  dish, and its recipe says so.
+  dish, and its recipe says so. A food sold **by the ounce** is the other kind
+  — a prepared component, the same pot the kitchen ladles from into dishes,
+  not a separate thing that happens to share a name.
+- Deciding 250 things in one sitting produces a predictable set of mistakes, so
+  `services.review()` looks for them afterwards and `apps/catalog/services.py`
+  offers the fixes: merge (keeping the old spelling as a searchable alias),
+  convert to a component, retire. Both operations refuse outright once the item
+  has stock movements against it — an item with a past cannot be redefined
+  without rewriting what the ledger says happened.
 
 *Implements FR-203, FR-610.*
 

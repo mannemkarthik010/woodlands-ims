@@ -25,6 +25,7 @@ told. See ADR 0002 and the third invariant in docs/architecture.md.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from decimal import Decimal
 from difflib import SequenceMatcher
@@ -316,3 +317,171 @@ def create_dish(name: str, *, category=None) -> Item:
         base_unit=each,
         is_stocked=False,  # a dish is sold, not held -- see Item.clean()
     )
+
+
+# ---------------------------------------------------------------------------
+# The second look
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class Flag:
+    """Something that looks wrong, with enough context to judge it in one read."""
+
+    kind: str
+    headline: str
+    detail: str
+    item: Item | None = None
+    other: Item | None = None
+    lines: list = field(default_factory=list)
+
+
+def review() -> list[Flag]:
+    """
+    What to look at again after a long mapping session.
+
+    Two hundred and fifty decisions in one sitting produces a predictable set
+    of mistakes, and none of them are carelessness. This finds them:
+
+      * A tub sold in ounces pointing at an item counted in "each" -- so the
+        4 oz and the 32 oz deplete the same amount, and the tub sambar is a
+        different thing from the sambar in the dish.
+      * The same food spelled two ways, now two items. The variance report
+        would show half the usage against each, and neither would make sense.
+      * Items nothing points at, left behind by a decision that was changed.
+      * A quantity of one against an item measured in ounces -- possible, but
+        usually a size that was never filled in.
+
+    Everything here is a question, not a correction. Nothing is changed until
+    somebody presses something.
+    """
+    from apps.catalog.models import Recipe
+    from apps.stock.models import StockMovement
+
+    flags: list[Flag] = []
+    lines = list(PosItem.objects.filter(item__isnull=False).select_related("item", "item__base_unit"))
+
+    # 1. Sold by the ounce, counted by the one.
+    by_item: dict[int, list[PosItem]] = {}
+    for pos in lines:
+        if pos.detected_size and pos.item.base_unit.kind == UnitKind.COUNT:
+            by_item.setdefault(pos.item_id, []).append(pos)
+    drink_classes = {"beer", "liquor", "wine", "beverage", "beverages"}
+    for rows in by_item.values():
+        item = rows[0].item
+        sizes = ", ".join(f"{r.detected_size:g} oz" for r in sorted(rows, key=lambda r: r.detected_size))
+        is_drink = all(
+            (r.revenue_class or "").lower() in drink_classes
+            or (r.pos_category or "").lower() in drink_classes
+            for r in rows
+        )
+        if is_drink:
+            detail = (
+                f"{sizes} all deplete the same amount as each other. This is a drink, "
+                f"though — a 12 oz bottle and a 22 oz bottle are usually two things that "
+                f"are bought, not one thing that is poured. Worth settling with the owners "
+                f"whether bar stock is being tracked at all before changing anything."
+            )
+        else:
+            detail = (
+                f"{sizes} all deplete the same amount as each other. If this is something "
+                f"the kitchen makes, it is a prepared component measured in ounces — and "
+                f"then it is the same stock that goes into the dishes, not a separate thing."
+            )
+        flags.append(
+            Flag(
+                kind="sized-drink" if is_drink else "sized",
+                headline=f"{item.name} is sold by the ounce but counted in “{item.base_unit.code}”",
+                detail=detail,
+                item=item,
+                lines=rows,
+            )
+        )
+
+    # 2. The same food, spelled twice.
+    # Demo fixtures are excluded. They are seeded to click around with and
+    # removed by `seed_demo --clear`; flagging them as duplicates of the real
+    # catalogue would bury the findings that matter under scaffolding.
+    active = list(
+        Item.objects.filter(is_active=True, kind__in=[ItemKind.DISH, ItemKind.PREPARED])
+        .exclude(code__istartswith="demo-")
+        .select_related("base_unit")
+        .order_by("name")
+    )
+    counts = {i.pk: 0 for i in active}
+    for pos in lines:
+        if pos.item_id in counts:
+            counts[pos.item_id] += 1
+
+    seen = set()
+    for a_index, first in enumerate(active):
+        for second in active[a_index + 1 :]:
+            pair = (first.pk, second.pk)
+            if pair in seen:
+                continue
+            one, two = normalise(first.name), normalise(second.name)
+            if SequenceMatcher(None, one, two).ratio() < 0.9:
+                continue
+            # "Poori 2Pc" and "Poori 4Pc" are 90% the same string and 100%
+            # different products, and so are the 4- and 8-serving family
+            # packages. Where the numbers differ, the numbers are the point.
+            if re.findall(r"\d+", one) != re.findall(r"\d+", two):
+                continue
+            seen.add(pair)
+            # Fold the one fewer till lines point at into the other.
+            source, target = sorted([first, second], key=lambda i: counts.get(i.pk, 0))
+            flags.append(
+                Flag(
+                    kind="duplicate",
+                    headline=f"“{source.name}” and “{target.name}” look like one food",
+                    detail=(
+                        f"{counts.get(source.pk, 0)} till line(s) point at {source.name}, "
+                        f"{counts.get(target.pk, 0)} at {target.name}. Merging keeps "
+                        f"“{source.name}” as a searchable name on {target.name} — nobody "
+                        f"loses the spelling they are used to typing."
+                    ),
+                    item=source,
+                    other=target,
+                )
+            )
+
+    # 3. Left behind by a decision that was changed.
+    with_recipe = set(Recipe.objects.values_list("item_id", flat=True))
+    with_history = set(StockMovement.objects.values_list("item_id", flat=True).distinct())
+    for item in active:
+        untouched = counts.get(item.pk, 0) == 0 and item.pk not in with_recipe and item.pk not in with_history
+        if untouched and item.kind == ItemKind.DISH and item.code.startswith("dish-"):
+            flags.append(
+                Flag(
+                    kind="orphan",
+                    headline=f"Nothing points at “{item.name}”",
+                    detail=(
+                        "No till line, no recipe, no stock. Usually what is left when a "
+                        "mapping decision was made and then changed."
+                    ),
+                    item=item,
+                )
+            )
+
+    # 4. One ounce per sale is possible, but usually means nobody filled it in.
+    unfilled = [
+        pos
+        for pos in lines
+        if pos.item.base_unit.kind != UnitKind.COUNT and pos.quantity_per_sale == Decimal("1")
+    ]
+    if unfilled:
+        flags.append(
+            Flag(
+                kind="quantity",
+                headline=f"{len(unfilled)} line(s) deplete exactly one {'unit'}",
+                detail=(
+                    "Each of these takes one unit of something measured by volume or weight "
+                    "— one fluid ounce of sambar, for instance. Possible, but it usually "
+                    "means the serving size is still a question for the chef."
+                ),
+                lines=unfilled,
+            )
+        )
+
+    order = {"sized": 0, "duplicate": 1, "quantity": 2, "sized-drink": 3, "orphan": 4}
+    return sorted(flags, key=lambda f: (order.get(f.kind, 9), f.headline))

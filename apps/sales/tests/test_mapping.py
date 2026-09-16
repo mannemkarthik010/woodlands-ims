@@ -274,3 +274,88 @@ class ScreenTests(TestCase):
             response = self.client.post(reverse(name, args=args))
             self.assertEqual(response.status_code, 302, name)
             self.assertIn("/login/", response["Location"])
+
+
+class ReviewTests(TestCase):
+    """
+    The second look. What it must NOT say is as important as what it says: a
+    review screen that cries wolf gets scrolled past, and then the real finding
+    three cards down goes with it.
+    """
+
+    def setUp(self):
+        self.each = Unit.objects.create(
+            code="each", name="Each", kind=UnitKind.COUNT, to_canonical=Decimal("1")
+        )
+        self.user = get_user_model().objects.create_user("owner", password="pw")
+        self.client.force_login(self.user)
+
+    def _dish(self, code, name):
+        return Item.objects.create(
+            code=code, name=name, kind=ItemKind.DISH, base_unit=self.each, is_stocked=False
+        )
+
+    def kinds(self):
+        return [f.kind for f in services.review()]
+
+    # Covers: FR-203.
+    def test_a_tub_counted_in_each_is_flagged(self):
+        sambar = self._dish("dish-sambar", "Sambar")
+        for name in ["Sambar 8oz", "Sambar 16 oz"]:
+            pos(name, item=sambar)
+        self.assertIn("sized", self.kinds())
+
+    # Covers: FR-201.
+    def test_two_spellings_of_one_food_are_flagged(self):
+        self._dish("dish-raita", "Raita")
+        self._dish("dish-raitha", "Raitha")
+        self.assertIn("duplicate", self.kinds())
+
+    def test_two_sizes_of_one_product_are_not_a_duplicate(self):
+        """
+        "Poori 2Pc" and "Poori 4Pc" are ninety per cent the same string and a
+        hundred per cent different products. Where the numbers differ, the
+        numbers are the point.
+        """
+        first = self._dish("dish-poori-2pc", "Poori 2Pc")
+        second = self._dish("dish-poori-4pc", "Poori 4Pc")
+        pos("Poori 2Pc", item=first)
+        pos("Poori 4Pc", item=second)
+        self.assertNotIn("duplicate", self.kinds())
+
+    def test_demo_fixtures_are_not_flagged_against_the_real_catalogue(self):
+        real = self._dish("dish-dosa-batter", "Dosa Batter")
+        pos("Dosa Batter", item=real)
+        Item.objects.create(
+            code="DEMO-batter-dosa", name="Dosa batter", kind=ItemKind.PREPARED, base_unit=self.each
+        )
+        self.assertNotIn("duplicate", self.kinds())
+
+    # Covers: FR-211.
+    def test_an_item_nothing_points_at_is_flagged_as_left_over(self):
+        self._dish("dish-abandoned", "Abandoned Thali")
+        self.assertIn("orphan", self.kinds())
+
+    # Covers: FR-202, FR-211.
+    def test_merging_from_the_screen_keeps_the_old_name_and_moves_the_lines(self):
+        keep = self._dish("dish-raita", "Raita")
+        fold = self._dish("dish-raitha", "Raitha")
+        line = pos("Raitha", item=fold)
+        self.client.post(reverse("item_merge"), {"source": fold.pk, "target": keep.pk})
+        line.refresh_from_db()
+        fold.refresh_from_db()
+        self.assertEqual(line.item, keep)
+        self.assertFalse(fold.is_active)
+        self.assertTrue(keep.aliases.filter(alias="Raitha").exists())
+
+    # Covers: FR-203, FR-501.
+    def test_converting_from_the_screen_makes_the_sizes_count(self):
+        floz = Unit.objects.create(
+            code="floz", name="Fluid ounce", kind=UnitKind.VOLUME, to_canonical=Decimal("29.5735")
+        )
+        sambar = self._dish("dish-sambar", "Sambar")
+        pos("Sambar 16 oz", item=sambar)
+        self.client.post(reverse("item_convert"), {"item": sambar.pk, "unit": floz.pk})
+        sambar.refresh_from_db()
+        self.assertEqual(sambar.kind, ItemKind.PREPARED)
+        self.assertEqual(PosItem.objects.get().quantity_per_sale, Decimal("16"))

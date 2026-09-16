@@ -22,6 +22,9 @@ Notable changes per release. Newest first.
 - Environment-based settings, demo data, and a command for testing on a phone
 - Documentation: architecture and runbook written by hand; data model and requirement
   traceability generated from the code, with CI failing when they go stale
+- Mapping review ("second look"): finds tubs counted in "each", one food spelled two ways,
+  and items left behind by a changed decision — and offers merge, convert and retire
+- Merge keeps the old spelling as a searchable name on the surviving item
 - Menu mapping screen: 311 POS lines grouped into 252 decisions, with the dish created
   from the group in one action, tub sizes read off the name and converted, and
   near-identical existing items offered as a question (ADR 0005)
