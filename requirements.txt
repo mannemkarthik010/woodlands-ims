@@ -4,4 +4,4 @@
 Django>=5.0,<6.0
 python-dotenv>=1.0
 django-simple-history>=3.5
-Pillow>=11.0          # required by ImageField: invoice and clock-in photos
+Pillow>=12.3.0          # required by ImageField: invoice and clock-in photos
