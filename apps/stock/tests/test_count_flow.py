@@ -47,6 +47,7 @@ class CountTests(TestCase):
         build_count_sheet(count)
         return count
 
+    # Covers: FR-702, FR-706.
     def test_a_blank_line_means_not_counted_not_zero(self):
         """The one that matters. An unvisited shelf must not be written off."""
         count = self._sheet()
@@ -60,6 +61,7 @@ class CountTests(TestCase):
         self.assertEqual(on_hand(self.dal, self.store), Decimal("132"))
         self.assertEqual(on_hand(self.rice, self.store), Decimal("240"))  # untouched
 
+    # Covers: FR-706, FR-1203.
     def test_a_count_writes_the_difference_not_the_total(self):
         """The ledger must still explain how the balance got where it is."""
         count = self._sheet()
@@ -73,6 +75,7 @@ class CountTests(TestCase):
         self.assertEqual(movements[0].quantity, Decimal("-18"))
         self.assertEqual(movements[0].movement_type, MovementType.COUNT_ADJUSTMENT)
 
+    # Covers: FR-706.
     def test_an_exact_count_writes_nothing(self):
         count = self._sheet()
         line = count.lines.get(item=self.dal)
@@ -80,6 +83,7 @@ class CountTests(TestCase):
         line.save()
         self.assertEqual(post_count(count, user=self.user), [])
 
+    # Covers: FR-701, FR-704.
     def test_expected_is_snapshotted_when_the_sheet_is_made(self):
         """
         Variance is measured against what was believed when somebody walked
@@ -94,6 +98,7 @@ class CountTests(TestCase):
         )
         self.assertEqual(count.lines.get(item=self.dal).expected_quantity, Decimal("150"))
 
+    # Covers: FR-706.
     def test_a_count_cannot_be_posted_twice(self):
         from apps.stock.services import StockError
 
@@ -105,6 +110,7 @@ class CountTests(TestCase):
         with self.assertRaises(StockError):
             post_count(count, user=self.user)
 
+    # Covers: FR-702.
     def test_the_counting_screen_does_not_show_the_expected_figure(self):
         """
         Showing it turns counting into confirming. A sheet that agrees with
@@ -115,6 +121,7 @@ class CountTests(TestCase):
         self.assertContains(response, "Urad dal")
         self.assertNotContains(response, "150")
 
+    # Covers: FR-704, FR-705.
     def test_variance_appears_on_review(self):
         count = self._sheet()
         line = count.lines.get(item=self.dal)
@@ -123,6 +130,7 @@ class CountTests(TestCase):
         response = self.client.get(reverse("count_review", args=[count.pk]))
         self.assertContains(response, "-18")
 
+    # Covers: FR-702.
     def test_a_line_saves_as_it_is_typed(self):
         count = self._sheet()
         line = count.lines.get(item=self.dal)
@@ -130,6 +138,7 @@ class CountTests(TestCase):
         line.refresh_from_db()
         self.assertEqual(line.counted_quantity, Decimal("132"))
 
+    # Covers: FR-702.
     def test_clearing_a_line_puts_it_back_to_not_counted(self):
         count = self._sheet()
         line = count.lines.get(item=self.dal)
@@ -139,6 +148,7 @@ class CountTests(TestCase):
         line.refresh_from_db()
         self.assertIsNone(line.counted_quantity)
 
+    # Covers: FR-702, NFR-05.
     def test_nonsense_does_not_overwrite_a_good_figure(self):
         count = self._sheet()
         line = count.lines.get(item=self.dal)

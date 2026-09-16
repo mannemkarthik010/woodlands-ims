@@ -33,6 +33,7 @@ from apps.catalog.models import QTY, Item, Recipe
 from apps.core.models import Location, TimeStamped
 
 
+# Implements: FR-508.
 class BatchStatus(models.TextChoices):
     IN_PROGRESS = "IN_PROGRESS", "In progress"
     MATURING = "MATURING", "Maturing"  # exists, not yet usable
@@ -41,6 +42,7 @@ class BatchStatus(models.TextChoices):
     WRITTEN_OFF = "WRITTEN_OFF", "Written off"
 
 
+# Implements: FR-503, FR-504, FR-505, FR-506, FR-507, FR-509, FR-513.
 class ProductionBatch(TimeStamped):
     item = models.ForeignKey(Item, on_delete=models.PROTECT, related_name="batches")
     batch_code = models.CharField(max_length=40, unique=True)
@@ -92,6 +94,7 @@ class ProductionBatch(TimeStamped):
     def __str__(self) -> str:
         return self.batch_code
 
+    # Implements: FR-505.
     @property
     def yield_variance(self):
         """Signed difference, in base units. Negative means short."""
@@ -105,11 +108,13 @@ class ProductionBatch(TimeStamped):
             return None
         return (self.actual_yield - self.expected_yield) / self.expected_yield * Decimal("100")
 
+    # Implements: FR-508.
     @property
     def is_usable(self) -> bool:
         return self.status == BatchStatus.AVAILABLE
 
 
+# Implements: FR-502, FR-503.
 class ProductionInput(models.Model):
     """
     What actually went into the batch.
@@ -132,6 +137,7 @@ class ProductionInput(models.Model):
         return f"{self.quantity} {self.item.base_unit} {self.item.name}"
 
 
+# Implements: FR-515.
 class BatchSplit(models.Model):
     """
     One grind divided into more than one product -- a single batter split

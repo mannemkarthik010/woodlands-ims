@@ -42,6 +42,7 @@ class TransferFlowTests(TestCase):
             movement_type=MovementType.RECEIPT,
         )
 
+    # Covers: FR-403, FR-404, FR-405.
     def test_the_whole_run_from_start_to_recorded(self):
         # Tap "Storage run" -- a draft exists immediately, so nothing is lost
         # if the phone locks halfway through.
@@ -76,6 +77,7 @@ class TransferFlowTests(TestCase):
         self.assertEqual(on_hand(self.dal, self.restaurant), Decimal("18"))
         self.assertEqual(on_hand(self.dal), Decimal("150"))
 
+    # Covers: FR-202.
     def test_items_are_findable_by_the_name_someone_actually_uses(self):
         transfer = Transfer.objects.create(
             from_location=self.storage,
@@ -85,6 +87,7 @@ class TransferFlowTests(TestCase):
         results = self.client.get(reverse("item_search"), {"q": "black gram", "transfer": transfer.pk})
         self.assertContains(results, "Urad dal")
 
+    # Covers: FR-403, NFR-05.
     def test_the_same_item_twice_adds_up_instead_of_making_two_rows(self):
         transfer = Transfer.objects.create(
             from_location=self.storage,
@@ -98,6 +101,7 @@ class TransferFlowTests(TestCase):
         self.assertEqual(transfer.lines.count(), 1)
         self.assertEqual(transfer.lines.get().quantity, Decimal("18"))
 
+    # Covers: FR-405, NFR-05.
     def test_a_bad_quantity_is_refused_without_losing_the_run(self):
         transfer = Transfer.objects.create(
             from_location=self.storage,
@@ -111,6 +115,7 @@ class TransferFlowTests(TestCase):
         self.assertContains(response, "greater than zero")
         self.assertEqual(transfer.lines.count(), 0)
 
+    # Covers: FR-403.
     def test_an_empty_run_cannot_be_recorded(self):
         transfer = Transfer.objects.create(
             from_location=self.storage,
@@ -122,6 +127,7 @@ class TransferFlowTests(TestCase):
         transfer.refresh_from_db()
         self.assertEqual(transfer.status, DocumentStatus.DRAFT)
 
+    # Covers: FR-403.
     def test_a_line_can_be_removed_before_recording(self):
         transfer = Transfer.objects.create(
             from_location=self.storage,
@@ -136,6 +142,7 @@ class TransferFlowTests(TestCase):
         self.client.post(reverse("transfer_remove_line", args=[transfer.pk, line.pk]))
         self.assertEqual(transfer.lines.count(), 0)
 
+    # Covers: FR-1202, NFR-11.
     def test_signed_out_people_see_nothing(self):
         self.client.logout()
         response = self.client.get(reverse("transfer_new"))

@@ -22,6 +22,7 @@ from django.db import models
 from apps.core.models import Location, TimeStamped
 
 
+# Implements: FR-103.
 class BreakPolicy(TimeStamped):
     """
     The standard closure. Configurable by weekday, because lunch service does
@@ -51,6 +52,7 @@ class BreakPolicy(TimeStamped):
         return self.name
 
 
+# Implements: FR-101, FR-102, FR-108, D-04.
 class Shift(TimeStamped):
     employee = models.ForeignKey("core.User", on_delete=models.PROTECT, related_name="shifts")
     location = models.ForeignKey(Location, on_delete=models.PROTECT, related_name="shifts")
@@ -85,6 +87,7 @@ class Shift(TimeStamped):
     def is_open(self) -> bool:
         return self.clocked_out_at is None
 
+    # Implements: FR-106.
     @property
     def hours_worked(self):
         """Gross span minus the break that applies. None while still open."""
@@ -98,6 +101,7 @@ class Shift(TimeStamped):
         return gross
 
 
+# Implements: FR-105, FR-113.
 class ShiftEdit(TimeStamped):
     """
     Every correction to a clock record, kept forever. A time record that can

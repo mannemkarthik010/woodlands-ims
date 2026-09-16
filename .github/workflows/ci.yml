@@ -43,6 +43,14 @@ jobs:
         env:
           DJANGO_SECRET_KEY: ci-only-not-a-real-secret
 
+      - name: Documentation up to date?
+        # data-model.md and traceability.md are generated from the code. If a
+        # model changed without the docs being regenerated, the documentation is
+        # already lying -- so the build fails here rather than later in a room.
+        run: python manage.py docs --check
+        env:
+          DJANGO_SECRET_KEY: ci-only-not-a-real-secret
+
       - name: Tests
         run: python manage.py test apps --verbosity 2
         env:

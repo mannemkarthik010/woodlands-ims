@@ -35,6 +35,7 @@ class UnitKind(models.TextChoices):
     COUNT = "COUNT", "Count"
 
 
+# Implements: FR-203.
 class Unit(TimeStamped):
     """A unit of measure. Conversion between units of the same kind only."""
 
@@ -54,6 +55,7 @@ class Unit(TimeStamped):
         return self.code
 
 
+# Implements: FR-209.
 class ItemKind(models.TextChoices):
     RAW = "RAW", "Raw material"
     PREPARED = "PREPARED", "Prepared component"  # batter, sambar, chutney, blends
@@ -62,6 +64,7 @@ class ItemKind(models.TextChoices):
     CONSUMABLE = "CONSUMABLE", "Consumable"
 
 
+# Implements: FR-201.
 class ItemCategory(TimeStamped):
     name = models.CharField(max_length=80, unique=True)
     sort_order = models.PositiveSmallIntegerField(default=0)
@@ -74,6 +77,7 @@ class ItemCategory(TimeStamped):
         return self.name
 
 
+# Implements: FR-201, FR-203, FR-206, FR-207, FR-209, FR-211.
 class Item(TimeStamped):
     code = models.SlugField(max_length=48, unique=True)
     name = models.CharField(max_length=160)
@@ -116,6 +120,7 @@ class Item(TimeStamped):
             raise ValidationError({"is_stocked": "A menu dish is not held in stock."})
 
 
+# Implements: FR-202.
 class ItemAlias(TimeStamped):
     """
     The same thing called three different names by three different people --
@@ -133,6 +138,7 @@ class ItemAlias(TimeStamped):
         return self.alias
 
 
+# Implements: FR-204, FR-205.
 class PurchaseUnit(TimeStamped):
     """
     How an item is bought, and what that is worth in base units.
@@ -166,6 +172,7 @@ class PurchaseUnit(TimeStamped):
         return f"{self.name}{who} = {self.quantity_in_base_units} {self.item.base_unit}"
 
 
+# Implements: FR-212.
 class ParLevel(TimeStamped):
     """How much of an item should be on hand at a given location."""
 
@@ -184,6 +191,7 @@ class ParLevel(TimeStamped):
 # ---------------------------------------------------------------------------
 
 
+# Implements: FR-502, FR-601, FR-602, FR-609.
 class Recipe(TimeStamped):
     """
     How an item is made. Applies equally to a dish (masala dosa) and to a
@@ -230,6 +238,7 @@ class Recipe(TimeStamped):
         return f"{self.item.name} v{self.version}"
 
 
+# Implements: FR-601, FR-602.
 class RecipeLine(TimeStamped):
     """
     One component of a recipe. `component` may itself be a prepared item with

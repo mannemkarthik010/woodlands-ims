@@ -34,6 +34,7 @@ class LedgerTests(TestCase):
         self.rest = Location.objects.create(code="rest", name="Restaurant", kind=Location.Kind.RESTAURANT)
         self.dal = Item.objects.create(code="raw-urad", name="Urad dal", kind=ItemKind.RAW, base_unit=self.lb)
 
+    # Covers: FR-408, FR-1203.
     def test_balance_is_the_sum_of_movements(self):
         post_movement(
             item=self.dal, location=self.storage, quantity=Decimal("150"), movement_type=MovementType.RECEIPT
@@ -46,6 +47,7 @@ class LedgerTests(TestCase):
         )
         self.assertEqual(on_hand(self.dal, self.storage), Decimal("132"))
 
+    # Covers: FR-1204.
     def test_cache_can_always_be_rebuilt_from_the_ledger(self):
         post_movement(
             item=self.dal, location=self.storage, quantity=Decimal("100"), movement_type=MovementType.RECEIPT
@@ -58,6 +60,7 @@ class LedgerTests(TestCase):
             StockBalance.objects.get(item=self.dal, location=self.storage).quantity, Decimal("100")
         )
 
+    # Covers: FR-1203, FR-1204.
     def test_a_correction_is_a_new_row_not_an_edit(self):
         m = post_movement(
             item=self.dal, location=self.storage, quantity=Decimal("50"), movement_type=MovementType.RECEIPT
@@ -67,6 +70,7 @@ class LedgerTests(TestCase):
         self.assertEqual(StockMovement.objects.count(), 2)  # original survives
         self.assertTrue(StockMovement.objects.filter(reverses=m).exists())
 
+    # Covers: FR-1204.
     def test_a_movement_cannot_be_reversed_twice(self):
         m = post_movement(
             item=self.dal, location=self.storage, quantity=Decimal("50"), movement_type=MovementType.RECEIPT
@@ -75,6 +79,7 @@ class LedgerTests(TestCase):
         with self.assertRaises(StockError):
             reverse_movement(m)
 
+    # Covers: FR-403, FR-404.
     def test_transfer_moves_stock_between_locations_atomically(self):
         post_movement(
             item=self.dal, location=self.storage, quantity=Decimal("150"), movement_type=MovementType.RECEIPT
@@ -91,6 +96,7 @@ class LedgerTests(TestCase):
         t.refresh_from_db()
         self.assertEqual(t.status, DocumentStatus.POSTED)
 
+    # Covers: FR-404.
     def test_a_transfer_cannot_be_posted_twice(self):
         post_movement(
             item=self.dal, location=self.storage, quantity=Decimal("150"), movement_type=MovementType.RECEIPT
@@ -103,6 +109,7 @@ class LedgerTests(TestCase):
         with self.assertRaises(StockError):
             post_transfer(t)
 
+    # Covers: FR-409.
     def test_negative_stock_can_be_refused(self):
         with self.assertRaises(StockError):
             post_movement(
@@ -152,6 +159,7 @@ class ExplosionTests(TestCase):
         d = Recipe.objects.create(item=self.dosa, yield_quantity=Decimal("1"))
         RecipeLine.objects.create(recipe=d, component=self.batter, quantity=Decimal("0.05"))
 
+    # Covers: FR-602, FR-603, FR-610.
     def test_a_dish_explodes_all_the_way_to_raw_materials(self):
         result = {c.item.code: c.quantity for c in explode(self.dosa, Decimal("100"))}
         # 100 dosas = 5 gal batter = 5/11 of a grind
@@ -159,6 +167,7 @@ class ExplosionTests(TestCase):
         self.assertAlmostEqual(result["raw-urad"], Decimal("5") * (Decimal("5") / Decimal("11")), places=6)
         self.assertNotIn("prep-dosa-batter", result)  # intermediate, not a leaf
 
+    # Covers: FR-602.
     def test_a_recipe_loop_is_refused_rather_than_hanging(self):
         loop = Recipe.objects.create(item=self.rice, yield_quantity=Decimal("1"))
         RecipeLine.objects.create(recipe=loop, component=self.batter, quantity=Decimal("1"))

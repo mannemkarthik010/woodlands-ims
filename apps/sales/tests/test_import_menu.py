@@ -16,6 +16,7 @@ class NormaliseTests(TestCase):
     person to confirm -- it never creates a mapping by itself.
     """
 
+    # Covers: FR-610.
     def test_one_dish_sold_five_ways_groups_together(self):
         names = [
             "Masala Dosa",
@@ -26,6 +27,7 @@ class NormaliseTests(TestCase):
         ]
         self.assertEqual({normalise(n) for n in names}, {"masala dosa"})
 
+    # Covers: FR-610.
     def test_sizes_collapse_to_the_same_base(self):
         names = ["Coconut Chutney 4 oz", "Coconut Chutney 8 oz", "Coconut Chutney 16 oz"]
         self.assertEqual({normalise(n) for n in names}, {"coconut chutney"})
@@ -54,6 +56,7 @@ class ImportBehaviourTests(TestCase):
         path.write_text(self.rows)
         call_command("import_menu", str(path), verbosity=0)
 
+    # Covers: FR-610.
     def test_non_food_lines_are_ignored_and_never_deplete(self):
         import tempfile
         from pathlib import Path
@@ -62,6 +65,7 @@ class ImportBehaviourTests(TestCase):
             self._run(Path(d))
         self.assertTrue(PosItem.objects.get(pos_name="Corkage Fee").ignore)
 
+    # Covers: FR-610.
     def test_prix_fixe_parent_is_ignored_so_meals_are_not_counted_twice(self):
         import tempfile
         from pathlib import Path
@@ -84,6 +88,7 @@ class ImportBehaviourTests(TestCase):
             self._run(Path(d))
         self.assertTrue(PosItem.objects.filter(pos_name="DosaNights-Masala Dosa").exists())
 
+    # Covers: FR-211, FR-610.
     def test_inactive_menu_items_are_recorded_but_flagged(self):
         import tempfile
         from pathlib import Path
@@ -92,6 +97,7 @@ class ImportBehaviourTests(TestCase):
             self._run(Path(d))
         self.assertFalse(PosItem.objects.get(pos_name="Samosa").active_on_pos)
 
+    # Covers: FR-610.
     def test_reimporting_does_not_undo_a_human_decision(self):
         import tempfile
         from pathlib import Path

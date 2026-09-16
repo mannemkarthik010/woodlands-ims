@@ -51,6 +51,7 @@ def home(request):
     return render(request, "stock/home.html", {"open_transfers": open_transfers})
 
 
+# Implements: FR-403, FR-405, NFR-02, NFR-06.
 @login_required
 def transfer_new(request):
     """
@@ -72,6 +73,7 @@ def transfer_new(request):
     return redirect("transfer_edit", pk=transfer.pk)
 
 
+# Implements: FR-403, FR-405.
 @login_required
 def transfer_edit(request, pk):
     transfer = get_object_or_404(Transfer.objects.select_related("from_location", "to_location"), pk=pk)
@@ -100,6 +102,7 @@ def _transfer_context(transfer):
     }
 
 
+# Implements: FR-202, NFR-05.
 @login_required
 def item_search(request):
     """
@@ -125,6 +128,7 @@ def item_search(request):
     )
 
 
+# Implements: FR-403, FR-405, NFR-06.
 @login_required
 @require_POST
 def transfer_add_line(request, pk):
@@ -166,6 +170,7 @@ def transfer_remove_line(request, pk, line_pk):
     return render(request, "stock/_lines.html", _transfer_context(transfer))
 
 
+# Implements: FR-404, FR-409.
 @login_required
 @require_POST
 def transfer_post(request, pk):
@@ -217,6 +222,7 @@ def transfer_done(request, pk):
 # screen, where it belongs.
 
 
+# Implements: FR-701.
 @login_required
 def count_new(request):
     """Pick a location and cadence, then build the sheet."""
@@ -242,6 +248,7 @@ def count_new(request):
     )
 
 
+# Implements: FR-702, FR-703, NFR-06.
 @login_required
 def count_sheet(request, pk):
     count = get_object_or_404(StockCount.objects.select_related("location"), pk=pk)
@@ -257,6 +264,7 @@ def count_sheet(request, pk):
     )
 
 
+# Implements: FR-702, NFR-04.
 @login_required
 @require_POST
 def count_save_line(request, pk, line_pk):
@@ -284,6 +292,7 @@ def count_save_line(request, pk, line_pk):
     )
 
 
+# Implements: FR-704, FR-705.
 @login_required
 def count_review(request, pk):
     """Variance, shown only once counting is finished."""
@@ -307,6 +316,7 @@ def count_review(request, pk):
     )
 
 
+# Implements: FR-706.
 @login_required
 @require_POST
 def count_post(request, pk):

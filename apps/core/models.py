@@ -7,6 +7,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
+# Implements: NFR-18.
 class TimeStamped(models.Model):
     """Every table records when a row was made and by whom. No exceptions."""
 
@@ -37,6 +38,7 @@ class Role(models.TextChoices):
     FRONT_OF_HOUSE = "FOH", "Front of house"
 
 
+# Implements: FR-1201, FR-1202, FR-1208, NFR-09, NFR-11.
 class User(AbstractUser):
     role = models.CharField(max_length=16, choices=Role.choices, default=Role.KITCHEN)
 
@@ -55,11 +57,13 @@ class User(AbstractUser):
         help_text="Unticking keeps all history intact but stops the person signing in.",
     )
 
+    # Implements: FR-102, D-04.
     @property
     def can_use_pin(self) -> bool:
         """An owner must never be reachable from a tablet PIN."""
         return self.role != Role.OWNER
 
+    # Implements: NFR-11.
     @property
     def may_see_money(self) -> bool:
         return self.role == Role.OWNER
@@ -68,6 +72,7 @@ class User(AbstractUser):
         return self.display_name or self.get_username()
 
 
+# Implements: FR-401.
 class Location(TimeStamped):
     """
     Somewhere stock can sit. Three kinds today: the restaurant, the
@@ -95,6 +100,7 @@ class Location(TimeStamped):
         return self.name
 
 
+# Implements: FR-402, FR-703.
 class Area(TimeStamped):
     """
     Optional subdivision of a location -- dry store, walk-in, freezer, bar.
@@ -113,6 +119,7 @@ class Area(TimeStamped):
         return f"{self.location.name} / {self.name}"
 
 
+# Implements: FR-301.
 class Supplier(TimeStamped):
     name = models.CharField(max_length=120, unique=True)
     contact_name = models.CharField(max_length=120, blank=True)

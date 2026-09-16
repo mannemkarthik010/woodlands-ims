@@ -24,6 +24,7 @@ class StockError(Exception):
     pass
 
 
+# Implements: FR-1203, FR-1204, NFR-18.
 @transaction.atomic
 def post_movement(
     *,
@@ -80,6 +81,7 @@ def post_movement(
     return movement
 
 
+# Implements: FR-1204, FR-706.
 @transaction.atomic
 def reverse_movement(movement: StockMovement, *, user=None, reason: str = "") -> StockMovement:
     """
@@ -106,6 +108,7 @@ def reverse_movement(movement: StockMovement, *, user=None, reason: str = "") ->
     return reversal
 
 
+# Implements: FR-403, FR-404.
 @transaction.atomic
 def post_transfer(transfer, *, user=None) -> list[StockMovement]:
     """
@@ -150,6 +153,7 @@ def post_transfer(transfer, *, user=None) -> list[StockMovement]:
     return movements
 
 
+# Implements: FR-408.
 def on_hand(item: Item, location: Location | None = None) -> Decimal:
     """Authoritative figure, summed from the ledger rather than read from the cache."""
     qs = StockMovement.objects.filter(item=item)
@@ -158,6 +162,7 @@ def on_hand(item: Item, location: Location | None = None) -> Decimal:
     return qs.aggregate(total=Sum("quantity"))["total"] or Decimal("0")
 
 
+# Implements: FR-1204.
 def rebuild_balances() -> int:
     """
     Recompute every cached balance from the ledger.
@@ -192,6 +197,7 @@ class ExplodedComponent:
     depth: int
 
 
+# Implements: FR-602, FR-603, FR-610.
 def explode(item: Item, quantity: Decimal, *, _seen=None, _depth=0) -> list[ExplodedComponent]:
     """
     Walk a dish down to the things that are actually held in stock.
@@ -230,6 +236,7 @@ def explode(item: Item, quantity: Decimal, *, _seen=None, _depth=0) -> list[Expl
     return out
 
 
+# Implements: FR-704, FR-706.
 @transaction.atomic
 def post_count(count, *, user=None) -> list[StockMovement]:
     """
@@ -275,6 +282,7 @@ def post_count(count, *, user=None) -> list[StockMovement]:
     return movements
 
 
+# Implements: FR-701, FR-703.
 def build_count_sheet(count, *, items=None) -> int:
     """
     Fill a count sheet with the items to be counted, and snapshot what the

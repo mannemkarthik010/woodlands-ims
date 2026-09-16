@@ -29,6 +29,7 @@ from apps.catalog.models import MONEY, QTY, Item
 from apps.core.models import Location, TimeStamped
 
 
+# Implements: FR-610.
 class PosItem(TimeStamped):
     """
     A line as Shift4 names it. Kept distinct from our Item on purpose: the
@@ -101,6 +102,7 @@ class SalesImportStatus(models.TextChoices):
     SUPERSEDED = "SUPERSEDED", "Superseded by a later import"
 
 
+# Implements: FR-610, FR-611.
 class SalesImport(TimeStamped):
     """One CSV, one business date."""
 
@@ -139,6 +141,7 @@ class SalesImport(TimeStamped):
         return self.status == SalesImportStatus.IMPORTED and self.rows_unmapped == 0
 
 
+# Implements: FR-610.
 class SalesImportLine(models.Model):
     sales_import = models.ForeignKey(SalesImport, on_delete=models.CASCADE, related_name="lines")
     pos_item = models.ForeignKey(PosItem, on_delete=models.PROTECT, related_name="sale_lines")
@@ -155,6 +158,7 @@ class SalesImportLine(models.Model):
     def __str__(self) -> str:
         return f"{self.pos_item.pos_name} x{self.quantity_sold}"
 
+    # Implements: FR-804.
     @property
     def quantity_to_deplete(self):
         """

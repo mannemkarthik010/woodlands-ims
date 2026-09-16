@@ -1,0 +1,1038 @@
+[
+  {
+    "ref": "FR-101",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "An employee can clock in and clock out, and the system records the exact time of each event.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-102",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "The system prevents one employee clocking in on behalf of another. See D-04 for the method.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-103",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "The daily break is handled as a fixed closed period. The restaurant closes between 3:00~pm and 5:00~pm and staff take their lunch in that window, so the system treats it as a standard unpaid break rather than asking each person to clock out and back in. Staff who work through it, or who take their break at another time, can record that as an exception.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-104",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "Any shift that departs from the standard 3:00--5:00~pm break pattern is visible to the owners as an exception, so it is not lost.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-105",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "The owners can correct a missed or wrong clock event; every correction is logged with who changed it, when, from what value, to what value, and why.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-106",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "The system calculates hours worked per shift, per day and per week, with the standard break deducted.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-107",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "The system flags a shift with no clock-out, or an unusually long one, so the owners can review it.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-108",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "The system distinguishes work performed at the restaurant from work performed at a catering event.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-109",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "An employee can view their own hours to date.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-110",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "The owners can build and publish a staff rota, if they want one.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-111",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "The system compares rota hours against actual hours and reports the difference.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-112",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "Hours can be exported to a spreadsheet or PDF for the owners' own use. This is an export for reading, not a payroll file.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-113",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "Time records cannot be silently deleted, and the history of any edit is retained.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-114",
+    "module": "M1",
+    "module_name": "Time and attendance",
+    "text": "Clock-in works when the internet connection is down, and syncs when it returns.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-201",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "Every stock item has a unique code, a name, an optional local-language name, and a category.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-202",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "An item may have several names in use \u2014 supplier's name, chef's name, menu name \u2014 all searchable.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-203",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "Each item has a base unit in which stock is held (for example: pound, gram, litre, each).",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-204",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "Each item may have any number of purchase units with a stated conversion to the base unit (for example: 1 sack = 25 lb; 1 case = 24 tins; 1 tin = 400 g).",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-205",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "Conversions that are not fixed \u2014 \"one bunch of curry leaves\" \u2014 are supported with an agreed nominal weight, and flagged as approximate.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-206",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "Each item carries a shelf life or a best-before behaviour appropriate to its type.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-207",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "Each item carries a current cost per base unit, updated from goods receipts.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-208",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "The system supports the cost basis chosen in D-15 (latest cost, weighted average, or FIFO).",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-209",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "Items can be marked as raw material, prepared component, packaging, consumable or non-stock.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-210",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "Items can be marked as allergen-relevant, and dishes inherit that flag through their recipe.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-211",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "An item can be deactivated without deleting its history.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-212",
+    "module": "M2",
+    "module_name": "Item master and units of measure",
+    "text": "Each item has a par level per location \u2014 the quantity that should be on hand.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-301",
+    "module": "M3",
+    "module_name": "Purchasing and goods receipt",
+    "text": "Suppliers are recorded with contact details, delivery days and payment terms.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-302",
+    "module": "M3",
+    "module_name": "Purchasing and goods receipt",
+    "text": "A goods receipt records what physically arrived: item, quantity, unit, price paid, date, supplier, and who received it.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-303",
+    "module": "M3",
+    "module_name": "Purchasing and goods receipt",
+    "text": "A goods receipt increases stock at the location where the goods arrived \u2014 normally the storage facility.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-304",
+    "module": "M3",
+    "module_name": "Purchasing and goods receipt",
+    "text": "The receiver can photograph the supplier invoice and attach it to the receipt.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-305",
+    "module": "M3",
+    "module_name": "Purchasing and goods receipt",
+    "text": "The system warns when the price paid differs materially from the last price paid for the same item.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-306",
+    "module": "M3",
+    "module_name": "Purchasing and goods receipt",
+    "text": "The system records short deliveries, damaged goods and rejected items separately from accepted stock.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-307",
+    "module": "M3",
+    "module_name": "Purchasing and goods receipt",
+    "text": "A purchase order can be raised in advance and a receipt matched against it.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-308",
+    "module": "M3",
+    "module_name": "Purchasing and goods receipt",
+    "text": "The system suggests what to buy, based on par levels, current stock and recent consumption.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-309",
+    "module": "M3",
+    "module_name": "Purchasing and goods receipt",
+    "text": "Purchase history per item and per supplier is reportable over any date range.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-310",
+    "module": "M3",
+    "module_name": "Purchasing and goods receipt",
+    "text": "Cash purchases and account purchases are both supported, and distinguishable.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-311",
+    "module": "M3",
+    "module_name": "Purchasing and goods receipt",
+    "text": "Receipt entry is possible from a phone, standing in the storage facility, without a keyboard.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-401",
+    "module": "M4",
+    "module_name": "Multi-location stock and transfers",
+    "text": "The system holds stock balances separately for each location: restaurant, storage facility, and any event location.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-402",
+    "module": "M4",
+    "module_name": "Multi-location stock and transfers",
+    "text": "Locations can be subdivided into areas \u2014 dry store, walk-in, freezer, bar, prep station \u2014 if the client wants that granularity.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-403",
+    "module": "M4",
+    "module_name": "Multi-location stock and transfers",
+    "text": "A transfer records item, quantity, unit, source location, destination location, date, time and the person moving it.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-404",
+    "module": "M4",
+    "module_name": "Multi-location stock and transfers",
+    "text": "A transfer decreases stock at source and increases it at destination in one action.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-405",
+    "module": "M4",
+    "module_name": "Multi-location stock and transfers",
+    "text": "Transfer entry takes under thirty seconds for a typical multi-item load, on a phone, one-handed.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-406",
+    "module": "M4",
+    "module_name": "Multi-location stock and transfers",
+    "text": "Frequently repeated transfers can be saved as a template and re-used with quantities adjusted.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-407",
+    "module": "M4",
+    "module_name": "Multi-location stock and transfers",
+    "text": "The system can operate a two-step transfer \u2014 despatched, then received \u2014 where the client wants goods confirmed at the far end.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-408",
+    "module": "M4",
+    "module_name": "Multi-location stock and transfers",
+    "text": "Stock on hand for any item, at any location, is visible at a glance.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-409",
+    "module": "M4",
+    "module_name": "Multi-location stock and transfers",
+    "text": "Negative stock is either prevented or clearly flagged, per the client's preference.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-501",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "A prepared component \u2014 dosa batter, idli batter, sambar, chutney, spice blend \u2014 exists as a stock item in its own right.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-502",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "Each prepared component has a production formula listing its raw materials and quantities.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-503",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "Recording a production batch decreases the raw materials and increases the prepared component, in one action.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-504",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "Each production batch has its own batch or lot identifier.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-505",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "The system records the expected yield and the actual yield of each batch, and reports the difference.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-506",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "Each batch records the time production started.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-507",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "For fermented items, each batch records the time fermentation was judged complete, either entered by staff or calculated from a configured duration.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-508",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "A batch is not counted as available stock until fermentation is complete. Immature stock is visible but distinguished.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-509",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "Each batch has an expiry, calculated from maturity plus a configured shelf life.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-510",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "The system warns when a batch is approaching expiry, at a lead time the client sets.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-511",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "Batches are consumed oldest-first by default, and the system indicates which batch to draw from.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-512",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "Expired batter is written off through the waste module, not silently removed.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-513",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "The system records ambient temperature or a season setting against a batch, so that fermentation duration can be tuned across the year.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-514",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "The system forecasts how much batter to produce, based on recent consumption and the day of week.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-515",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "A single grind that is split into two or more products is supported.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-516",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "Batter repurposed into another dish rather than discarded is recorded as such.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-517",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "Production entry is possible with wet hands \u2014 large targets, minimal typing, no fine gestures.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-518",
+    "module": "M5",
+    "module_name": "Production and the batter cycle",
+    "text": "A printable batch label can be produced showing item, batch, made-on, use-by.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-601",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "Every menu item can have a recipe listing its components and quantities.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-602",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "A recipe component may itself be a prepared component with its own recipe, to any sensible depth.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-603",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "The system calculates the cost of a dish from current component costs, all the way down.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-604",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "The system shows gross margin per dish against its menu price.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-605",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "The system alerts when a dish's cost rises past a threshold, so pricing can be reviewed.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-606",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "Recipes can be scaled \u2014 a batch for 10 portions, 50 portions, or an event for 200.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-607",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "Recipes carry preparation steps, timings and notes, not only quantities.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-608",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "Recipes carry photographs of the correct finished appearance.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-609",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "Recipe changes are versioned; the previous version remains retrievable.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-610",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "Sales data can deplete component stock automatically according to recipes.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-611",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "Where sales data is not available electronically, dish counts can be entered manually at end of service.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-612",
+    "module": "M6",
+    "module_name": "Recipes, costing and theoretical depletion",
+    "text": "Recipes record allergens and dietary attributes, which propagate to the dish.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-701",
+    "module": "M7",
+    "module_name": "Physical counts and variance",
+    "text": "A count sheet can be generated for a location, a category, or a defined subset of items.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-702",
+    "module": "M7",
+    "module_name": "Physical counts and variance",
+    "text": "Counts are entered on a phone or tablet while walking the shelves.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-703",
+    "module": "M7",
+    "module_name": "Physical counts and variance",
+    "text": "Count sheets follow the physical order of the shelves, configurable by the client.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-704",
+    "module": "M7",
+    "module_name": "Physical counts and variance",
+    "text": "The system shows the difference between counted and expected quantity, in units and in dollars.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-705",
+    "module": "M7",
+    "module_name": "Physical counts and variance",
+    "text": "Large discrepancies are highlighted for review before the count is committed.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-706",
+    "module": "M7",
+    "module_name": "Physical counts and variance",
+    "text": "Committing a count adjusts stock, and the adjustment is recorded with a reason.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-707",
+    "module": "M7",
+    "module_name": "Physical counts and variance",
+    "text": "Counts can be scheduled \u2014 some items daily, some weekly, some monthly.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-708",
+    "module": "M7",
+    "module_name": "Physical counts and variance",
+    "text": "Count history is retained and trend-reportable per item.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-709",
+    "module": "M7",
+    "module_name": "Physical counts and variance",
+    "text": "Two people can count different areas at the same time without conflict.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-801",
+    "module": "M8",
+    "module_name": "Waste, spoilage and staff meals",
+    "text": "Waste is recorded against an item and a quantity, with a reason from a short configurable list.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-802",
+    "module": "M8",
+    "module_name": "Waste, spoilage and staff meals",
+    "text": "Reasons distinguish at minimum: spoiled, expired, over-produced, dropped or damaged, cooking error, customer return.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-803",
+    "module": "M8",
+    "module_name": "Waste, spoilage and staff meals",
+    "text": "Recording waste takes under fifteen seconds, or it will not happen.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-804",
+    "module": "M8",
+    "module_name": "Waste, spoilage and staff meals",
+    "text": "Staff meals and comped dishes are recorded so they do not appear as unexplained loss.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-805",
+    "module": "M8",
+    "module_name": "Waste, spoilage and staff meals",
+    "text": "Waste is reportable by item, by reason, by period and by shift, in units and dollars.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-806",
+    "module": "M8",
+    "module_name": "Waste, spoilage and staff meals",
+    "text": "Expired production batches can be written off in one action from the batch record.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-901",
+    "module": "M9",
+    "module_name": "Catering and events",
+    "text": "An event is recorded with date, client, location, guest count and menu.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-902",
+    "module": "M9",
+    "module_name": "Catering and events",
+    "text": "The system generates a required-ingredients list by scaling the event's recipes to the guest count.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-903",
+    "module": "M9",
+    "module_name": "Catering and events",
+    "text": "Stock taken to an event is recorded as a transfer to a temporary event location.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-904",
+    "module": "M9",
+    "module_name": "Catering and events",
+    "text": "Stock returned from an event is transferred back or written off, and the event cannot be closed until it is reconciled.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-905",
+    "module": "M9",
+    "module_name": "Catering and events",
+    "text": "Equipment taken to an event is checked out and checked back in.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-906",
+    "module": "M9",
+    "module_name": "Catering and events",
+    "text": "Staff hours worked at an event are attributable to that event.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-907",
+    "module": "M9",
+    "module_name": "Catering and events",
+    "text": "The system reports the true cost and margin of an event, including food, labour and travel.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-1001",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "Every dish on the menu has a structured, complete preparation record authored with the head chef.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1002",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "Records include quantities, sequence, timing, temperature, equipment, and the sensory cues the chef uses to judge doneness.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1003",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "Records include what to do when something goes wrong \u2014 batter too thin, curry too salty, dosa sticking.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1004",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "Records include acceptable substitutions and what changes when they are used.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1005",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "Records include photographs or short videos of correct technique and correct appearance.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1006",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "A cook can search the knowledge base by dish, ingredient or symptom.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1007",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "A cook can ask a question in plain language and receive an answer drawn only from the captured knowledge.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1008",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "Every answer states its source, so the cook can read the underlying record.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1009",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "The assistant says \"this has not been recorded \u2014 ask the chef\" rather than guessing.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1010",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "The head chef can review, correct and approve every record, and nothing is published without his approval.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1011",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "The assistant works in the languages the kitchen uses. See D-08.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1012",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "The knowledge base is exportable by the client in a readable format they own outright.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1013",
+    "module": "M10",
+    "module_name": "Culinary knowledge assistant",
+    "text": "Recipe content is not sent to any third-party service without the client's explicit, informed consent. See D-16.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1101",
+    "module": "M11",
+    "module_name": "Reporting",
+    "text": "An owner's dashboard shows, for a chosen period: stock value by location, food cost, labour cost, waste, and top variances.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1102",
+    "module": "M11",
+    "module_name": "Reporting",
+    "text": "A stock-on-hand report by location and category, valued.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1103",
+    "module": "M11",
+    "module_name": "Reporting",
+    "text": "A variance report comparing theoretical against actual consumption.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1104",
+    "module": "M11",
+    "module_name": "Reporting",
+    "text": "A batter yield report showing expected against actual by batch and by period.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1105",
+    "module": "M11",
+    "module_name": "Reporting",
+    "text": "A labour report: hours and cost by employee, role, day and location.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1106",
+    "module": "M11",
+    "module_name": "Reporting",
+    "text": "A purchasing report: spend by supplier and by item, with price trend.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1107",
+    "module": "M11",
+    "module_name": "Reporting",
+    "text": "A waste report by reason and item.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1108",
+    "module": "M11",
+    "module_name": "Reporting",
+    "text": "An expiring-soon report across all perishable stock and open batches.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1109",
+    "module": "M11",
+    "module_name": "Reporting",
+    "text": "Any report can be exported to spreadsheet or PDF.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1110",
+    "module": "M11",
+    "module_name": "Reporting",
+    "text": "Selected reports can be emailed automatically on a schedule.",
+    "priority": "Could"
+  },
+  {
+    "ref": "FR-1111",
+    "module": "M11",
+    "module_name": "Reporting",
+    "text": "Reports are readable on a phone.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1201",
+    "module": "M12",
+    "module_name": "Administration, security and audit",
+    "text": "Users are created, deactivated and assigned roles by an administrator.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1202",
+    "module": "M12",
+    "module_name": "Administration, security and audit",
+    "text": "Access is enforced by role, per Section~{sec:roles}.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1203",
+    "module": "M12",
+    "module_name": "Administration, security and audit",
+    "text": "Every change to stock, time records, recipes or costs is logged with user, timestamp and previous value.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1204",
+    "module": "M12",
+    "module_name": "Administration, security and audit",
+    "text": "The audit log cannot be edited or deleted by any user, including the administrator.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1205",
+    "module": "M12",
+    "module_name": "Administration, security and audit",
+    "text": "Locations, categories, waste reasons, par levels and shelf lives are configurable without developer involvement.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1206",
+    "module": "M12",
+    "module_name": "Administration, security and audit",
+    "text": "Data is backed up automatically, and a restore has been tested and documented.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1207",
+    "module": "M12",
+    "module_name": "Administration, security and audit",
+    "text": "The client can export all of their data, in full, at any time, without asking us.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1208",
+    "module": "M12",
+    "module_name": "Administration, security and audit",
+    "text": "A deactivated employee's historical records remain intact.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-01",
+    "module": "NFR",
+    "module_name": "Speed",
+    "text": "Any screen a member of staff uses during service loads in under two seconds on the restaurant's own connection.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-02",
+    "module": "NFR",
+    "module_name": "Speed",
+    "text": "Recording a transfer, a waste event or a clock-in completes in under thirty seconds end to end.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-03",
+    "module": "NFR",
+    "module_name": "Availability",
+    "text": "Clock-in and clock-out must work even when the internet is down; other functions may degrade.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-04",
+    "module": "NFR",
+    "module_name": "Offline",
+    "text": "Data captured offline is queued and synchronised automatically, with conflicts surfaced rather than silently resolved.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-05",
+    "module": "NFR",
+    "module_name": "Usability",
+    "text": "Usable by a person with limited computer experience, after under thirty minutes of training, without a manual.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-06",
+    "module": "NFR",
+    "module_name": "Usability",
+    "text": "Kitchen screens use large targets and high contrast, and are legible under kitchen lighting with steam present.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-07",
+    "module": "NFR",
+    "module_name": "Devices",
+    "text": "Works on the devices the client already owns; no specialist hardware unless separately agreed.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-08",
+    "module": "NFR",
+    "module_name": "Language",
+    "text": "Interface strings are translatable; the languages supported are set by D-08.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-09",
+    "module": "NFR",
+    "module_name": "Security",
+    "text": "Passwords stored using a current password-hashing standard; no plain-text storage anywhere.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-10",
+    "module": "NFR",
+    "module_name": "Security",
+    "text": "All traffic encrypted in transit.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-11",
+    "module": "NFR",
+    "module_name": "Security",
+    "text": "Wage and personal data visible only to roles that require it.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-12",
+    "module": "NFR",
+    "module_name": "Privacy",
+    "text": "Personal data handled in line with California privacy law; retained no longer than required.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-13",
+    "module": "NFR",
+    "module_name": "Backup",
+    "text": "Automated daily backup, retained per D-19, restore tested before go-live.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-14",
+    "module": "NFR",
+    "module_name": "Scale",
+    "text": "Supports at least 50 users, 5{,}000 items and 3 years of history without redesign.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-15",
+    "module": "NFR",
+    "module_name": "Maintainability",
+    "text": "Documented well enough that another competent developer could take it over.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-16",
+    "module": "NFR",
+    "module_name": "Portability",
+    "text": "No dependency on a single vendor that would prevent the client moving the system elsewhere.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-17",
+    "module": "NFR",
+    "module_name": "Accessibility",
+    "text": "Reasonable colour contrast and text sizing; no reliance on colour alone to convey meaning.",
+    "priority": "Must"
+  },
+  {
+    "ref": "NFR-18",
+    "module": "NFR",
+    "module_name": "Auditability",
+    "text": "Every financially material record is traceable to who created it and when.",
+    "priority": "Must"
+  }
+]

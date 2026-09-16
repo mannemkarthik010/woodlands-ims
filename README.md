@@ -142,10 +142,42 @@ Two things there are deliberately **read-only, including for a superuser**:
 `PosItem` has a **"Needs mapping"** filter. That is the work queue: every unmapped POS
 name blocks its sales import from posting, on purpose.
 
+## Documentation
+
+| Document | Kept how |
+|---|---|
+| [`docs/architecture.md`](docs/architecture.md) | By hand. How the pieces fit, the three invariants, and what is deliberately absent. |
+| [`docs/runbook.md`](docs/runbook.md) | By hand. Setup, everyday commands, and what to do when something is wrong. |
+| [`docs/adr/`](docs/adr/) | By hand. One file per significant decision: what was decided, why, what it cost. |
+| [`docs/data-model.md`](docs/data-model.md) | **Generated** from the models. |
+| [`docs/traceability.md`](docs/traceability.md) | **Generated.** Every numbered requirement against the code and tests that name it. |
+| [`docs/requirements.json`](docs/requirements.json) | The 148 numbered requirements, extracted from the Discovery & Requirements Report. |
+
+```bash
+python manage.py docs           # regenerate
+python manage.py docs --check   # fail if stale — CI runs this
+```
+
+Generated documentation cannot drift, because drifting breaks the build. Code that
+implements a requirement names it (`FR-403`) in a docstring or comment, and appears in
+the traceability table on the next regeneration. Nothing is inferred from a function
+looking roughly relevant — that would make the table reassuring and wrong.
+
+## Built so far
+
+- The ledger, recipe explosion, and every model in the six apps
+- **Storage run (transfer)** — search by any name an item is known by, add lines, post
+- **Stock count** — generated sheet, counted on a phone, variance reviewed, then committed
+- **Menu import** — 318 Shift4 lines grouped to roughly 60 mapping decisions
+- Admin, with the ledger read-only to everybody
+- 34 tests, CI, hooks, ADRs, generated documentation
+
 ## Not built yet
 
-Views, templates, PWA manifest, the Shift4 CSV parser, the import scheduler, PIN auth,
-`django-simple-history` wiring, deployment config.
+Goods receipt, waste, production and labour screens; the PWA manifest and offline
+queue; the Shift4 CSV parser and its scheduler; the POS mapping screen; PIN auth; the
+culinary knowledge assistant; deployment config.
 
 The parser waits on a real sample CSV — building it against a guessed column layout would
-be wasted work.
+be wasted work. Deployment waits on the client, because hosting costs money and that
+decision is theirs.

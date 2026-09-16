@@ -15,6 +15,7 @@ from apps.stock.models import (
 )
 
 
+# Implements: FR-1204.
 @admin.register(StockMovement)
 class StockMovementAdmin(admin.ModelAdmin):
     """
@@ -44,6 +45,7 @@ class StockMovementAdmin(admin.ModelAdmin):
         return False
 
 
+# Implements: FR-1204.
 @admin.register(StockBalance)
 class StockBalanceAdmin(admin.ModelAdmin):
     """Also read-only: this is a cache of the ledger, not a place to type."""
@@ -115,6 +117,7 @@ class StockCountAdmin(admin.ModelAdmin):
     inlines = [StockCountLineInline]
 
 
+# Implements: FR-801, FR-805.
 @admin.register(WasteEvent)
 class WasteEventAdmin(admin.ModelAdmin):
     list_display = ("occurred_at", "item", "location", "quantity", "reason", "created_by")

@@ -16,3 +16,9 @@ Notable changes per release. Newest first.
 - Seed command for units, categories, locations and break policy
 - CI: lint, format, Django checks, missing-migration check, tests
 - Pre-commit hooks and Architecture Decision Records
+- Storage run screen: search by any name an item is known by, post in one action
+- Stock count screen: generated sheet, counted on a phone, variance reviewed before committing
+- Menu import: 318 Shift4 lines grouped into roughly 60 mapping decisions
+- Environment-based settings, demo data, and a command for testing on a phone
+- Documentation: architecture and runbook written by hand; data model and requirement
+  traceability generated from the code, with CI failing when they go stale

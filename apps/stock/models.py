@@ -35,6 +35,7 @@ from apps.catalog.models import MONEY, QTY, Item, PurchaseUnit
 from apps.core.models import Area, Location, Supplier, TimeStamped
 
 
+# Implements: FR-1203.
 class MovementType(models.TextChoices):
     RECEIPT = "RECEIPT", "Goods received"
     TRANSFER_OUT = "TRANSFER_OUT", "Transferred out"
@@ -48,6 +49,7 @@ class MovementType(models.TextChoices):
     OPENING_BALANCE = "OPENING", "Opening balance"
 
 
+# Implements: FR-1203, FR-1204, NFR-18.
 class StockMovement(TimeStamped):
     """
     One append-only row. Positive quantity increases stock at the location,
@@ -99,6 +101,7 @@ class StockMovement(TimeStamped):
         return f"{self.quantity:+} {self.item.base_unit} {self.item.name} @ {self.location.code}"
 
 
+# Implements: FR-401, FR-408.
 class StockBalance(models.Model):
     """
     Derived cache of SUM(movements). Rebuildable; never authoritative.
@@ -128,6 +131,7 @@ class DocumentStatus(models.TextChoices):
     VOIDED = "VOIDED", "Voided"
 
 
+# Implements: FR-302, FR-303, FR-310.
 class GoodsReceipt(TimeStamped):
     """What physically arrived -- not what was ordered, not what was invoiced."""
 
@@ -146,6 +150,7 @@ class GoodsReceipt(TimeStamped):
         return f"Receipt {self.pk} — {self.supplier}"
 
 
+# Implements: FR-302, FR-306.
 class GoodsReceiptLine(models.Model):
     receipt = models.ForeignKey(GoodsReceipt, on_delete=models.CASCADE, related_name="lines")
     item = models.ForeignKey(Item, on_delete=models.PROTECT, related_name="+")
@@ -164,6 +169,7 @@ class GoodsReceiptLine(models.Model):
         return f"{self.quantity_in_base_units} {self.item.base_unit} {self.item.name}"
 
 
+# Implements: FR-403, FR-404.
 class Transfer(TimeStamped):
     """
     Stock moving between the Devonshire Street unit and the restaurant.
@@ -191,6 +197,7 @@ class Transfer(TimeStamped):
         return f"{self.from_location.code} → {self.to_location.code} ({self.occurred_at:%d %b})"
 
 
+# Implements: FR-403.
 class TransferLine(models.Model):
     transfer = models.ForeignKey(Transfer, on_delete=models.CASCADE, related_name="lines")
     item = models.ForeignKey(Item, on_delete=models.PROTECT, related_name="+")
@@ -203,6 +210,7 @@ class TransferLine(models.Model):
         return f"{self.quantity} {self.item.base_unit} {self.item.name}"
 
 
+# Implements: FR-406.
 class TransferTemplate(TimeStamped):
     """A storage run that repeats. Load it, adjust the numbers, done."""
 
@@ -220,6 +228,7 @@ class TransferTemplateLine(models.Model):
         return f"{self.typical_quantity} {self.item.base_unit} {self.item.name}"
 
 
+# Implements: FR-701, FR-706.
 class StockCount(TimeStamped):
     """
     A physical count. Counting everything daily is how inventory systems die,
@@ -244,6 +253,7 @@ class StockCount(TimeStamped):
         ordering = ["-counted_at"]
 
 
+# Implements: FR-704.
 class StockCountLine(models.Model):
     count = models.ForeignKey(StockCount, on_delete=models.CASCADE, related_name="lines")
     item = models.ForeignKey(Item, on_delete=models.PROTECT, related_name="+")
@@ -263,6 +273,7 @@ class StockCountLine(models.Model):
         return self.counted_quantity - self.expected_quantity
 
 
+# Implements: FR-802.
 class WasteReason(models.TextChoices):
     SPOILED = "SPOILED", "Spoiled"
     EXPIRED = "EXPIRED", "Expired"
@@ -274,6 +285,7 @@ class WasteReason(models.TextChoices):
     COMPED = "COMPED", "Comped dish"
 
 
+# Implements: FR-801, FR-805.
 class WasteEvent(TimeStamped):
     """
     Must take under fifteen seconds to record or it will not happen.
