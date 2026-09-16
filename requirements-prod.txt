@@ -4,4 +4,3 @@ psycopg[binary]>=3.1     # PostgreSQL driver; SQLite is used locally
 dj-database-url>=2.1
 gunicorn>=21.2
 whitenoise>=6.6
-Pillow>=10.0             # image uploads: invoice photos, clock-in photos
