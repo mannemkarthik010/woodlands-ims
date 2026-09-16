@@ -27,6 +27,7 @@ from django.db import models
 
 from apps.catalog.models import MONEY, QTY, Item
 from apps.core.models import Location, TimeStamped
+from apps.sales.naming import size_in_name
 
 
 # Implements: FR-610.
@@ -75,6 +76,15 @@ class PosItem(TimeStamped):
         **QTY,
     )
 
+    # The food this line appears to be, with promotions and tub sizes stripped:
+    # "$10 Masala Dosa" and "DosaNights-Masala Dosa" both reduce to "masala
+    # dosa". Stored rather than recomputed so the grouping a person saw when
+    # they made a decision is the grouping on record, and so the mapping queue
+    # is one query rather than 318 regular expressions per page load.
+    #
+    # It groups. It never decides. See apps/sales/services.normalise.
+    group_key = models.CharField(max_length=200, blank=True, db_index=True)
+
     first_seen_on = models.DateField(null=True, blank=True)
     last_seen_on = models.DateField(null=True, blank=True)
     mapped_by = models.ForeignKey(
@@ -92,6 +102,16 @@ class PosItem(TimeStamped):
     @property
     def needs_attention(self) -> bool:
         return self.item_id is None and not self.ignore
+
+    @property
+    def detected_size(self):
+        """
+        The tub size written into the name, if any: "Pickle 32 oz" -> 32.
+
+        Offered to a person as a pre-filled figure to confirm, never written
+        without being seen. Returns None when the name says nothing about size.
+        """
+        return size_in_name(self.pos_name)
 
 
 class SalesImportStatus(models.TextChoices):

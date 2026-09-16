@@ -16,7 +16,7 @@
   {% endif %}
 </header>
 
-<main class="wrap">
+<main class="wrap {% block wrap_class %}{% endblock %}">
   {% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
   {% block content %}{% endblock %}
 </main>

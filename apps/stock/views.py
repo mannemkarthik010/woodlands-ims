@@ -41,16 +41,6 @@ from apps.stock.services import (
 )
 
 
-@login_required
-def home(request):
-    open_transfers = (
-        Transfer.objects.filter(status=DocumentStatus.DRAFT)
-        .select_related("from_location", "to_location")
-        .order_by("-occurred_at")[:5]
-    )
-    return render(request, "stock/home.html", {"open_transfers": open_transfers})
-
-
 # Implements: FR-403, FR-405, NFR-02, NFR-06.
 @login_required
 def transfer_new(request):

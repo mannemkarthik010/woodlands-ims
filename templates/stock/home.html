@@ -13,6 +13,16 @@
   <span class="tile__sub">Opening balance, or the daily and weekly counts</span>
 </a>
 
+{% if mapping_remaining %}
+  <a class="tile" href="{% url 'mapping_queue' %}">
+    <span class="tile__title">Menu mapping</span>
+    <span class="tile__sub">
+      {{ mapping_remaining }} POS line{{ mapping_remaining|pluralize }} still need a decision
+      before sales can deplete stock
+    </span>
+  </a>
+{% endif %}
+
 {% if open_transfers %}
   <h2 class="h2">Unfinished</h2>
   <ul class="list">

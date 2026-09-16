@@ -491,6 +491,7 @@ A line as Shift4 names it. Kept distinct from our Item on purpose: the menu drif
 | `is_modifier` | Boolean |  | Add-ons such as extra paneer. These consume stock in their own right. |
 | `ignore` | Boolean |  | Deliberately not stock-bearing, e.g. a service charge line. |
 | `quantity_per_sale` | Decimal(14,4) |  | In the target item's base unit. 1 for dishes; set for sized portions. |
+| `group_key` | Char(200) |  |  |
 | `first_seen_on` | Date | yes |  |
 | `last_seen_on` | Date | yes |  |
 | `mapped_by` | ForeignKey → User | yes |  |

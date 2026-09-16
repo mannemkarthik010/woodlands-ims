@@ -1,0 +1,8 @@
+<span class="meter__bar" aria-hidden="true">
+  <span class="meter__fill" style="width: {% widthratio progress.mapped|add:progress.ignored progress.total 100 %}%"></span>
+</span>
+<span class="meter__text">
+  <strong>{{ progress.remaining }}</strong> POS lines still need a decision
+  <span class="muted">· {{ progress.groups_remaining }} group{{ progress.groups_remaining|pluralize }}
+  · {{ progress.mapped }} mapped, {{ progress.ignored }} ignored, {{ progress.total }} in all</span>
+</span>

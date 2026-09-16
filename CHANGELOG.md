@@ -22,3 +22,10 @@ Notable changes per release. Newest first.
 - Environment-based settings, demo data, and a command for testing on a phone
 - Documentation: architecture and runbook written by hand; data model and requirement
   traceability generated from the code, with CI failing when they go stale
+- Menu mapping screen: 311 POS lines grouped into 252 decisions, with the dish created
+  from the group in one action, tub sizes read off the name and converted, and
+  near-identical existing items offered as a question (ADR 0005)
+
+### Fixed
+- Multi-line `{# … #}` template comments were being shown to the user rather than
+  treated as comments — visible on the counting screen

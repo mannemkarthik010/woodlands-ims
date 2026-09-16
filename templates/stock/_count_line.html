@@ -1,5 +1,7 @@
-{# Expected quantity is deliberately absent. Showing it turns counting into
-   confirming, and a sheet that agrees with itself tells you nothing. #}
+{% comment %}
+  Expected quantity is deliberately absent. Showing it turns counting into
+  confirming, and a sheet that agrees with itself tells you nothing.
+{% endcomment %}
 <form class="hit {% if saved %}hit--saved{% endif %} {% if bad %}hit--bad{% endif %}"
       hx-post="{% url 'count_save_line' line.count_id line.pk %}"
       hx-trigger="change from:find input"

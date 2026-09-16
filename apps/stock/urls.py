@@ -1,9 +1,10 @@
 from django.urls import path
 
+from apps.core import views as core_views
 from apps.stock import views
 
 urlpatterns = [
-    path("", views.home, name="home"),
+    path("", core_views.home, name="home"),
     path("transfer/", views.transfer_new, name="transfer_new"),
     path("transfer/<int:pk>/", views.transfer_edit, name="transfer_edit"),
     path("transfer/<int:pk>/add/", views.transfer_add_line, name="transfer_add_line"),

@@ -75,6 +75,13 @@ nothing; nothing imports from `production` or `sales`. When a new model does not
 obviously belong to one of these, that is a signal to stop and think rather than
 to put it in `core`.
 
+The one deliberate exception is the home screen, which lives in
+`apps/core/views.py` rather than in `stock`. Its whole job is to show what is
+outstanding across every app — unfinished storage runs, POS lines still to map —
+so it crosses the layering by definition. Keeping it in `core` puts that crossing
+somewhere expected, instead of quietly turning `stock` into the app that imports
+everything.
+
 ---
 
 ## 3. The three invariants
@@ -118,7 +125,8 @@ infer, approximate or fuzzy-match:
 
 - An unmapped POS item blocks the whole import (`SalesImport.is_safe_to_post`).
   An unmapped item is a visible problem; a wrongly guessed one is an invisible
-  wrong answer for months.
+  wrong answer for months. The mapping screen groups names and suggests
+  near-identical items, but a person confirms every one. See ADR 0005.
 - A blank line on a count sheet means *not counted*, not zero.
 - `traceability.md` marks a requirement covered only when a file actually names
   it. Nothing is inferred from a function looking roughly relevant.
@@ -145,6 +153,27 @@ services handle the consequences.** A view never writes a `StockMovement`
 directly, and a service never renders anything or reads `request`.
 
 ---
+
+## 4a. Reading the till
+
+The menu's 318 POS names are not 318 foods, and the mapping screen exists to
+make that manageable rather than to guess at it:
+
+- `apps/sales/naming.py` holds the reading rules — promotional prefixes, tub
+  sizes — in one place, imported by the model, the services and the import
+  command. Two copies of a regular expression agree only until somebody edits
+  one of them.
+- `PosItem.group_key` stores what a name reduces to, so the grouping a person
+  saw when they decided is the grouping on record, and so the queue is one
+  query rather than 318 regular expressions per page load.
+- A tub size in a name is read **in ounces** and converted into whatever the
+  target item is measured in. "Coconut Chutney 16 oz" against a chutney held
+  in quarts is 0.5, not 16 — the conversion is the point, because carrying the
+  number across would be a thirty-twofold error in a figure nobody re-checks.
+- A dish is one dish whatever size the tub is. A bigger plate is a different
+  dish, and its recipe says so.
+
+*Implements FR-203, FR-610.*
 
 ## 5. Time
 

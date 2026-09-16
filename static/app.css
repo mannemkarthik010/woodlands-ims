@@ -161,3 +161,93 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 .var--over  { color: var(--green); }
 .var--under { color: var(--deep); }
 .lines__name small { display: block; font-size: 13px; font-weight: 400; }
+
+/* ---- POS mapping -------------------------------------------------------
+   The one screen here that is not used standing up. It is done sitting
+   down, on a laptop, in two or three sittings, and there are 250 decisions
+   in it -- so it is allowed to be denser than the kitchen screens, and it
+   has to keep its place when a decision is made. */
+
+.wrap--wide { max-width: 760px; }
+.h1 { font-size: 22px; margin: 0 0 6px; }
+
+.meter { display: flex; flex-direction: column; gap: 6px; margin: 14px 0 18px; }
+.meter__bar { display: block; height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+.meter__fill { display: block; height: 100%; background: var(--green); transition: width .2s; }
+.meter__text { font-size: 14px; }
+
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.filters input[type=search], .filters select {
+  flex: 1 1 160px; min-height: 44px; padding: 0 12px;
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  font-size: 16px; background: #fff; color: var(--ink);
+}
+.filters .btn { flex: 0 0 auto; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--rule); margin-bottom: 14px; }
+.tabs__tab {
+  padding: 10px 14px; text-decoration: none; color: var(--grey);
+  font-size: 15px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tabs__tab--on { color: var(--ink); font-weight: 600; border-bottom-color: var(--brand); }
+
+.card {
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 14px; margin-bottom: 12px; background: #fff;
+}
+.card__head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.card__title { font-size: 18px; margin: 0; }
+.card__meta { color: var(--grey); font-size: 13px; }
+.card__actions { display: flex; gap: 8px; align-items: stretch; margin-top: 10px; flex-wrap: wrap; }
+.card__actions .btn { flex: 0 0 auto; }
+
+.newname {
+  flex: 1 1 200px; min-height: 44px; padding: 0 12px; font-size: 16px;
+  border: 1px solid var(--rule); border-radius: var(--radius); color: var(--ink);
+}
+
+.poslines { list-style: none; margin: 10px 0; padding: 0; font-size: 15px; }
+.poslines li { display: flex; gap: 8px; padding: 3px 0; align-items: baseline; }
+.poslines__name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.poslines__price { flex: 0 0 auto; color: var(--grey); font-variant-numeric: tabular-nums; }
+
+.flag {
+  flex: 0 0 auto; font-size: 12px; color: var(--amber);
+  border: 1px solid currentColor; border-radius: 4px; padding: 0 5px;
+}
+
+.sizes { border: 1px solid var(--rule); border-radius: var(--radius); padding: 10px 12px; margin: 10px 0; }
+.sizes legend { font-size: 14px; font-weight: 600; color: var(--grey); padding: 0 4px; }
+.sizes__row { display: flex; align-items: center; gap: 10px; padding: 4px 0; font-size: 15px; }
+.sizes__row span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.sizes__row input {
+  flex: 0 0 82px; min-height: 44px; text-align: right; padding: 0 10px;
+  font-size: 17px; border: 1px solid var(--rule); border-radius: var(--radius);
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+
+.opts { display: flex; flex-direction: column; gap: 6px; }
+.opt {
+  display: flex; align-items: baseline; gap: 10px; width: 100%;
+  min-height: 44px; padding: 8px 12px; text-align: left; cursor: pointer;
+  background: #fff; border: 1px solid var(--rule); border-radius: var(--radius);
+  font: inherit; color: var(--ink);
+}
+.opt:hover, .opt:focus-visible { border-color: var(--brand); background: var(--tint); }
+.opt--suggest { border-color: var(--gold); background: #fffaf2; }
+.opt__name { flex: 1 1 auto; font-weight: 600; }
+.opt__meta { flex: 0 0 auto; color: var(--grey); font-size: 13px; }
+
+.search--inline { margin: 10px 0 6px; }
+.search--inline input[type=search] { width: 100%; }
+
+.btn--small { min-height: 44px; padding: 0 14px; font-size: 15px; width: auto; }
+.card .btn--ghost { margin-top: 8px; }
+
+.ok {
+  background: #f2f8f4; border: 1px solid var(--green); color: var(--green);
+  border-radius: var(--radius); padding: 8px 12px; margin: 10px 0; font-size: 15px;
+}
+.settled { font-size: 16px; margin: 8px 0 0; }
+.sizes__field { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
+.sizes__unit { color: var(--grey); font-size: 14px; width: 20px; }

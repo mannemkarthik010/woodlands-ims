@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Menu mapping{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+
+<h1 class="h1">Menu mapping</h1>
+
+<p class="muted small">
+  Every name on the till has to point at something before sales can deplete
+  stock. Names that look like the same food are grouped, so one decision
+  usually settles several lines. Nothing is mapped automatically — a wrong
+  mapping is invisible for months.
+</p>
+
+<div class="meter" id="progress">{% include "sales/_progress.html" %}</div>
+
+<form class="filters" method="get" action="{% url 'mapping_queue' %}">
+  <input type="search" name="q" value="{{ query }}" placeholder="Find a name…"
+         aria-label="Search POS names">
+  <select name="category" aria-label="Menu section">
+    <option value="">Every section</option>
+    {% for c in categories %}
+      <option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  {% if done %}<input type="hidden" name="show" value="done">{% endif %}
+  <button class="btn btn--ghost" type="submit">Filter</button>
+</form>
+
+<div class="tabs">
+  <a class="tabs__tab {% if not done %}tabs__tab--on{% endif %}"
+     href="{% url 'mapping_queue' %}{% if category %}?category={{ category }}{% endif %}">To decide</a>
+  <a class="tabs__tab {% if done %}tabs__tab--on{% endif %}"
+     href="{% url 'mapping_queue' %}?show=done{% if category %}&category={{ category }}{% endif %}">Decided</a>
+</div>
+
+{% if not groups %}
+  <p class="done">
+    {% if done %}Nothing decided yet.{% else %}Nothing left to map here.{% endif %}
+  </p>
+{% endif %}
+
+{% for group in groups %}
+  <div class="card">{% include "sales/_group.html" %}</div>
+{% endfor %}
+
+{% if total_groups > shown %}
+  <p class="muted small">
+    Showing {{ shown }} of {{ total_groups }} groups. Decide these and the next
+    ones appear — or filter by section to work through one part of the menu.
+  </p>
+{% endif %}
+
+{% endblock %}

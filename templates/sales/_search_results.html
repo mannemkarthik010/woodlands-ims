@@ -1,0 +1,8 @@
+{% for item in items %}
+  <button class="opt" type="submit" name="item_id" value="{{ item.pk }}">
+    <span class="opt__name">{{ item.name }}</span>
+    <span class="opt__meta">{{ item.get_kind_display|lower }} · {{ item.base_unit.code }}</span>
+  </button>
+{% empty %}
+  <p class="muted small">No dish or prepared component by that name. Create it below.</p>
+{% endfor %}

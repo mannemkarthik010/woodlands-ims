@@ -42,6 +42,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.sales.models import PosItem
+from apps.sales.naming import SIZE_RE, normalise
 
 # Not food. These never touch stock.
 NEVER_STOCK = [
@@ -56,44 +57,10 @@ PRIX_FIXE_PARENT = [
     r"prix fixe",
 ]
 
-# Prefixes that mark the same food sold under a promotion, a fixed-price
-# night, or a seasonal menu. Stripping them reveals the underlying dish.
-PROMO_PREFIXES = [
-    r"^\$10\s+",
-    r"^dosanights\s*-\s*",
-    r"^dosanights-\s*",
-    r"^dosanights\s+",
-    r"^nypf\s*-\s*",
-    r"^new year's pf add on\s*-\s*",
-    r"^weekday lunch\s+",
-    r"^father's day\s+",
-    r"^\d+\s*piece\s+",
-]
-
-PROMO_SUFFIXES = [
-    r"\s*-?\s*diwali special.*$",
-    r"\s*\(online\)$",
-    r"\s*-\s*\d+\s*piece$",
-    r"\s*\(dine-?in\)$",
-    r"\s*\(take ?out\)$",
-]
-
-# Sized portions of one base: "Coconut Chutney 16 oz" -> chutney, 16 fl oz.
-SIZE_RE = re.compile(r"\b(\d+(?:\.\d+)?)\s*oz\b", re.I)
-
-
-def normalise(name: str) -> str:
-    """Reduce a POS name to the food it is, for grouping only."""
-    out = name.lower().strip()
-    for pattern in PROMO_PREFIXES:
-        out = re.sub(pattern, "", out)
-    for pattern in PROMO_SUFFIXES:
-        out = re.sub(pattern, "", out)
-    out = SIZE_RE.sub("", out)
-    out = re.sub(r"\bgrab and go\b|\bgrab-and-go\b", "", out)
-    out = re.sub(r"[^a-z0-9 ]+", " ", out)
-    out = re.sub(r"\s+", " ", out).strip()
-    return out
+# Grouping lives in the service layer, not here. The mapping screen and this
+# command have to agree about what counts as the same food, and two copies of
+# a regular expression list agree only until somebody edits one of them.
+# `normalise` and `SIZE_RE` are re-exported so the command reads as before.
 
 
 def matches(name: str, patterns) -> bool:
@@ -141,6 +108,7 @@ class Command(BaseCommand):
                     auto_ignored.append(name)
 
                 defaults = {
+                    "group_key": normalise(name),
                     "pos_category": department,
                     "revenue_class": revenue_class,
                     "default_price": price,

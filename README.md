@@ -168,15 +168,17 @@ looking roughly relevant — that would make the table reassuring and wrong.
 - The ledger, recipe explosion, and every model in the six apps
 - **Storage run (transfer)** — search by any name an item is known by, add lines, post
 - **Stock count** — generated sheet, counted on a phone, variance reviewed, then committed
-- **Menu import** — 318 Shift4 lines grouped to roughly 60 mapping decisions
+- **Menu import** — 318 Shift4 lines read in, grouped, and pre-classified
+- **Menu mapping** — 311 unmapped lines as 252 decisions: create the dish from the group,
+  read tub sizes off the name, confirm near-identical items rather than assuming (ADR 0005)
 - Admin, with the ledger read-only to everybody
-- 34 tests, CI, hooks, ADRs, generated documentation
+- 55 tests, CI, hooks, ADRs, generated documentation
 
 ## Not built yet
 
 Goods receipt, waste, production and labour screens; the PWA manifest and offline
-queue; the Shift4 CSV parser and its scheduler; the POS mapping screen; PIN auth; the
-culinary knowledge assistant; deployment config.
+queue; the Shift4 CSV parser and its scheduler; PIN auth; the culinary knowledge
+assistant; deployment config.
 
 The parser waits on a real sample CSV — building it against a guessed column layout would
 be wasted work. Deployment waits on the client, because hosting costs money and that

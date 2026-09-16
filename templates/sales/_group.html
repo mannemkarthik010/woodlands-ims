@@ -1,0 +1,119 @@
+{% comment %}
+  One decision. Re-rendered in place after it is made, so the page keeps its
+  scroll position -- there are 250 of these, and losing your place is what
+  makes somebody stop halfway.
+{% endcomment %}
+
+<div class="card__head">
+  <h2 class="card__title">{{ group.title }}</h2>
+  <span class="card__meta">
+    {{ group.lines|length }} POS line{{ group.lines|length|pluralize }}
+    {% if group.price_range %} · {{ group.price_range }}{% endif %}
+    {% if group.categories %} · {{ group.categories }}{% endif %}
+  </span>
+</div>
+
+{% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
+{% if message %}<p class="ok" role="status">{{ message }}</p>{% endif %}
+
+{% if group.mapped_to %}
+  <p class="settled">→ <strong>{{ group.mapped_to.name }}</strong></p>
+  <ul class="poslines">
+    {% for line in group.lines %}
+      <li>
+        <span class="poslines__name">{{ line.pos_name }}</span>
+        {% if group.has_sizes %}
+          <span class="poslines__price">
+            {{ line.quantity_per_sale|floatformat:"-3" }} {{ group.mapped_to.base_unit.code }}
+          </span>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  <form hx-post="{% url 'mapping_reopen' group.key %}" hx-target="closest .card" hx-swap="innerHTML">
+    {% csrf_token %}
+    <button class="btn btn--ghost btn--small" type="submit">Change this</button>
+  </form>
+
+{% elif group.is_ignored %}
+  <p class="settled muted">Ignored — never depletes stock.</p>
+  <form hx-post="{% url 'mapping_reopen' group.key %}" hx-target="closest .card" hx-swap="innerHTML">
+    {% csrf_token %}
+    <button class="btn btn--ghost btn--small" type="submit">Change this</button>
+  </form>
+
+{% else %}
+  <form hx-post="{% url 'mapping_apply' group.key %}" hx-target="closest .card" hx-swap="innerHTML">
+    {% csrf_token %}
+
+    <ul class="poslines">
+      {% for line in group.lines %}
+        <li>
+          <span class="poslines__name">{{ line.pos_name }}</span>
+          {% if line.default_price %}<span class="poslines__price">${{ line.default_price|floatformat:2 }}</span>{% endif %}
+          {% if not line.active_on_pos %}<span class="flag">off the menu</span>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+
+    {% if group.has_sizes %}
+      <fieldset class="sizes">
+        <legend>How much does each one use?</legend>
+        <p class="muted small">
+          In ounces, read off the names — correct any that are wrong. They are
+          converted into whatever the item you map to is measured in. A dish
+          stays one dish: a bigger plate is a different dish, not more of one.
+        </p>
+        {% for line in group.lines %}
+          <label class="sizes__row">
+            <span>{{ line.pos_name }}</span>
+            <span class="sizes__field">
+              <input type="text" name="qty-{{ line.pk }}" inputmode="decimal"
+                     value="{{ line.detected_size|default_if_none:'' }}"
+                     placeholder="—"
+                     aria-label="Ounces per sale of {{ line.pos_name }}">
+              <span class="sizes__unit">oz</span>
+            </span>
+          </label>
+        {% endfor %}
+      </fieldset>
+    {% endif %}
+
+    {% if group.suggestions %}
+      <p class="muted small">Already in the catalogue — is it one of these?</p>
+      <div class="opts">
+        {% for item in group.suggestions %}
+          <button class="opt opt--suggest" type="submit" name="item_id" value="{{ item.pk }}">
+            <span class="opt__name">{{ item.name }}</span>
+            <span class="opt__meta">{{ item.get_kind_display|lower }} · {{ item.base_unit.code }}</span>
+          </button>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="search search--inline">
+      <input type="search" name="q" placeholder="Or search the catalogue…"
+             aria-label="Search for the item to map {{ group.title }} to"
+             hx-get="{% url 'mapping_search' %}"
+             hx-trigger="keyup changed delay:200ms"
+             hx-target="next .opts"
+             hx-swap="innerHTML">
+    </div>
+    <div class="opts"></div>
+
+    <div class="card__actions">
+      <input class="newname" type="text" name="new_name" value="{{ group.title }}"
+             aria-label="Name for the new dish">
+      <button class="btn btn--primary btn--small" type="submit" name="create" value="1">
+        Create dish &amp; map
+      </button>
+    </div>
+  </form>
+
+  <form hx-post="{% url 'mapping_ignore' group.key %}" hx-target="closest .card" hx-swap="innerHTML">
+    {% csrf_token %}
+    <button class="btn btn--ghost btn--small" type="submit">Not stock — ignore</button>
+  </form>
+{% endif %}
+
+{% if oob %}<span hx-swap-oob="innerHTML:#progress">{% include "sales/_progress.html" %}</span>{% endif %}

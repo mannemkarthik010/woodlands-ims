@@ -10,7 +10,7 @@ Write `FR-403` in a docstring, a comment or a test name and it appears here.
 Nothing is inferred from a function looking roughly relevant — that would
 make this table reassuring and wrong, which is worse than an empty one.
 
-**68 of 148** requirements referenced in code · **20** covered by a test.
+**68 of 148** requirements referenced in code · **24** covered by a test.
 
 ## M1 — Time and attendance
 
@@ -35,15 +35,15 @@ make this table reassuring and wrong, which is worse than an empty one.
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **FR-201** | Every stock item has a unique code, a name, an optional local-language name, and a category. | Must | `apps/catalog/models.py` | — |
-| **FR-202** | An item may have several names in use — supplier's name, chef's name, menu name — all searchable. | Should | `apps/catalog/models.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_transfer_flow.py` |
-| **FR-203** | Each item has a base unit in which stock is held (for example: pound, gram, litre, each). | Must | `apps/catalog/models.py` | — |
+| **FR-201** | Every stock item has a unique code, a name, an optional local-language name, and a category. | Must | `apps/catalog/models.py` | `apps/sales/tests/test_mapping.py` |
+| **FR-202** | An item may have several names in use — supplier's name, chef's name, menu name — all searchable. | Should | `apps/catalog/models.py`<br>`apps/sales/views.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_transfer_flow.py` |
+| **FR-203** | Each item has a base unit in which stock is held (for example: pound, gram, litre, each). | Must | `apps/catalog/models.py` | `apps/sales/tests/test_mapping.py` |
 | **FR-204** | Each item may have any number of purchase units with a stated conversion to the base unit (for example: 1 sack = 25 lb; 1 case = 24 tins; 1 tin = 400 g). | Must | `apps/catalog/models.py` | — |
 | **FR-205** | Conversions that are not fixed — "one bunch of curry leaves" — are supported with an agreed nominal weight, and flagged as approximate. | Should | `apps/catalog/models.py` | — |
 | **FR-206** | Each item carries a shelf life or a best-before behaviour appropriate to its type. | Should | `apps/catalog/models.py` | — |
 | **FR-207** | Each item carries a current cost per base unit, updated from goods receipts. | Must | `apps/catalog/models.py` | — |
 | **FR-208** | The system supports the cost basis chosen in D-15 (latest cost, weighted average, or FIFO). | Must | — | — |
-| **FR-209** | Items can be marked as raw material, prepared component, packaging, consumable or non-stock. | Must | `apps/catalog/models.py` | — |
+| **FR-209** | Items can be marked as raw material, prepared component, packaging, consumable or non-stock. | Must | `apps/catalog/models.py` | `apps/sales/tests/test_mapping.py` |
 | **FR-210** | Items can be marked as allergen-relevant, and dishes inherit that flag through their recipe. | Should | — | — |
 | **FR-211** | An item can be deactivated without deleting its history. | Must | `apps/catalog/models.py` | `apps/sales/tests/test_import_menu.py` |
 | **FR-212** | Each item has a par level per location — the quantity that should be on hand. | Should | `apps/catalog/models.py` | — |
@@ -105,7 +105,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **FR-601** | Every menu item can have a recipe listing its components and quantities. | Must | `apps/catalog/models.py` | — |
+| **FR-601** | Every menu item can have a recipe listing its components and quantities. | Must | `apps/catalog/models.py` | `apps/sales/tests/test_mapping.py` |
 | **FR-602** | A recipe component may itself be a prepared component with its own recipe, to any sensible depth. | Must | `apps/catalog/models.py`<br>`apps/stock/services.py` | `apps/stock/tests/test_ledger.py` |
 | **FR-603** | The system calculates the cost of a dish from current component costs, all the way down. | Must | `apps/stock/services.py` | `apps/stock/tests/test_ledger.py` |
 | **FR-604** | The system shows gross margin per dish against its menu price. | Should | — | — |
@@ -114,7 +114,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 | **FR-607** | Recipes carry preparation steps, timings and notes, not only quantities. | Should | — | — |
 | **FR-608** | Recipes carry photographs of the correct finished appearance. | Should | — | — |
 | **FR-609** | Recipe changes are versioned; the previous version remains retrievable. | Should | `apps/catalog/models.py` | — |
-| **FR-610** | Sales data can deplete component stock automatically according to recipes. | Should | `apps/sales/models.py`<br>`apps/stock/services.py` | `apps/sales/tests/test_import_menu.py`<br>`apps/stock/tests/test_ledger.py` |
+| **FR-610** | Sales data can deplete component stock automatically according to recipes. | Should | `apps/sales/models.py`<br>`apps/sales/views.py`<br>`apps/stock/services.py` | `apps/sales/tests/test_import_menu.py`<br>`apps/sales/tests/test_mapping.py`<br>`apps/stock/tests/test_ledger.py` |
 | **FR-611** | Where sales data is not available electronically, dish counts can be entered manually at end of service. | Must | `apps/sales/models.py` | — |
 | **FR-612** | Recipes record allergens and dietary attributes, which propagate to the dish. | Should | — | — |
 
@@ -194,7 +194,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
 | **FR-1201** | Users are created, deactivated and assigned roles by an administrator. | Must | `apps/core/models.py` | — |
-| **FR-1202** | Access is enforced by role, per Section~{sec:roles}. | Must | `apps/core/models.py` | `apps/stock/tests/test_transfer_flow.py` |
+| **FR-1202** | Access is enforced by role, per Section~{sec:roles}. | Must | `apps/core/models.py` | `apps/sales/tests/test_mapping.py`<br>`apps/stock/tests/test_transfer_flow.py` |
 | **FR-1203** | Every change to stock, time records, recipes or costs is logged with user, timestamp and previous value. | Must | `apps/stock/models.py`<br>`apps/stock/services.py` | `apps/stock/tests/test_count_flow.py`<br>`apps/stock/tests/test_ledger.py` |
 | **FR-1204** | The audit log cannot be edited or deleted by any user, including the administrator. | Must | `apps/stock/admin.py`<br>`apps/stock/models.py`<br>`apps/stock/services.py` | `apps/stock/tests/test_ledger.py` |
 | **FR-1205** | Locations, categories, waste reasons, par levels and shelf lives are configurable without developer involvement. | Should | — | — |
@@ -225,7 +225,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **NFR-05** | Usable by a person with limited computer experience, after under thirty minutes of training, without a manual. | Must | `apps/stock/views.py` | `apps/stock/tests/test_count_flow.py`<br>`apps/stock/tests/test_transfer_flow.py` |
+| **NFR-05** | Usable by a person with limited computer experience, after under thirty minutes of training, without a manual. | Must | `apps/sales/views.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_count_flow.py`<br>`apps/stock/tests/test_transfer_flow.py` |
 | **NFR-06** | Kitchen screens use large targets and high contrast, and are legible under kitchen lighting with steam present. | Must | `apps/stock/views.py` | — |
 
 ## NFR — Devices
@@ -246,7 +246,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 |---|---|---|---|---|
 | **NFR-09** | Passwords stored using a current password-hashing standard; no plain-text storage anywhere. | Must | `apps/core/models.py` | — |
 | **NFR-10** | All traffic encrypted in transit. | Must | — | — |
-| **NFR-11** | Wage and personal data visible only to roles that require it. | Must | `apps/core/models.py` | `apps/stock/tests/test_transfer_flow.py` |
+| **NFR-11** | Wage and personal data visible only to roles that require it. | Must | `apps/core/models.py` | `apps/sales/tests/test_mapping.py`<br>`apps/stock/tests/test_transfer_flow.py` |
 
 ## NFR — Privacy
 
