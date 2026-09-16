@@ -14,7 +14,8 @@ db.sqlite3
 .vscode/
 .idea/
 
-# Client data — real menu, sales exports. Not for the public repo.
-data/*.csv
-data/*.pdf
+# Client data — real menu, sales exports, the kitchen's own recipes.
+# None of this belongs in the repository; the recipes in particular are the
+# restaurant's own, and they stay on the machine that needs them.
+data/**
 !data/.gitkeep
