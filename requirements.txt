@@ -1,7 +1,7 @@
 # Local development. Ships wheels on every current platform, so
 # `pip install -r requirements.txt` needs no compiler.
 # Production-only extras live in requirements-prod.txt.
-Django>=5.0,<6.0
+Django>=5.2.17,<6.0
 python-dotenv>=1.0
 django-simple-history>=3.5
 Pillow>=11.0          # required by ImageField: invoice and clock-in photos
