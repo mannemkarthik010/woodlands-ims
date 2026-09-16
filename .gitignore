@@ -13,3 +13,8 @@ db.sqlite3
 .Rapp.history
 .vscode/
 .idea/
+
+# Client data — real menu, sales exports. Not for the public repo.
+data/*.csv
+data/*.pdf
+!data/.gitkeep

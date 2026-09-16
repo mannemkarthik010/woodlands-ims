@@ -37,7 +37,10 @@ class PosItem(TimeStamped):
     """
 
     pos_name = models.CharField(max_length=200, unique=True)
-    pos_category = models.CharField(max_length=120, blank=True)
+    pos_category = models.CharField(max_length=120, blank=True)  # Shift4 "Department"
+    revenue_class = models.CharField(max_length=40, blank=True)  # Food, Beverage, Beer, Liquor
+    default_price = models.DecimalField(null=True, blank=True, **MONEY)
+    active_on_pos = models.BooleanField(default=True)
 
     item = models.ForeignKey(
         Item,
@@ -54,6 +57,21 @@ class PosItem(TimeStamped):
     ignore = models.BooleanField(
         default=False,
         help_text="Deliberately not stock-bearing, e.g. a service charge line.",
+    )
+
+    # How much of the target item one sale consumes, in that item's base unit.
+    #
+    # Needed because the menu sells the same base at several sizes: "Coconut
+    # Chutney 4 oz", "8 oz" and "16 oz" are three POS items pointing at one
+    # chutney, and every sale counts as a quantity of 1. Without this they
+    # would each deplete the same amount, and the 16 oz would under-report by
+    # a factor of four.
+    #
+    # Leave at 1 for a dish -- the recipe carries the quantities there.
+    quantity_per_sale = models.DecimalField(
+        default=Decimal("1"),
+        help_text="In the target item's base unit. 1 for dishes; set for sized portions.",
+        **QTY,
     )
 
     first_seen_on = models.DateField(null=True, blank=True)
