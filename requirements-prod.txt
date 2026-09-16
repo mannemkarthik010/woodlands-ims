@@ -1,6 +1,6 @@
 # Production only. Installed on the server, not needed to run locally.
 -r requirements.txt
 psycopg[binary]>=3.1     # PostgreSQL driver; SQLite is used locally
-dj-database-url>=2.1
+dj-database-url>=3.1.2
 gunicorn>=21.2
 whitenoise>=6.6
