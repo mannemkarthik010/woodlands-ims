@@ -13,6 +13,7 @@ out and back in for that would add four taps a day per person to record
 something the system already knows, so the closure is applied as a standard
 deduction and anything unusual is recorded as an exception instead.
 """
+
 from datetime import time
 from decimal import Decimal
 

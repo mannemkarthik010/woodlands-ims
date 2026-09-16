@@ -1,0 +1,24 @@
+# Runs on every commit. Catches the boring mistakes before they reach a
+# branch, so review time goes on design rather than formatting.
+#   pip install pre-commit && pre-commit install
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]
+      - id: check-merge-conflict
+      - id: detect-private-key          # a key must never reach the repo
+      - id: no-commit-to-branch
+        args: ["--branch", "main"]      # work on branches, merge via PR
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.7
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format

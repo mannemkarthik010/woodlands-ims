@@ -5,6 +5,7 @@ Every movement in the system goes through `post_movement`. Nothing else
 writes to StockMovement, and nothing at all writes to StockBalance except
 this module. Keeping that true is what makes the ledger trustworthy.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -59,9 +60,7 @@ def post_movement(
     )
 
     if not allow_negative and balance.quantity + quantity < 0:
-        raise StockError(
-            f"{item} at {location}: {balance.quantity} on hand, cannot remove {abs(quantity)}."
-        )
+        raise StockError(f"{item} at {location}: {balance.quantity} on hand, cannot remove {abs(quantity)}.")
 
     movement = StockMovement.objects.create(
         item=item,
@@ -167,11 +166,7 @@ def rebuild_balances() -> int:
     disagree, the ledger is right and this repairs the cache -- which is only
     possible because the ledger was never the thing being edited.
     """
-    totals = (
-        StockMovement.objects.values("item_id", "location_id")
-        .annotate(total=Sum("quantity"))
-        .order_by()
-    )
+    totals = StockMovement.objects.values("item_id", "location_id").annotate(total=Sum("quantity")).order_by()
     count = 0
     with transaction.atomic():
         StockBalance.objects.all().update(quantity=Decimal("0"))

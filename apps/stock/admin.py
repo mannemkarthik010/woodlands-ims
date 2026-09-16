@@ -1,9 +1,17 @@
 from django.contrib import admin
-from django.utils.html import format_html
 
 from apps.stock.models import (
-    GoodsReceipt, GoodsReceiptLine, StockBalance, StockCount, StockCountLine,
-    StockMovement, Transfer, TransferLine, TransferTemplate, TransferTemplateLine, WasteEvent,
+    GoodsReceipt,
+    GoodsReceiptLine,
+    StockBalance,
+    StockCount,
+    StockCountLine,
+    StockMovement,
+    Transfer,
+    TransferLine,
+    TransferTemplate,
+    TransferTemplateLine,
+    WasteEvent,
 )
 
 

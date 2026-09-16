@@ -25,7 +25,15 @@ class UnmappedFilter(admin.SimpleListFilter):
 
 @admin.register(PosItem)
 class PosItemAdmin(admin.ModelAdmin):
-    list_display = ("pos_name", "pos_category", "item", "is_modifier", "ignore", "status_display", "last_seen_on")
+    list_display = (
+        "pos_name",
+        "pos_category",
+        "item",
+        "is_modifier",
+        "ignore",
+        "status_display",
+        "last_seen_on",
+    )
     list_filter = (UnmappedFilter, "is_modifier", "ignore", "pos_category")
     search_fields = ("pos_name", "item__name")
     autocomplete_fields = ("item",)
@@ -54,14 +62,24 @@ class SalesImportLineInline(admin.TabularInline):
 @admin.register(SalesImport)
 class SalesImportAdmin(admin.ModelAdmin):
     list_display = (
-        "business_date", "location", "status", "rows_read", "rows_mapped",
-        "unmapped_display", "posted_at",
+        "business_date",
+        "location",
+        "status",
+        "rows_read",
+        "rows_mapped",
+        "unmapped_display",
+        "posted_at",
     )
     list_filter = ("status", "location")
     date_hierarchy = "business_date"
     readonly_fields = (
-        "source_sha256", "rows_read", "rows_mapped", "rows_unmapped",
-        "imported_at", "posted_at", "error_detail",
+        "source_sha256",
+        "rows_read",
+        "rows_mapped",
+        "rows_unmapped",
+        "imported_at",
+        "posted_at",
+        "error_detail",
     )
     inlines = [SalesImportLineInline]
 

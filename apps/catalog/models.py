@@ -16,6 +16,7 @@ Two decisions worth knowing before reading:
     never in the middle. Floats are not used for quantities or money anywhere
     in this system.
 """
+
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -24,8 +25,8 @@ from django.db import models
 
 from apps.core.models import Supplier, TimeStamped
 
-QTY = dict(max_digits=14, decimal_places=4)
-MONEY = dict(max_digits=12, decimal_places=4)
+QTY = {"max_digits": 14, "decimal_places": 4}
+MONEY = {"max_digits": 12, "decimal_places": 4}
 
 
 class UnitKind(models.TextChoices):
@@ -126,9 +127,7 @@ class ItemAlias(TimeStamped):
     source = models.CharField(max_length=40, blank=True)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["item", "alias"], name="uniq_alias_per_item")
-        ]
+        constraints = [models.UniqueConstraint(fields=["item", "alias"], name="uniq_alias_per_item")]
 
     def __str__(self) -> str:
         return self.alias
@@ -149,9 +148,7 @@ class PurchaseUnit(TimeStamped):
     supplier = models.ForeignKey(
         Supplier, null=True, blank=True, on_delete=models.PROTECT, related_name="purchase_units"
     )
-    quantity_in_base_units = models.DecimalField(
-        validators=[MinValueValidator(Decimal("0.0001"))], **QTY
-    )
+    quantity_in_base_units = models.DecimalField(validators=[MinValueValidator(Decimal("0.0001"))], **QTY)
     is_approximate = models.BooleanField(
         default=False,
         help_text="For things like a bunch of curry leaves, where the weight is nominal.",
@@ -161,9 +158,7 @@ class PurchaseUnit(TimeStamped):
     class Meta:
         ordering = ["item", "name"]
         constraints = [
-            models.UniqueConstraint(
-                fields=["item", "name", "supplier"], name="uniq_purchase_unit"
-            )
+            models.UniqueConstraint(fields=["item", "name", "supplier"], name="uniq_purchase_unit")
         ]
 
     def __str__(self) -> str:

@@ -1,7 +1,14 @@
 from django.contrib import admin
 
 from apps.catalog.models import (
-    Item, ItemAlias, ItemCategory, ParLevel, PurchaseUnit, Recipe, RecipeLine, Unit,
+    Item,
+    ItemAlias,
+    ItemCategory,
+    ParLevel,
+    PurchaseUnit,
+    Recipe,
+    RecipeLine,
+    Unit,
 )
 
 

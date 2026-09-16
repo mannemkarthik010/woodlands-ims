@@ -6,6 +6,7 @@ after adding a unit or a category will not duplicate anything.
 
     python manage.py seed
 """
+
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand
@@ -17,38 +18,61 @@ from apps.labour.models import BreakPolicy
 
 UNITS = [
     # code,   name,        kind,             how many canonical units (g / ml / 1)
-    ("g",     "Gram",      UnitKind.WEIGHT,  "1"),
-    ("kg",    "Kilogram",  UnitKind.WEIGHT,  "1000"),
-    ("lb",    "Pound",     UnitKind.WEIGHT,  "453.59237"),
-    ("oz",    "Ounce",     UnitKind.WEIGHT,  "28.349523"),
-    ("ml",    "Millilitre", UnitKind.VOLUME, "1"),
-    ("l",     "Litre",     UnitKind.VOLUME,  "1000"),
-    ("gal",   "US gallon", UnitKind.VOLUME,  "3785.411784"),
-    ("qt",    "US quart",  UnitKind.VOLUME,  "946.352946"),
-    ("floz",  "US fluid ounce", UnitKind.VOLUME, "29.5735295"),
-    ("each",  "Each",      UnitKind.COUNT,   "1"),
-    ("dozen", "Dozen",     UnitKind.COUNT,   "12"),
+    ("g", "Gram", UnitKind.WEIGHT, "1"),
+    ("kg", "Kilogram", UnitKind.WEIGHT, "1000"),
+    ("lb", "Pound", UnitKind.WEIGHT, "453.59237"),
+    ("oz", "Ounce", UnitKind.WEIGHT, "28.349523"),
+    ("ml", "Millilitre", UnitKind.VOLUME, "1"),
+    ("l", "Litre", UnitKind.VOLUME, "1000"),
+    ("gal", "US gallon", UnitKind.VOLUME, "3785.411784"),
+    ("qt", "US quart", UnitKind.VOLUME, "946.352946"),
+    ("floz", "US fluid ounce", UnitKind.VOLUME, "29.5735295"),
+    ("each", "Each", UnitKind.COUNT, "1"),
+    ("dozen", "Dozen", UnitKind.COUNT, "12"),
 ]
 
 # First pass at the item list. The real one gets built on site, against the
 # actual shelves, with the owners and the chef -- an item list assembled from
 # a menu always misses the things nobody thinks to mention.
 CATEGORIES = [
-    "Rice and grains", "Pulses and dals", "Flours", "Spices whole",
-    "Spices ground", "Spice blends (in-house)", "Oils and ghee",
-    "Dairy and paneer", "Fresh produce", "Frozen", "Tinned and jarred",
-    "Batters (in-house)", "Bases and gravies (in-house)", "Chutneys (in-house)",
-    "Sweets and desserts", "Beverages", "Beer and wine", "Packaging",
+    "Rice and grains",
+    "Pulses and dals",
+    "Flours",
+    "Spices whole",
+    "Spices ground",
+    "Spice blends (in-house)",
+    "Oils and ghee",
+    "Dairy and paneer",
+    "Fresh produce",
+    "Frozen",
+    "Tinned and jarred",
+    "Batters (in-house)",
+    "Bases and gravies (in-house)",
+    "Chutneys (in-house)",
+    "Sweets and desserts",
+    "Beverages",
+    "Beer and wine",
+    "Packaging",
     "Cleaning and consumables",
 ]
 
 LOCATIONS = [
-    ("restaurant", "Restaurant", Location.Kind.RESTAURANT,
-     "9840 Topanga Canyon Blvd, Unit A, Chatsworth, CA 91311", 1,
-     ["Dry store", "Walk-in", "Freezer", "Prep kitchen", "Line", "Bar"]),
-    ("devonshire", "Devonshire Street unit", Location.Kind.STORAGE,
-     "Devonshire Street, Chatsworth, CA — approx. 0.5 miles from the restaurant", 2,
-     ["Dry store", "Chilled", "Frozen"]),
+    (
+        "restaurant",
+        "Restaurant",
+        Location.Kind.RESTAURANT,
+        "9840 Topanga Canyon Blvd, Unit A, Chatsworth, CA 91311",
+        1,
+        ["Dry store", "Walk-in", "Freezer", "Prep kitchen", "Line", "Bar"],
+    ),
+    (
+        "devonshire",
+        "Devonshire Street unit",
+        Location.Kind.STORAGE,
+        "Devonshire Street, Chatsworth, CA — approx. 0.5 miles from the restaurant",
+        2,
+        ["Dry store", "Chilled", "Frozen"],
+    ),
 ]
 
 
@@ -67,9 +91,7 @@ class Command(BaseCommand):
             made["units"] += created
 
         for i, name in enumerate(CATEGORIES, start=1):
-            _, created = ItemCategory.objects.get_or_create(
-                name=name, defaults={"sort_order": i}
-            )
+            _, created = ItemCategory.objects.get_or_create(name=name, defaults={"sort_order": i})
             made["categories"] += created
 
         for code, name, kind, address, order, areas in LOCATIONS:
@@ -92,11 +114,13 @@ class Command(BaseCommand):
             name="Standard 3–5pm closure", defaults={"applies_monday": False}
         )
 
-        self.stdout.write(self.style.SUCCESS(
-            f"Seeded — units +{made['units']}, categories +{made['categories']}, "
-            f"locations +{made['locations']}, areas +{made['areas']}, "
-            f"break policy {'created' if policy_created else 'already present'}."
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Seeded — units +{made['units']}, categories +{made['categories']}, "
+                f"locations +{made['locations']}, areas +{made['areas']}, "
+                f"break policy {'created' if policy_created else 'already present'}."
+            )
+        )
         self.stdout.write(
             "Totals now: "
             f"{Unit.objects.count()} units, {ItemCategory.objects.count()} categories, "

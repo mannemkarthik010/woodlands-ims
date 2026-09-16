@@ -1,9 +1,9 @@
 """
 Core: people, places, and the base classes everything else inherits.
 """
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MinLengthValidator
 from django.db import models
 
 
@@ -107,9 +107,7 @@ class Area(TimeStamped):
 
     class Meta:
         ordering = ["location", "sort_order", "name"]
-        constraints = [
-            models.UniqueConstraint(fields=["location", "name"], name="uniq_area_per_location")
-        ]
+        constraints = [models.UniqueConstraint(fields=["location", "name"], name="uniq_area_per_location")]
 
     def __str__(self) -> str:
         return f"{self.location.name} / {self.name}"

@@ -23,6 +23,7 @@ restaurant currently knows what a batch yields. A recorded expected-versus-
 actual turns a vague sense that "we seem to be buying more rice lately" into
 a number somebody can act on.
 """
+
 from decimal import Decimal
 
 from django.core.validators import MinValueValidator
@@ -34,7 +35,7 @@ from apps.core.models import Location, TimeStamped
 
 class BatchStatus(models.TextChoices):
     IN_PROGRESS = "IN_PROGRESS", "In progress"
-    MATURING = "MATURING", "Maturing"          # exists, not yet usable
+    MATURING = "MATURING", "Maturing"  # exists, not yet usable
     AVAILABLE = "AVAILABLE", "Available"
     EXPIRED = "EXPIRED", "Expired"
     WRITTEN_OFF = "WRITTEN_OFF", "Written off"
@@ -71,7 +72,10 @@ class ProductionBatch(TimeStamped):
     matured_at = models.DateTimeField(null=True, blank=True, db_index=True)
     expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
     ambient_temp_f = models.DecimalField(
-        null=True, blank=True, max_digits=5, decimal_places=1,
+        null=True,
+        blank=True,
+        max_digits=5,
+        decimal_places=1,
         help_text="Recorded so fermentation time can be tuned across the seasons.",
     )
 
@@ -124,6 +128,9 @@ class ProductionInput(models.Model):
     )
     note = models.CharField(max_length=160, blank=True)
 
+    def __str__(self) -> str:
+        return f"{self.quantity} {self.item.base_unit} {self.item.name}"
+
 
 class BatchSplit(models.Model):
     """
@@ -134,3 +141,6 @@ class BatchSplit(models.Model):
     parent = models.ForeignKey(ProductionBatch, on_delete=models.CASCADE, related_name="splits")
     child = models.OneToOneField(ProductionBatch, on_delete=models.CASCADE, related_name="split_from")
     quantity = models.DecimalField(**QTY)
+
+    def __str__(self) -> str:
+        return f"{self.parent.batch_code} -> {self.child.batch_code} ({self.quantity})"

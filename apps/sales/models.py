@@ -20,6 +20,7 @@ Two things this module is careful about:
     matched on a hopeful string similarity. An unmapped item is a visible
     problem; a wrongly mapped one is an invisible wrong answer for months.
 """
+
 from decimal import Decimal
 
 from django.db import models
@@ -51,7 +52,8 @@ class PosItem(TimeStamped):
         help_text="Add-ons such as extra paneer. These consume stock in their own right.",
     )
     ignore = models.BooleanField(
-        default=False, help_text="Deliberately not stock-bearing, e.g. a service charge line.",
+        default=False,
+        help_text="Deliberately not stock-bearing, e.g. a service charge line.",
     )
 
     first_seen_on = models.DateField(null=True, blank=True)
@@ -131,6 +133,9 @@ class SalesImportLine(models.Model):
     raw_row = models.JSONField(
         default=dict, help_text="The original CSV row, kept so an import can always be explained."
     )
+
+    def __str__(self) -> str:
+        return f"{self.pos_item.pos_name} x{self.quantity_sold}"
 
     @property
     def quantity_to_deplete(self):

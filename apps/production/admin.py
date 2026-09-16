@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from apps.production.models import BatchSplit, ProductionBatch, ProductionInput
+from apps.production.models import ProductionBatch, ProductionInput
 
 
 class ProductionInputInline(admin.TabularInline):
@@ -15,8 +15,15 @@ class ProductionInputInline(admin.TabularInline):
 @admin.register(ProductionBatch)
 class ProductionBatchAdmin(admin.ModelAdmin):
     list_display = (
-        "batch_code", "item", "status", "started_at", "matured_at", "expires_at",
-        "expected_yield", "actual_yield", "variance_display",
+        "batch_code",
+        "item",
+        "status",
+        "started_at",
+        "matured_at",
+        "expires_at",
+        "expected_yield",
+        "actual_yield",
+        "variance_display",
     )
     list_filter = ("status", "item", "location")
     search_fields = ("batch_code", "item__name")

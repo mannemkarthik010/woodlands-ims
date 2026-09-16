@@ -25,6 +25,7 @@ hard to retrofit:
 StockBalance exists only as a cache for speed. It is derived, and can be
 rebuilt from the ledger at any time. The ledger is the truth.
 """
+
 from decimal import Decimal
 
 from django.core.validators import MinValueValidator
@@ -110,9 +111,7 @@ class StockBalance(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["item", "location"], name="uniq_balance")
-        ]
+        constraints = [models.UniqueConstraint(fields=["item", "location"], name="uniq_balance")]
 
     def __str__(self) -> str:
         return f"{self.item.name} @ {self.location.code}: {self.quantity}"
@@ -137,9 +136,7 @@ class GoodsReceipt(TimeStamped):
     received_at = models.DateTimeField()
     supplier_reference = models.CharField(max_length=80, blank=True)
     invoice_image = models.ImageField(upload_to="invoices/%Y/%m/", null=True, blank=True)
-    status = models.CharField(
-        max_length=8, choices=DocumentStatus.choices, default=DocumentStatus.DRAFT
-    )
+    status = models.CharField(max_length=8, choices=DocumentStatus.choices, default=DocumentStatus.DRAFT)
     note = models.TextField(blank=True)
 
     class Meta:
@@ -157,13 +154,14 @@ class GoodsReceiptLine(models.Model):
     purchase_unit = models.ForeignKey(
         PurchaseUnit, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
     )
-    purchase_quantity = models.DecimalField(
-        validators=[MinValueValidator(Decimal("0"))], **QTY
-    )
+    purchase_quantity = models.DecimalField(validators=[MinValueValidator(Decimal("0"))], **QTY)
     quantity_in_base_units = models.DecimalField(**QTY)
     unit_cost = models.DecimalField(null=True, blank=True, **MONEY)
     quantity_rejected = models.DecimalField(default=Decimal("0"), **QTY)
     note = models.CharField(max_length=160, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.quantity_in_base_units} {self.item.base_unit} {self.item.name}"
 
 
 class Transfer(TimeStamped):
@@ -180,16 +178,10 @@ class Transfer(TimeStamped):
     none at all.
     """
 
-    from_location = models.ForeignKey(
-        Location, on_delete=models.PROTECT, related_name="transfers_out"
-    )
-    to_location = models.ForeignKey(
-        Location, on_delete=models.PROTECT, related_name="transfers_in"
-    )
+    from_location = models.ForeignKey(Location, on_delete=models.PROTECT, related_name="transfers_out")
+    to_location = models.ForeignKey(Location, on_delete=models.PROTECT, related_name="transfers_in")
     occurred_at = models.DateTimeField()
-    status = models.CharField(
-        max_length=8, choices=DocumentStatus.choices, default=DocumentStatus.DRAFT
-    )
+    status = models.CharField(max_length=8, choices=DocumentStatus.choices, default=DocumentStatus.DRAFT)
     note = models.CharField(max_length=240, blank=True)
 
     class Meta:
@@ -207,6 +199,9 @@ class TransferLine(models.Model):
         "production.ProductionBatch", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
     )
 
+    def __str__(self) -> str:
+        return f"{self.quantity} {self.item.base_unit} {self.item.name}"
+
 
 class TransferTemplate(TimeStamped):
     """A storage run that repeats. Load it, adjust the numbers, done."""
@@ -220,6 +215,9 @@ class TransferTemplateLine(models.Model):
     template = models.ForeignKey(TransferTemplate, on_delete=models.CASCADE, related_name="lines")
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="+")
     typical_quantity = models.DecimalField(**QTY)
+
+    def __str__(self) -> str:
+        return f"{self.typical_quantity} {self.item.base_unit} {self.item.name}"
 
 
 class StockCount(TimeStamped):
@@ -239,9 +237,7 @@ class StockCount(TimeStamped):
     area = models.ForeignKey(Area, null=True, blank=True, on_delete=models.PROTECT, related_name="counts")
     cadence = models.CharField(max_length=8, choices=Cadence.choices, default=Cadence.WEEKLY)
     counted_at = models.DateTimeField()
-    status = models.CharField(
-        max_length=8, choices=DocumentStatus.choices, default=DocumentStatus.DRAFT
-    )
+    status = models.CharField(max_length=8, choices=DocumentStatus.choices, default=DocumentStatus.DRAFT)
     note = models.TextField(blank=True)
 
     class Meta:
@@ -256,6 +252,9 @@ class StockCountLine(models.Model):
     expected_quantity = models.DecimalField(**QTY)
     counted_quantity = models.DecimalField(null=True, blank=True, **QTY)
     note = models.CharField(max_length=160, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.item.name}: counted {self.counted_quantity}"
 
     @property
     def variance(self):

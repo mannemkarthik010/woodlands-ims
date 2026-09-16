@@ -22,8 +22,13 @@ class ShiftEditInline(admin.TabularInline):
 @admin.register(Shift)
 class ShiftAdmin(admin.ModelAdmin):
     list_display = (
-        "employee", "location", "clocked_in_at", "clocked_out_at",
-        "hours_display", "worked_through_break", "is_catering_event",
+        "employee",
+        "location",
+        "clocked_in_at",
+        "clocked_out_at",
+        "hours_display",
+        "worked_through_break",
+        "is_catering_event",
     )
     list_filter = ("location", "worked_through_break", "is_catering_event")
     search_fields = ("employee__username", "employee__display_name")
