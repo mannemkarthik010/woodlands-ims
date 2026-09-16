@@ -10,22 +10,54 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+def env_bool(name: str, default: bool = False) -> bool:
+    return os.environ.get(name, str(int(default))).strip().lower() in {"1", "true", "yes", "on"}
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-x^=*#avfc5h-fxbv%s5z4@s(auk82gu&&qj7yqlz!*0n3j$oh4"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# The secret key never lives in the repository. Locally it comes from .env
+# (which is gitignored); on a server it comes from the environment. There is
+# no default, on purpose -- a missing key should stop the process, not
+# silently fall back to one that is in everybody's git history.
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+DEBUG = env_bool("DJANGO_DEBUG", default=False)
 
-ALLOWED_HOSTS = []
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "dev-only-key-not-for-any-server"
+    else:
+        raise RuntimeError("DJANGO_SECRET_KEY is not set. Refusing to start with DEBUG off and no key.")
+
+# In development, accept any host so the app can be opened from a phone on
+# the same wi-fi without knowing the laptop's address in advance. In
+# production the hosts are listed explicitly and nothing else is served.
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
+else:
+    ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h.strip()]
+
+# Django 4+ checks the Origin header on unsafe requests. A phone reaching the
+# laptop over the LAN sends its own address, so trust the private ranges in
+# development only.
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
+]
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS += [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://192.168.*.*:8000",
+        "http://10.*.*.*:8000",
+        "http://172.16.*.*:8000",
+    ]
 
 
 # Application definition

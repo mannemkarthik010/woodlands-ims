@@ -13,10 +13,20 @@ pip install -r requirements.txt
 cp .env.example .env          # then fill it in
 python manage.py migrate
 python manage.py seed         # units, categories, locations, break policy
+python manage.py seed_demo    # sample items, so the screens have data
 python manage.py createsuperuser
-python manage.py test apps    # 9 tests, all green
-python manage.py runserver    # admin at /admin/
+python manage.py test apps
+python manage.py phone        # serves on the network, prints the phone URL
 ```
+
+`manage.py phone` is the one to use while building screens. It binds to the
+network and prints the address to open on a phone on the same wi-fi — the
+transfer screen is designed for one hand at a storage-unit door, and a desktop
+browser tells you almost nothing about whether it works.
+
+`seed_demo` adds 24 sample ingredients with opening stock, all coded `DEMO-`.
+Remove them with `python manage.py seed_demo --clear` before anything real
+goes in.
 
 `requirements.txt` is deliberately small and pure-Python, so a missing compiler
 can never stop you running locally. The PostgreSQL driver, image handling and
