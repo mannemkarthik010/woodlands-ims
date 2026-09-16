@@ -8,13 +8,22 @@ tablet and the owners' laptop, with the interface changing by role.
 ## Running it
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # then fill it in
 python manage.py migrate
 python manage.py test apps    # 9 tests, all green
 python manage.py runserver
 ```
+
+`requirements.txt` is deliberately small and pure-Python, so a missing compiler
+can never stop you running locally. The PostgreSQL driver, image handling and
+the web server live in `requirements-prod.txt` and are only installed on the
+server.
+
+If you use conda, deactivate it first (`conda deactivate`) — having `(base)` and
+`(.venv)` both active is a reliable source of confusion about which `pip` you
+just used.
 
 ---
 
