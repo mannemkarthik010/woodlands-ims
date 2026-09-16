@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Woodlands{% endblock %}
+{% block content %}
+<h1>What are you doing?</h1>
+
+<a class="tile" href="{% url 'transfer_new' %}">
+  <span class="tile__title">Storage run</span>
+  <span class="tile__sub">Record stock coming from Devonshire Street</span>
+</a>
+
+{% if open_transfers %}
+  <h2 class="h2">Unfinished</h2>
+  <ul class="list">
+    {% for t in open_transfers %}
+      <li>
+        <a href="{% url 'transfer_edit' t.pk %}">
+          {{ t.from_location.name }} → {{ t.to_location.name }}
+          <small>{{ t.occurred_at|date:"D j M, H:i" }} · {{ t.lines.count }} item{{ t.lines.count|pluralize }}</small>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}

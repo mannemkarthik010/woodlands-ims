@@ -1,0 +1,24 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#35363A">
+<title>{% block title %}Woodlands{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'app.css' %}">
+<script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+</head>
+<body>
+<header class="bar">
+  <a class="bar__home" href="{% url 'home' %}">Woodlands</a>
+  {% if user.is_authenticated %}
+    <span class="bar__who">{{ user.display_name|default:user.username }}</span>
+  {% endif %}
+</header>
+
+<main class="wrap">
+  {% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

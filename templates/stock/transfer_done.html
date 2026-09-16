@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Recorded{% endblock %}
+{% block content %}
+
+<p class="done">Recorded</p>
+<p class="muted">
+  {{ transfer.from_location.name }} → {{ transfer.to_location.name }},
+  {{ transfer.occurred_at|date:"D j M, H:i" }}
+</p>
+
+<ul class="lines">
+  {% for row in rows %}
+    <li class="lines__row">
+      <span class="lines__qty">{{ row.line.quantity|floatformat:"-3" }} {{ row.line.item.base_unit.code }}</span>
+      <span class="lines__name">{{ row.line.item.name }}</span>
+      <span class="lines__after">{{ row.now_at_destination|floatformat:"-3" }} now here</span>
+    </li>
+  {% endfor %}
+</ul>
+
+<a class="btn btn--primary btn--big" href="{% url 'transfer_new' %}">Another run</a>
+<a class="btn btn--ghost" href="{% url 'home' %}">Done</a>
+
+{% endblock %}

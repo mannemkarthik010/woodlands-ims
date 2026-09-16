@@ -1,0 +1,140 @@
+/* Built for a phone held one-handed at a storage-unit door, and for a
+   tablet in a kitchen with wet hands. Everything tappable is at least 44px.
+   Nothing relies on hover, because nothing here has a mouse. */
+
+:root {
+  --brand: #35363A;      /* the restaurant's own charcoal */
+  --gold:  #B7791F;
+  --deep:  #7A2E1E;
+  --ink:   #1F2933;
+  --grey:  #5B6770;
+  --rule:  #D8DEE4;
+  --tint:  #F7F4F0;
+  --green: #2F6B4F;
+  --amber: #8A6100;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font: 17px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  background: #fff;
+  -webkit-text-size-adjust: 100%;
+}
+
+.bar {
+  background: var(--brand);
+  color: #fff;
+  padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.bar__home { color: #fff; text-decoration: none; font-weight: 600; letter-spacing: .04em; }
+.bar__who  { color: #ffffffa8; font-size: 14px; }
+
+.wrap { padding: 16px; max-width: 640px; margin: 0 auto; padding-bottom: 48px; }
+
+h1 { font-size: 22px; margin: 4px 0 18px; }
+.h2 { font-size: 15px; color: var(--grey); margin: 26px 0 8px; font-weight: 600; }
+.count {
+  background: var(--tint); color: var(--grey);
+  border-radius: 20px; padding: 1px 9px; font-size: 13px; margin-left: 4px;
+}
+.muted { color: var(--grey); }
+
+.alert {
+  background: #fdf3f1; border-left: 3px solid var(--deep);
+  padding: 10px 12px; border-radius: 4px; margin: 0 0 14px;
+}
+
+/* Buttons — 48px minimum, because a thumb is not a cursor. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 48px; padding: 0 18px;
+  border: 0; border-radius: var(--radius);
+  font: inherit; font-weight: 600;
+  cursor: pointer; text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn--primary { background: var(--brand); color: #fff; width: 100%; }
+.btn--big     { min-height: 58px; font-size: 18px; margin-top: 16px; }
+.btn--ghost   { background: transparent; color: var(--grey); border: 1px solid var(--rule); }
+.btn--add     { background: var(--green); color: #fff; padding: 0 16px; }
+.btn--remove  {
+  background: transparent; color: var(--grey); font-size: 26px;
+  min-width: 48px; padding: 0; line-height: 1;
+}
+
+.tile {
+  display: block; padding: 20px; background: var(--tint);
+  border-radius: var(--radius); text-decoration: none; color: var(--ink);
+  border: 1px solid var(--rule);
+}
+.tile__title { display: block; font-size: 19px; font-weight: 700; }
+.tile__sub   { display: block; color: var(--grey); font-size: 15px; margin-top: 3px; }
+
+.route {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--tint); border-radius: var(--radius);
+  padding: 12px 14px; margin-bottom: 14px;
+}
+.route__arrow { color: var(--gold); font-size: 20px; }
+.route__swap  { margin-left: auto; }
+.route__swap .btn { min-height: 36px; padding: 0 12px; font-size: 14px; }
+
+.search input[type=search] {
+  width: 100%; min-height: 52px; padding: 0 14px;
+  font: inherit; font-size: 17px;          /* 16px+ stops iOS zooming on focus */
+  border: 2px solid var(--rule); border-radius: var(--radius);
+  -webkit-appearance: none;
+}
+.search input[type=search]:focus { outline: none; border-color: var(--brand); }
+
+/* One search hit: name, quantity, unit, add. Everything on one row so the
+   whole add is a tap, a number and a tap. */
+.hit {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid var(--rule);
+}
+.hit__name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.hit__qty  {
+  flex: 0 0 76px; min-height: 48px; text-align: right;
+  padding: 0 8px; font: inherit; font-size: 17px; font-weight: 600;
+  border: 2px solid var(--rule); border-radius: 8px;
+  -webkit-appearance: none;
+}
+.hit__qty:focus { outline: none; border-color: var(--green); }
+.hit__unit { flex: 0 0 auto; color: var(--grey); font-size: 14px; min-width: 28px; }
+
+.lines { list-style: none; margin: 0; padding: 0; }
+.lines__row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 0; border-bottom: 1px solid var(--rule);
+}
+.lines__qty  { flex: 0 0 auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lines__name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.lines__after { flex: 0 0 auto; color: var(--grey); font-size: 13px; }
+
+.list { list-style: none; margin: 0; padding: 0; }
+.list a {
+  display: block; padding: 14px 0; border-bottom: 1px solid var(--rule);
+  text-decoration: none; color: var(--ink);
+}
+.list small { display: block; color: var(--grey); font-size: 14px; margin-top: 2px; }
+
+.done {
+  font-size: 26px; font-weight: 700; color: var(--green);
+  margin: 8px 0 2px;
+}
+
+.stack { display: flex; flex-direction: column; gap: 14px; max-width: 360px; }
+.stack label { display: flex; flex-direction: column; gap: 5px; font-size: 14px; color: var(--grey); }
+.stack input {
+  min-height: 48px; padding: 0 12px; font: inherit; font-size: 17px;
+  border: 2px solid var(--rule); border-radius: var(--radius);
+}

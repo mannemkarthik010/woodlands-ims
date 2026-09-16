@@ -1,0 +1,20 @@
+{% if q|length >= 2 and not items %}
+  <p class="muted">Nothing matching “{{ q }}”.</p>
+{% endif %}
+
+{% for item in items %}
+  <form class="hit"
+        hx-post="{% url 'transfer_add_line' transfer_pk %}"
+        hx-target="#lines"
+        hx-swap="innerHTML"
+        hx-on::after-request="this.reset(); this.querySelector('input[name=quantity]').blur()">
+    {% csrf_token %}
+    <input type="hidden" name="item" value="{{ item.pk }}">
+    <span class="hit__name">{{ item.name }}</span>
+    <input class="hit__qty" type="text" name="quantity"
+           inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*"
+           placeholder="0" aria-label="Quantity in {{ item.base_unit.code }}">
+    <span class="hit__unit">{{ item.base_unit.code }}</span>
+    <button class="btn btn--add" type="submit" aria-label="Add {{ item.name }}">Add</button>
+  </form>
+{% endfor %}

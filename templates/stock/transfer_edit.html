@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Storage run{% endblock %}
+{% block content %}
+
+<div class="route">
+  <strong>{{ transfer.from_location.name }}</strong>
+  <span class="route__arrow">→</span>
+  <strong>{{ transfer.to_location.name }}</strong>
+  <form method="post" class="route__swap">
+    {% csrf_token %}
+    <button class="btn btn--ghost" name="swap" value="1" type="submit">Swap</button>
+  </form>
+</div>
+
+<form class="search"
+      hx-get="{% url 'item_search' %}"
+      hx-trigger="input changed delay:200ms, search"
+      hx-target="#results"
+      autocomplete="off">
+  <input type="search" name="q" placeholder="Search an item…" autocapitalize="none" autofocus>
+  <input type="hidden" name="transfer" value="{{ transfer.pk }}">
+</form>
+
+<div id="results"></div>
+
+<div id="lines">
+  {% include "stock/_lines.html" %}
+</div>
+
+{% endblock %}
