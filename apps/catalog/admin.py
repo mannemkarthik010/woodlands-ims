@@ -4,8 +4,8 @@ from apps.catalog.models import (
     Item,
     ItemAlias,
     ItemCategory,
+    ItemMeasure,
     ParLevel,
-    PurchaseUnit,
     Recipe,
     RecipeLine,
     Unit,
@@ -31,8 +31,8 @@ class ItemAliasInline(admin.TabularInline):
     verbose_name_plural = "Other names this is called"
 
 
-class PurchaseUnitInline(admin.TabularInline):
-    model = PurchaseUnit
+class ItemMeasureInline(admin.TabularInline):
+    model = ItemMeasure
     extra = 1
     verbose_name_plural = "How it is bought (watch pack sizes per supplier)"
 
@@ -48,7 +48,7 @@ class ItemAdmin(admin.ModelAdmin):
     list_filter = ("kind", "category", "is_active", "is_allergen_relevant")
     search_fields = ("name", "code", "aliases__alias")
     autocomplete_fields = ("category", "base_unit")
-    inlines = [ItemAliasInline, PurchaseUnitInline, ParLevelInline]
+    inlines = [ItemAliasInline, ItemMeasureInline, ParLevelInline]
     fieldsets = (
         (None, {"fields": ("code", "name", "kind", "category", "base_unit", "is_stocked")}),
         ("Handling", {"fields": ("shelf_life_days", "is_allergen_relevant", "allergen_notes")}),
@@ -73,8 +73,8 @@ class RecipeAdmin(admin.ModelAdmin):
     inlines = [RecipeLineInline]
 
 
-@admin.register(PurchaseUnit)
-class PurchaseUnitAdmin(admin.ModelAdmin):
+@admin.register(ItemMeasure)
+class ItemMeasureAdmin(admin.ModelAdmin):
     """
     Registered mainly so goods receipt can autocomplete against it -- and
     because pack sizes differing by supplier is worth being able to inspect

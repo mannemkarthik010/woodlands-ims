@@ -22,6 +22,12 @@ Notable changes per release. Newest first.
 - Environment-based settings, demo data, and a command for testing on a phone
 - Documentation: architecture and runbook written by hand; data model and requirement
   traceability generated from the code, with CI failing when they go stale
+- Ingredients: the kitchen's grocery sheet imported — 45 raw items with pack sizes and
+  case conversions read from "4 lb bag" and "1 case = 10 bags"
+- Kitchen measures: what a scoop and a spoon actually weigh, recorded per item, because
+  a scoop of toor dal is 32 oz and a scoop of sambar powder is 14 oz
+- `PurchaseUnit` is now `ItemMeasure`, with a kind — how it is bought, or how the kitchen
+  measures it
 - Mapping review ("second look"): finds tubs counted in "each", one food spelled two ways,
   and items left behind by a changed decision — and offers merge, convert and retire
 - Merge keeps the old spelling as a searchable name on the surviving item

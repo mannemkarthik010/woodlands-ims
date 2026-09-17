@@ -202,12 +202,34 @@ Every quantity is stored in the item's **base unit**, as `Decimal`. Never float 
 not for quantities, not for money. `QTY` is `(14, 4)` and `MONEY` is `(12, 4)`,
 defined once in `apps/catalog/models.py` and imported everywhere else.
 
-Conversion happens only at the edges, when somebody types "6 sacks".
-`PurchaseUnit` carries an **optional supplier**, because urad dal arrives in
-25 lb sacks from one supplier and 20 lb sacks from another. A system that assumes
-one number turns four sacks into twenty pounds of stock that does not exist —
-one of the most common silent errors in food inventory, and very hard to unpick
-a year later.
+Conversion happens only at the edges, when somebody types "6 sacks" or "3 scoop".
+`ItemMeasure` holds every named quantity that is not the base unit, in two kinds:
+
+**How it is bought.** A pack carries an **optional supplier**, because urad dal
+arrives in 25 lb sacks from one supplier and 20 lb sacks from another. A system
+that assumes one number turns four sacks into twenty pounds of stock that does
+not exist — one of the most common silent errors in food inventory, and very
+hard to unpick a year later.
+
+**How the kitchen measures it.** Every recipe here is written in scoops, spoons,
+handfuls and bars. The kitchen weighed them on 16 September 2026:
+
+| 1 scoop of… | weighs |
+|---|---|
+| Toor dal | 32 oz |
+| Moong dal | 31 oz |
+| Sambar powder | 14 oz |
+
+A scoop is a **vessel, not a weight** — what it holds depends on what is in it,
+and the same is true of the spoon (salt 2.2 oz, turmeric 1.4 oz, cumin 0.6 oz).
+So the conversion belongs to the item and there is no global figure to store.
+One number applied to everything would be wrong nearly everywhere it was used,
+and wrong quietly: nobody re-checks a conversion.
+
+This is why the table is `ItemMeasure` and not `PurchaseUnit`. It always held
+"a named quantity of this item, worth this much in base units"; it was named
+for the only use there was at the time. A name that is a lie in the schema is
+the kind of lie that lasts.
 
 *Implements FR-203, FR-204, FR-205.*
 

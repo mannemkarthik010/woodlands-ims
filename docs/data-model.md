@@ -62,7 +62,7 @@ Somewhere stock can sit. Three kinds today: the restaurant, the Devonshire Stree
 
 | Field | Type | Null | Notes |
 |---|---|---|---|
-| `purchase_units` | ForeignKey → PurchaseUnit | yes |  |
+| `item_measures` | ForeignKey → ItemMeasure | yes |  |
 | `receipts` | ForeignKey → GoodsReceipt | yes |  |
 | `id` | BigAuto |  |  |
 | `created_at` | DateTime |  |  |
@@ -109,7 +109,7 @@ Somewhere stock can sit. Three kinds today: the restaurant, the Devonshire Stree
 | Field | Type | Null | Notes |
 |---|---|---|---|
 | `aliases` | ForeignKey → ItemAlias | yes |  |
-| `purchase_units` | ForeignKey → PurchaseUnit | yes |  |
+| `measures` | ForeignKey → ItemMeasure | yes |  |
 | `par_levels` | ForeignKey → ParLevel | yes |  |
 | `recipes` | ForeignKey → Recipe | yes |  |
 | `used_in` | ForeignKey → RecipeLine | yes |  |
@@ -161,6 +161,25 @@ The same thing called three different names by three different people -- the sup
 | `name` | Char(80) |  |  |
 | `sort_order` | PositiveSmallInteger |  |  |
 
+### ItemMeasure
+
+Any named quantity of an item that is not its base unit, and what that is worth in base units. Two kinds, and the distinction matters. HOW IT IS BOUGHT. Urad dal arrives in 25 lb sacks from one supplier and 20 lb sacks from another; if the system assumes one number, four sacks becomes twenty pounds…
+
+| Field | Type | Null | Notes |
+|---|---|---|---|
+| `id` | BigAuto |  |  |
+| `created_at` | DateTime |  |  |
+| `updated_at` | DateTime |  |  |
+| `created_by` | ForeignKey → User | yes |  |
+| `item` | ForeignKey → Item |  |  |
+| `name` | Char(60) |  |  |
+| `kind` | Char(10) |  | _PURCHASE, KITCHEN_ |
+| `supplier` | ForeignKey → Supplier | yes | Only meaningful for a purchase pack. A scoop has no supplier. |
+| `quantity_in_base_units` | Decimal(14,4) |  |  |
+| `is_approximate` | Boolean |  | A handful of curry leaves, where the weight is nominal rather than measured. |
+| `measured_on` | Date | yes | When this was last put on a scale. |
+| `is_active` | Boolean |  |  |
+
 ### ParLevel
 
 How much of an item should be on hand at a given location.
@@ -174,23 +193,6 @@ How much of an item should be on hand at a given location.
 | `item` | ForeignKey → Item |  |  |
 | `location` | ForeignKey → Location |  |  |
 | `quantity` | Decimal(14,4) |  |  |
-
-### PurchaseUnit
-
-How an item is bought, and what that is worth in base units. The supplier field is the important one. Urad dal arrives in 25 lb sacks from one supplier and 20 lb sacks from another; if the system assumes one number, four sacks becomes twenty pounds of phantom stock. This is the single most common s…
-
-| Field | Type | Null | Notes |
-|---|---|---|---|
-| `id` | BigAuto |  |  |
-| `created_at` | DateTime |  |  |
-| `updated_at` | DateTime |  |  |
-| `created_by` | ForeignKey → User | yes |  |
-| `item` | ForeignKey → Item |  |  |
-| `name` | Char(60) |  |  |
-| `supplier` | ForeignKey → Supplier | yes |  |
-| `quantity_in_base_units` | Decimal(14,4) |  |  |
-| `is_approximate` | Boolean |  | For things like a bunch of curry leaves, where the weight is nominal. |
-| `is_active` | Boolean |  |  |
 
 ### Recipe
 
@@ -274,7 +276,7 @@ What physically arrived -- not what was ordered, not what was invoiced.
 | `id` | BigAuto |  |  |
 | `receipt` | ForeignKey → GoodsReceipt |  |  |
 | `item` | ForeignKey → Item |  |  |
-| `purchase_unit` | ForeignKey → PurchaseUnit | yes |  |
+| `purchase_unit` | ForeignKey → ItemMeasure | yes |  |
 | `purchase_quantity` | Decimal(14,4) |  |  |
 | `quantity_in_base_units` | Decimal(14,4) |  |  |
 | `unit_cost` | Decimal(12,4) | yes |  |

@@ -139,33 +139,62 @@ class ItemAlias(TimeStamped):
 
 
 # Implements: FR-204, FR-205.
-class PurchaseUnit(TimeStamped):
-    """
-    How an item is bought, and what that is worth in base units.
+class MeasureKind(models.TextChoices):
+    PURCHASE = "PURCHASE", "How it is bought"
+    KITCHEN = "KITCHEN", "How the kitchen measures it"
 
-    The supplier field is the important one. Urad dal arrives in 25 lb sacks
-    from one supplier and 20 lb sacks from another; if the system assumes one
-    number, four sacks becomes twenty pounds of phantom stock. This is the
-    single most common source of silent inventory error in food businesses.
+
+class ItemMeasure(TimeStamped):
+    """
+    Any named quantity of an item that is not its base unit, and what that is
+    worth in base units. Two kinds, and the distinction matters.
+
+    HOW IT IS BOUGHT. Urad dal arrives in 25 lb sacks from one supplier and
+    20 lb sacks from another; if the system assumes one number, four sacks
+    becomes twenty pounds of phantom stock. That is the single most common
+    source of silent inventory error in food businesses, which is why the
+    supplier is recorded against the pack rather than against the item.
+
+    HOW THE KITCHEN MEASURES IT. The recipes are written in scoops, spoons,
+    handfuls and bars, and those are *vessels, not weights*. The kitchen
+    weighed them on 16 September 2026:
+
+        1 scoop of toor dal        32 oz
+        1 scoop of sambar powder   14 oz
+        1 spoon of salt            2.2 oz
+        1 spoon of cumin           0.6 oz
+
+    A scoop is not a unit of mass. What it holds depends on what is in it, so
+    the conversion belongs to the item and there is no global figure to store
+    (FR-205). One number applied to everything would be wrong nearly everywhere
+    it was used, and wrong quietly -- nobody would notice until the variance
+    report stopped making sense.
     """
 
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="purchase_units")
-    name = models.CharField(max_length=60)  # "sack", "case of 24", "retail packet"
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="measures")
+    name = models.CharField(max_length=60)  # "sack", "case of 24", "scoop", "spoon"
+    kind = models.CharField(
+        max_length=10, choices=MeasureKind.choices, default=MeasureKind.PURCHASE, db_index=True
+    )
     supplier = models.ForeignKey(
-        Supplier, null=True, blank=True, on_delete=models.PROTECT, related_name="purchase_units"
+        Supplier,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="item_measures",
+        help_text="Only meaningful for a purchase pack. A scoop has no supplier.",
     )
     quantity_in_base_units = models.DecimalField(validators=[MinValueValidator(Decimal("0.0001"))], **QTY)
     is_approximate = models.BooleanField(
         default=False,
-        help_text="For things like a bunch of curry leaves, where the weight is nominal.",
+        help_text="A handful of curry leaves, where the weight is nominal rather than measured.",
     )
+    measured_on = models.DateField(null=True, blank=True, help_text="When this was last put on a scale.")
     is_active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ["item", "name"]
-        constraints = [
-            models.UniqueConstraint(fields=["item", "name", "supplier"], name="uniq_purchase_unit")
-        ]
+        constraints = [models.UniqueConstraint(fields=["item", "name", "supplier"], name="uniq_item_measure")]
 
     def __str__(self) -> str:
         who = f" ({self.supplier})" if self.supplier_id else ""

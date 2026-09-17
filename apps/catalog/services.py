@@ -49,14 +49,14 @@ def merge_items(source: Item, target: Item, *, user=None) -> dict:
             f"rewrite what the ledger says happened. Correct the movements instead."
         )
 
-    from apps.catalog.models import ParLevel, PurchaseUnit, Recipe, RecipeLine
+    from apps.catalog.models import ItemMeasure, ParLevel, Recipe, RecipeLine
     from apps.sales.models import PosItem
 
     moved = {
         "pos_items": PosItem.objects.filter(item=source).update(item=target),
         "recipe_lines": RecipeLine.objects.filter(component=source).update(component=target),
         "recipes": Recipe.objects.filter(item=source).update(item=target),
-        "purchase_units": PurchaseUnit.objects.filter(item=source).update(item=target),
+        "measures": ItemMeasure.objects.filter(item=source).update(item=target),
         "par_levels": ParLevel.objects.filter(item=source).update(item=target),
         "aliases": ItemAlias.objects.filter(item=source).update(item=target),
     }

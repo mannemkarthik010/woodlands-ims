@@ -31,7 +31,7 @@ from decimal import Decimal
 from django.core.validators import MinValueValidator
 from django.db import models
 
-from apps.catalog.models import MONEY, QTY, Item, PurchaseUnit
+from apps.catalog.models import MONEY, QTY, Item, ItemMeasure
 from apps.core.models import Area, Location, Supplier, TimeStamped
 
 
@@ -157,7 +157,7 @@ class GoodsReceiptLine(models.Model):
     # Entered as "6 sacks"; stored as base units so the sack size can differ
     # by supplier without corrupting the arithmetic.
     purchase_unit = models.ForeignKey(
-        PurchaseUnit, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+        ItemMeasure, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
     )
     purchase_quantity = models.DecimalField(validators=[MinValueValidator(Decimal("0"))], **QTY)
     quantity_in_base_units = models.DecimalField(**QTY)
