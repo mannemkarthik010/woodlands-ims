@@ -321,3 +321,10 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 }
 .ing__weighed { font-weight: 400; font-size: 14px; color: var(--green); }
 .ing__aside { flex: 1 0 100%; font-size: 13px; color: var(--grey); }
+
+.recipe--scaled { border-left-color: var(--gold); }
+.ing__made {
+  font-size: 12px; color: var(--gold); border: 1px solid currentColor;
+  border-radius: 4px; padding: 0 5px; margin-left: 6px; white-space: nowrap;
+}
+.ing__judge { font-weight: 400; font-size: 13px; color: var(--amber); }

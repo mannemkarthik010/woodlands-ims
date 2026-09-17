@@ -51,7 +51,9 @@ Rules, in order of importance:
    passages. Never convert, round or estimate one that is not there.
 3. Keep the kitchen's own words for its own measures — a scoop is a scoop.
 4. Be brief and practical. Somebody is reading this standing up, mid-service.
-5. Never invent a step that is not in the passages, even an obvious one."""
+5. Never invent a step that is not in the passages, even an obvious one.
+6. If an ingredient is itself something the kitchen makes and has its own
+   record, name it and move on. Do not read its recipe out inside this one."""
 
 
 class Passages:
@@ -67,16 +69,35 @@ class Passages:
     name = "records"
     sends_externally = False
 
-    def answer(self, question: str, hits) -> str:
+    def answer(self, question: str, hits, servings: int | None = None) -> str:
         from apps.knowledge import format as recipe
 
-        parts, seen = [], set()
-        for hit in hits:
-            record = hit.record
-            if record.pk in seen:
-                continue
-            seen.add(record.pk)
-            parts.append(recipe.as_text(record.title, recipe.parse(record.body)))
+        primary = hits[0].record
+        sections = recipe.parse(primary.body)
+        parts = [recipe.as_text(primary.title, sections)]
+
+        if servings:
+            parts.append(recipe.as_scaled_text(primary.title, sections, servings))
+
+        # Components are named, never read out. Butter masala is built from
+        # kadai sauce and basic gravy; printing both of those here is how a
+        # one-page recipe becomes five pages and a cook stops reading.
+        made_here = sorted({i.component for s in sections for i in s.ingredients if i.component})
+        if made_here:
+            parts.append(
+                "Made separately\n---------------\n"
+                + "\n".join(f"  {name} — has its own recipe" for name in made_here)
+            )
+
+        others = [
+            hit.record.title
+            for hit in hits[1:]
+            if hit.record.pk != primary.pk and hit.record.title not in made_here
+        ]
+        if others:
+            seen = list(dict.fromkeys(others))
+            parts.append("Also mentions this\n------------------\n  " + ", ".join(seen))
+
         return "\n\n\n".join(parts)
 
 
@@ -92,7 +113,7 @@ class Claude:
     name = "claude"
     sends_externally = True
 
-    def answer(self, question: str, hits) -> str:
+    def answer(self, question: str, hits, servings: int | None = None) -> str:
         try:
             import anthropic
         except ImportError:  # pragma: no cover - depends on deployment
@@ -111,7 +132,15 @@ class Claude:
                 {
                     "role": "user",
                     "content": f"Passages from the kitchen's records:\n\n{context}\n\n"
-                    f"The cook asks: {question}",
+                    f"The cook asks: {question}"
+                    + (
+                        f"\n\nThey need enough for {servings} servings. Scale only from a "
+                        f"per-serving figure that is written in the passages. If there is "
+                        f"none, say that how many servings a batch makes has not been "
+                        f"recorded — do not estimate it."
+                        if servings
+                        else ""
+                    ),
                 }
             ],
         )

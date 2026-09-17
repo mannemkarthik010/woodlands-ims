@@ -61,6 +61,11 @@ class Ingredient:
     quantity: str = ""
     weighed: str = ""  # what the kitchen measured that quantity to be
     aside: str = ""  # whatever was in brackets after it
+    component: str = ""  # the record that says how to make this, if there is one
+    scaled: bool = True  # False when the quantity could not be multiplied
+
+
+SERVING = re.compile(r"per serving|per order|to serve|to reheat|per portion", re.I)
 
 
 @dataclass
@@ -72,6 +77,17 @@ class Section:
     @property
     def is_empty(self) -> bool:
         return not self.ingredients and not self.notes
+
+    @property
+    def is_per_serving(self) -> bool:
+        """
+        A section written for one plate rather than one batch.
+
+        This is what makes "enough for 100" answerable. A base recipe cannot
+        be multiplied by a hundred -- a hundred times two buckets is not a
+        question anybody is asking -- but a per-serving line can.
+        """
+        return bool(SERVING.search(self.heading))
 
 
 def split_quantity(text: str) -> tuple[str, str, str]:
@@ -142,6 +158,30 @@ def measured(name: str, quantity: str) -> str:
     return readable(count * row.quantity_in_base_units, item.base_unit.code)
 
 
+def components(names: set[str]) -> dict:
+    """
+    Which of these ingredients are themselves things the kitchen makes.
+
+    Butter masala is built from kadai sauce and basic gravy, and both have
+    their own records. Reading those records out inside the butter masala
+    answer is how a one-page recipe becomes a five-page one, and how a cook
+    stops reading. They are named and pointed at instead.
+    """
+    from apps.knowledge.models import Record
+
+    found = {}
+    for record in Record.objects.filter(approved_at__isnull=False).only("title"):
+        key = record.title.lower().strip()
+        for name in names:
+            cleaned = name.lower().strip()
+            # "Kadai sauce" matches the record "Kadai Sauce"; "Basic gravy
+            # sauce" matches "Basic Gravy", because the kitchen is not
+            # consistent about the word "sauce" and should not have to be.
+            if cleaned == key or cleaned.rstrip(" sauce").strip() == key.rstrip(" sauce").strip():
+                found[name] = record.title
+    return found
+
+
 def parse(body: str) -> list[Section]:
     """Turn a record into sections of ingredients and notes."""
     sections = [Section()]
@@ -174,7 +214,16 @@ def parse(body: str) -> list[Section]:
                 )
             )
 
-    return [s for s in sections if not s.is_empty]
+    sections = [s for s in sections if not s.is_empty]
+
+    # Mark the ingredients that have records of their own.
+    names = {i.name for s in sections for i in s.ingredients}
+    made_here = components(names)
+    for section in sections:
+        for item in section.ingredients:
+            item.component = made_here.get(item.name, "")
+
+    return sections
 
 
 def has_method(sections: list[Section]) -> bool:
@@ -215,3 +264,122 @@ def as_text(title: str, sections: list[Section]) -> str:
             "",
         ]
     return "\n".join(lines).rstrip()
+
+
+# ---------------------------------------------------------------------------
+# Making more of it
+# ---------------------------------------------------------------------------
+
+AMOUNT = re.compile(r"^(\d+(?:\.\d+)?|[½¼¾⅓])(?:\s*[–-]\s*(\d+(?:\.\d+)?))?\s*(.*)$")
+
+
+def multiply(quantity: str, factor: Decimal) -> tuple[str, bool]:
+    """
+    "1 large ladle" times 100 is "100 large ladle". "handful" times 100 is not
+    a number, and saying it is would be worse than saying it is not.
+
+    Returns the new quantity and whether it could actually be multiplied.
+    """
+    quantity = quantity.strip()
+    if not quantity:
+        return "", False
+
+    found = AMOUNT.match(quantity)
+    if not found:
+        return f"{quantity} × {tidy(factor)}", False
+
+    low = FRACTIONS.get(found.group(1)) or Decimal(found.group(1))
+    unit = found.group(3).strip()
+    high = Decimal(found.group(2)) if found.group(2) else None
+
+    if high is not None:
+        return f"{tidy(low * factor)}–{tidy(high * factor)} {unit}".strip(), True
+    return f"{tidy(low * factor)} {unit}".strip(), True
+
+
+def tidy(value: Decimal) -> str:
+    rounded = value.quantize(Decimal("0.01"))
+    return f"{rounded:f}".rstrip("0").rstrip(".") or "0"
+
+
+def scale(sections: list[Section], factor: Decimal) -> list[Section]:
+    """Multiply a per-serving section. Everything it cannot multiply, it marks."""
+    out = []
+    for section in sections:
+        scaled = Section(heading=section.heading, notes=list(section.notes))
+        for item in section.ingredients:
+            quantity, exact = multiply(item.quantity, factor)
+            scaled.ingredients.append(
+                Ingredient(
+                    name=item.name,
+                    quantity=quantity,
+                    weighed=measured(item.name, quantity),
+                    aside=item.aside,
+                    component=item.component,
+                    scaled=exact,
+                )
+            )
+        out.append(scaled)
+    return out
+
+
+def yield_text(sections: list[Section]) -> str:
+    """What the record says a batch makes, if it says."""
+    for section in sections:
+        if section.heading.lower().startswith("yield"):
+            parts = [i.name for i in section.ingredients] + section.notes
+            return " ".join(parts).strip()
+    return ""
+
+
+def per_serving(sections: list[Section]) -> Section | None:
+    for section in sections:
+        if section.is_per_serving:
+            return section
+    return None
+
+
+def as_scaled_text(title: str, sections: list[Section], servings: int) -> str:
+    """
+    Enough for a given number of people, or an honest account of why not.
+
+    A base recipe cannot simply be multiplied: the record says butter masala
+    makes "1 large soup chafer of concentrate", and nobody has written down how
+    many plates a chafer serves. The per-serving line CAN be multiplied, and
+    for a cook cooking for a hundred that is the answer they need -- how much
+    concentrate, cream and paneer to draw. How many batches of concentrate
+    that implies is a separate question, and it is asked rather than assumed.
+    """
+    heading = f"For {servings} servings"
+    lines = [heading, "=" * len(heading), ""]
+
+    section = per_serving(sections)
+    if section is None:
+        made = yield_text(sections) or "not recorded"
+        lines += [
+            "  This cannot be worked out yet. The record says one batch makes",
+            f"  “{made}”, and how many servings that is has not been written down.",
+            "",
+            "  Ask the chef how many servings one batch gives. Once that is",
+            "  recorded, this scales by itself.",
+        ]
+        return "\n".join(lines)
+
+    scaled = scale([section], Decimal(servings))[0]
+    width = max((len(i.name) for i in scaled.ingredients), default=0)
+    for item in scaled.ingredients:
+        tail = f"   ({item.weighed})" if item.weighed else ""
+        if not item.scaled and item.quantity:
+            tail += "   [not a number — judge by eye]"
+        lines.append(f"  {item.name.ljust(width)}   {item.quantity}{tail}".rstrip())
+
+    made = yield_text(sections)
+    lines += [
+        "",
+        "  Scaled from the per-serving figures the chef recorded.",
+    ]
+    if made:
+        lines.append(f"  The concentrate itself is made in batches — one makes “{made}” —")
+        lines.append("  and how many servings that is has not been recorded, so how many")
+        lines.append("  batches to make is still a question for the chef.")
+    return "\n".join(lines)

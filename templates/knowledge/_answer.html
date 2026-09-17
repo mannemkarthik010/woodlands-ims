@@ -6,48 +6,100 @@
     <div class="answer__body">{{ question.answer|linebreaks }}</div>
   </div>
 
-{% elif recipes %}
-  {% for entry in recipes %}
-    <article class="recipe">
-      <h2 class="recipe__title">{{ entry.record.title }}</h2>
+{% elif record %}
+  <article class="recipe">
+    <h2 class="recipe__title">{{ record.title }}</h2>
 
-      {% for section in entry.sections %}
-        {% if section.heading %}
-          <h3 class="recipe__section">{{ section.heading }}</h3>
-        {% elif section.ingredients %}
-          <h3 class="recipe__section">Ingredients</h3>
-        {% endif %}
-
-        {% if section.ingredients %}
-          <ul class="ing">
-            {% for item in section.ingredients %}
-              <li>
-                <span class="ing__name">{{ item.name }}</span>
-                <span class="ing__qty">
-                  {{ item.quantity }}
-                  {% if item.weighed %}<span class="ing__weighed">{{ item.weighed }}</span>{% endif %}
-                </span>
-                {% if item.aside %}<span class="ing__aside">{{ item.aside }}</span>{% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-
-        {% for note in section.notes %}<p class="recipe__note">{{ note }}</p>{% endfor %}
-      {% endfor %}
-
-      {% if not entry.has_method %}
-        <h3 class="recipe__section">Method</h3>
-        <p class="recipe__gap">
-          Not recorded. This document gives quantities only — no steps, no order,
-          no timings. Ask the chef, and write down what he says.
-        </p>
+    {% for section in sections %}
+      {% if section.heading %}
+        <h3 class="recipe__section">{{ section.heading }}</h3>
+      {% elif section.ingredients %}
+        <h3 class="recipe__section">Ingredients</h3>
       {% endif %}
 
-      <p class="answer__from">
-        Written by the chef{% if entry.record.captured_on %}, {{ entry.record.captured_on }}{% endif %}.
-        {% if not sends_externally %}Nothing left the restaurant to answer this.{% endif %}
+      {% if section.ingredients %}
+        <ul class="ing">
+          {% for item in section.ingredients %}
+            <li>
+              <span class="ing__name">
+                {{ item.name }}
+                {% if item.component %}<span class="ing__made">made separately</span>{% endif %}
+              </span>
+              <span class="ing__qty">
+                {{ item.quantity }}
+                {% if item.weighed %}<span class="ing__weighed">{{ item.weighed }}</span>{% endif %}
+              </span>
+              {% if item.aside %}<span class="ing__aside">{{ item.aside }}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% for note in section.notes %}<p class="recipe__note">{{ note }}</p>{% endfor %}
+    {% endfor %}
+
+    {% if not has_method %}
+      <h3 class="recipe__section">Method</h3>
+      <p class="recipe__gap">
+        Not recorded. This document gives quantities only — no steps, no order,
+        no timings. Ask the chef, and write down what he says.
       </p>
+    {% endif %}
+  </article>
+
+  {% if servings %}
+    <article class="recipe recipe--scaled">
+      <h2 class="recipe__title">For {{ servings }} servings</h2>
+      {% if scaled %}
+        <ul class="ing">
+          {% for item in scaled.ingredients %}
+            <li>
+              <span class="ing__name">{{ item.name }}</span>
+              <span class="ing__qty">
+                {{ item.quantity }}
+                {% if item.weighed %}<span class="ing__weighed">{{ item.weighed }}</span>{% endif %}
+                {% if item.quantity and not item.scaled %}
+                  <span class="ing__judge">judge by eye</span>
+                {% endif %}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+        <p class="recipe__note muted small">
+          Scaled from the per-serving figures the chef recorded.
+          {% if batch_makes %}
+            The base itself is made in batches — one makes “{{ batch_makes }}” — and how
+            many servings that is has not been recorded, so how many batches to make is
+            still a question for the chef.
+          {% endif %}
+        </p>
+      {% else %}
+        <p class="recipe__gap">
+          This cannot be worked out yet. The record says one batch makes
+          “{{ batch_makes|default:"an unrecorded amount" }}”, and how many servings that is
+          has not been written down. Ask the chef how many servings one batch gives, and
+          this will scale by itself.
+        </p>
+      {% endif %}
     </article>
-  {% endfor %}
+  {% endif %}
+
+  {% if components %}
+    <p class="answer__from">
+      Made separately, each with its own recipe:
+      {% for title in components %}<strong>{{ title }}</strong>{% if not forloop.last %}, {% endif %}{% endfor %}.
+    </p>
+  {% endif %}
+
+  {% if related %}
+    <p class="answer__from">Also mentions this: {{ related|join:", " }}.</p>
+  {% endif %}
+
+  <p class="answer__meta">
+    {% if sends_externally %}
+      Worded by the assistant from the chef's records.
+    {% else %}
+      The chef's own words. Nothing left the restaurant to answer this.
+    {% endif %}
+  </p>
 {% endif %}

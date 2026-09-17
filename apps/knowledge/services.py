@@ -5,6 +5,7 @@ Asking the kitchen's records a question.
 from __future__ import annotations
 
 import logging
+import re
 
 from django.db import models
 
@@ -22,6 +23,21 @@ log = logging.getLogger(__name__)
 # the corpus: the same passage scores less among two records than among two
 # hundred, so a fixed floor would make the assistant mute on its first day.
 COVERAGE = 0.5
+
+
+SERVINGS = re.compile(
+    r"(?:for\s+)?(\d{1,4})\s*(?:people|persons|pax|guests|heads|servings|portions|plates|orders)",
+    re.I,
+)
+
+
+def servings_wanted(text: str) -> int | None:
+    """ "butter masala for 100 people" -> 100."""
+    found = SERVINGS.search(text)
+    if not found:
+        return None
+    count = int(found.group(1))
+    return count if 0 < count <= 5000 else None
 
 
 def named_but_unrecorded(text: str):
@@ -118,16 +134,17 @@ def ask(text: str, *, user=None, limit: int = 4) -> Question:
             answered_by="none",
         )
 
+    servings = servings_wanted(text)
     engine = engines.current()
     try:
-        answer = engine.answer(text, hits)
+        answer = engine.answer(text, hits, servings=servings)
         outcome = Outcome.ANSWERED
         name = engine.name
     except Exception as problem:  # pragma: no cover - network
         # A model being unreachable must not mean a cook gets nothing. The
         # chef's own words are still right there.
         log.exception("Engine %r failed; answering from the passages instead.", engine.name)
-        answer = engines.Passages().answer(text, hits)
+        answer = engines.Passages().answer(text, hits, servings=servings)
         outcome = Outcome.ANSWERED
         name = f"records (after {type(problem).__name__})"
 
@@ -135,4 +152,10 @@ def ask(text: str, *, user=None, limit: int = 4) -> Question:
         asked_by=user, text=text[:400], answer=answer, outcome=outcome, answered_by=name
     )
     question.passages.set([hit.passage for hit in hits])
+
+    # The hits, in the order they ranked, carried on the object rather than
+    # left to be read back out of the many-to-many. That relation has no
+    # ordering, so re-reading it hands back database order -- which is how a
+    # question about butter masala came back answered with basic gravy.
+    question.hits = hits
     return question

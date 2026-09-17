@@ -16,6 +16,8 @@ cook who is told "nobody has written this down" learns something true about the
 kitchen; a cook given a plausible guess learns something false about the dish.
 """
 
+from decimal import Decimal
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
@@ -53,21 +55,40 @@ def ask(request):
         return render(request, "knowledge/_answer.html", {"blank": True, **_context()})
 
     answer = services.ask(text, user=request.user)
+    servings = services.servings_wanted(text)
 
-    # The same parse the text answer uses, so the tablet and the terminal show
-    # the same recipe. One rendering, two surfaces.
-    records, seen = [], set()
-    for passage in answer.passages.select_related("record").all():
-        record = passage.record
-        if record.pk in seen:
-            continue
-        seen.add(record.pk)
-        sections = recipe.parse(record.body)
-        records.append({"record": record, "sections": sections, "has_method": recipe.has_method(sections)})
-    records.sort(key=lambda r: r["record"].title)
+    # Ranked order, from the search itself. Never re-read from the
+    # many-to-many: it comes back in database order and the best match is not
+    # necessarily first.
+    hits = getattr(answer, "hits", [])
+    primary = hits[0].record if hits else None
+    sections = recipe.parse(primary.body) if primary else []
+
+    # Components are named and pointed at, never read out. Butter masala is
+    # built from kadai sauce and basic gravy; printing both inside it turns a
+    # one-page recipe into five and a cook stops reading.
+    made_here = sorted({i.component for s in sections for i in s.ingredients if i.component})
+    related = [
+        h.record.title
+        for h in hits[1:]
+        if primary and h.record.pk != primary.pk and h.record.title not in made_here
+    ]
+
+    per_serving = recipe.per_serving(sections) if servings else None
 
     return render(
         request,
         "knowledge/_answer.html",
-        {"question": answer, "recipes": records, **_context()},
+        {
+            "question": answer,
+            "record": primary,
+            "sections": sections,
+            "has_method": recipe.has_method(sections),
+            "servings": servings,
+            "scaled": recipe.scale([per_serving], Decimal(servings))[0] if per_serving else None,
+            "batch_makes": recipe.yield_text(sections) if servings else "",
+            "components": made_here,
+            "related": list(dict.fromkeys(related)),
+            **_context(),
+        },
     )

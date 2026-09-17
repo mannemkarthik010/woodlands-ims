@@ -187,3 +187,24 @@ class ScreenTests(TestCase):
         page = self.client.post(reverse("ask"), {"q": "how do I make sambar"})
         self.assertEqual(page.status_code, 302)
         self.assertIn("/login/", page["Location"])
+
+
+class RankingTests(TestCase):
+    """
+    The answer has to be the best match, not whichever row the database
+    returned first.
+    """
+
+    def setUp(self):
+        record("Basic Gravy", "Onion 25 lb · Garam masala 1 spoon · Oil 12 oz")
+        record("Butter Masala", "Kadai sauce 1 large ladle · Heavy cream half gallon")
+        record("Kadai Sauce", "Chopped onion 15 onions · Garam masala 1 spoon")
+
+    # Covers: FR-1007, FR-1008.
+    def test_the_first_hit_is_the_one_that_ranked_first(self):
+        answer = services.ask("butter masala for 100 people")
+        self.assertEqual(answer.hits[0].record.title, "Butter Masala")
+
+    def test_the_answer_leads_with_the_dish_that_was_asked_about(self):
+        answer = services.ask("butter masala for 100 people")
+        self.assertTrue(answer.answer.startswith("Butter Masala"))
