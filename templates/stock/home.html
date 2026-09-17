@@ -13,6 +13,11 @@
   <span class="tile__sub">Opening balance, or the daily and weekly counts</span>
 </a>
 
+<a class="tile" href="{% url 'ask_page' %}">
+  <span class="tile__title">Ask the kitchen</span>
+  <span class="tile__sub">How a dish is made, in the chef's own words</span>
+</a>
+
 {% if mapping_remaining %}
   <a class="tile" href="{% url 'mapping_queue' %}">
     <span class="tile__title">Menu mapping</span>

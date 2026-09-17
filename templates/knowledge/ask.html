@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Ask the kitchen{% endblock %}
+{% block content %}
+
+<h1 class="h1">Ask the kitchen</h1>
+
+{% if published %}
+  <p class="muted small">
+    {{ published }} record{{ published|pluralize }} written by the chef. Ask in
+    your own words — a dish, an ingredient, or what has gone wrong.
+  </p>
+{% else %}
+  <p class="alert" role="alert">
+    Nothing is approved yet, so nothing can be answered.
+    {{ waiting }} record{{ waiting|pluralize }} are waiting for the chef to read them.
+  </p>
+{% endif %}
+
+<form class="askbox"
+      hx-post="{% url 'ask' %}"
+      hx-target="#answer"
+      hx-swap="innerHTML"
+      hx-indicator="#thinking">
+  {% csrf_token %}
+  <input type="search" name="q" id="q" autocomplete="off"
+         placeholder="How do I make sambar?"
+         aria-label="Your question">
+  <button class="btn btn--primary btn--small" type="submit">Ask</button>
+</form>
+
+<p class="muted small" id="thinking" style="display:none">Looking…</p>
+
+<div id="answer"></div>
+
+{% if examples %}
+  <h2 class="h2">Written down so far</h2>
+  <ul class="chips">
+    {% for title in examples %}<li class="chip">{{ title }}</li>{% endfor %}
+  </ul>
+{% endif %}
+
+{% if recent_gaps %}
+  <h2 class="h2">Asked recently, nothing recorded</h2>
+  <ul class="list">
+    {% for gap in recent_gaps %}<li><span class="gap">{{ gap.text }}</span></li>{% endfor %}
+  </ul>
+  <p class="muted small">
+    These are worth putting to the chef — each one is something a cook needed
+    and the kitchen has not written down.
+  </p>
+{% endif %}
+
+{% endblock %}

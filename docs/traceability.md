@@ -164,10 +164,10 @@ make this table reassuring and wrong, which is worse than an empty one.
 | **FR-1003** | Records include what to do when something goes wrong — batter too thin, curry too salty, dosa sticking. | Should | — | — |
 | **FR-1004** | Records include acceptable substitutions and what changes when they are used. | Should | — | — |
 | **FR-1005** | Records include photographs or short videos of correct technique and correct appearance. | Should | — | — |
-| **FR-1006** | A cook can search the knowledge base by dish, ingredient or symptom. | Must | `apps/knowledge/models.py` | `apps/knowledge/tests/test_ask.py` |
-| **FR-1007** | A cook can ask a question in plain language and receive an answer drawn only from the captured knowledge. | Should | `apps/knowledge/models.py` | `apps/knowledge/tests/test_ask.py` |
-| **FR-1008** | Every answer states its source, so the cook can read the underlying record. | Must | `apps/knowledge/models.py` | `apps/knowledge/tests/test_ask.py` |
-| **FR-1009** | The assistant says "this has not been recorded — ask the chef" rather than guessing. | Must | `apps/knowledge/engines.py`<br>`apps/knowledge/models.py`<br>`apps/knowledge/services.py` | `apps/knowledge/tests/test_ask.py` |
+| **FR-1006** | A cook can search the knowledge base by dish, ingredient or symptom. | Must | `apps/knowledge/models.py`<br>`apps/knowledge/views.py` | `apps/knowledge/tests/test_ask.py` |
+| **FR-1007** | A cook can ask a question in plain language and receive an answer drawn only from the captured knowledge. | Should | `apps/knowledge/models.py`<br>`apps/knowledge/views.py` | `apps/knowledge/tests/test_ask.py` |
+| **FR-1008** | Every answer states its source, so the cook can read the underlying record. | Must | `apps/knowledge/models.py`<br>`apps/knowledge/views.py` | `apps/knowledge/tests/test_ask.py` |
+| **FR-1009** | The assistant says "this has not been recorded — ask the chef" rather than guessing. | Must | `apps/knowledge/engines.py`<br>`apps/knowledge/models.py`<br>`apps/knowledge/services.py`<br>`apps/knowledge/views.py` | `apps/knowledge/tests/test_ask.py` |
 | **FR-1010** | The head chef can review, correct and approve every record, and nothing is published without his approval. | Must | `apps/knowledge/management/commands/ingest_recipes.py`<br>`apps/knowledge/models.py` | `apps/knowledge/tests/test_ask.py` |
 | **FR-1011** | The assistant works in the languages the kitchen uses. See D-08. | Should | — | — |
 | **FR-1012** | The knowledge base is exportable by the client in a readable format they own outright. | Must | `apps/knowledge/models.py` | — |
@@ -194,7 +194,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
 | **FR-1201** | Users are created, deactivated and assigned roles by an administrator. | Must | `apps/core/models.py` | — |
-| **FR-1202** | Access is enforced by role, per Section~{sec:roles}. | Must | `apps/core/models.py` | `apps/sales/tests/test_mapping.py`<br>`apps/stock/tests/test_transfer_flow.py` |
+| **FR-1202** | Access is enforced by role, per Section~{sec:roles}. | Must | `apps/core/models.py` | `apps/knowledge/tests/test_ask.py`<br>`apps/sales/tests/test_mapping.py`<br>`apps/stock/tests/test_transfer_flow.py` |
 | **FR-1203** | Every change to stock, time records, recipes or costs is logged with user, timestamp and previous value. | Must | `apps/stock/models.py`<br>`apps/stock/services.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/stock/tests/test_count_flow.py`<br>`apps/stock/tests/test_ledger.py` |
 | **FR-1204** | The audit log cannot be edited or deleted by any user, including the administrator. | Must | `apps/stock/admin.py`<br>`apps/stock/models.py`<br>`apps/stock/services.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/stock/tests/test_ledger.py` |
 | **FR-1205** | Locations, categories, waste reasons, par levels and shelf lives are configurable without developer involvement. | Should | — | — |

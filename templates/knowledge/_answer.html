@@ -1,0 +1,23 @@
+{% if blank %}
+  <p class="muted small">Type a question first.</p>
+{% elif question %}
+  <div class="answer {% if question.outcome == 'NOT_RECORDED' %}answer--gap{% endif %}">
+    <div class="answer__body">{{ question.answer|linebreaks }}</div>
+
+    {% if sources %}
+      <p class="answer__from">
+        From
+        {% for record in sources %}<strong>{{ record.title }}</strong>{% if not forloop.last %}, {% endif %}{% endfor %}
+        — written by the chef{% if record.captured_on %} on {{ record.captured_on }}{% endif %}.
+      </p>
+    {% endif %}
+
+    <p class="answer__meta">
+      {% if sends_externally %}
+        Worded by the assistant from those records.
+      {% else %}
+        The chef's own words. Nothing left the restaurant to answer this.
+      {% endif %}
+    </p>
+  </div>
+{% endif %}

@@ -146,3 +146,44 @@ class ConsentTests(TestCase):
         self.assertEqual(answer.outcome, Outcome.ANSWERED)
         self.assertIn("Toor dal 3 scoop", answer.answer)
         self.assertTrue(answer.answered_by.startswith("records ("))
+
+
+class ScreenTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        self.user = get_user_model().objects.create_user("cook", password="pw")
+        self.client.force_login(self.user)
+        record("Sambar", "Toor dal 3 scoop. Tamarind water 16 oz. Yield 2 buckets.")
+
+    # Covers: FR-1007, FR-1008.
+    def test_an_answer_arrives_with_the_record_it_came_from(self):
+        from django.urls import reverse
+
+        page = self.client.post(reverse("ask"), {"q": "how do I make sambar"})
+        self.assertContains(page, "Toor dal 3 scoop")
+        self.assertContains(page, "Sambar")
+        self.assertContains(page, "Nothing left the restaurant")
+
+    # Covers: FR-1009.
+    def test_a_gap_is_shown_as_a_gap(self):
+        from django.urls import reverse
+
+        page = self.client.post(reverse("ask"), {"q": "how do I fix a gearbox"})
+        self.assertContains(page, "ask the chef")
+        self.assertContains(page, "answer--gap")
+
+    def test_the_question_is_recorded_against_whoever_asked_it(self):
+        from django.urls import reverse
+
+        self.client.post(reverse("ask"), {"q": "how do I make sambar"})
+        self.assertEqual(services.Question.objects.get().asked_by, self.user)
+
+    # Covers: FR-1202.
+    def test_signed_out_people_see_nothing(self):
+        from django.urls import reverse
+
+        self.client.logout()
+        page = self.client.post(reverse("ask"), {"q": "how do I make sambar"})
+        self.assertEqual(page.status_code, 302)
+        self.assertIn("/login/", page["Location"])

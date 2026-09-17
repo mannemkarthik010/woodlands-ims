@@ -256,3 +256,36 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
   min-height: 44px; padding: 0 10px; font-size: 16px; color: var(--ink);
   border: 1px solid var(--rule); border-radius: var(--radius); background: #fff;
 }
+
+/* ---- Ask the kitchen ---------------------------------------------------
+   One box and a button, for somebody holding a tablet with one hand in the
+   middle of service. */
+
+.askbox { display: flex; gap: 8px; margin: 16px 0; }
+.askbox input[type=search] {
+  flex: 1 1 auto; min-height: 52px; padding: 0 14px; font-size: 17px;
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  background: #fff; color: var(--ink);
+}
+.askbox input[type=search]:focus { outline: none; border-color: var(--brand); }
+.askbox .btn { flex: 0 0 auto; min-height: 52px; }
+.htmx-request#thinking { display: block !important; }
+
+.answer {
+  border: 1px solid var(--rule); border-left: 3px solid var(--green);
+  border-radius: var(--radius); padding: 14px 16px; margin: 14px 0;
+  background: #fff;
+}
+.answer--gap { border-left-color: var(--amber); background: var(--tint); }
+.answer__body { font-size: 16px; }
+.answer__body p { margin: 0 0 10px; }
+.answer__body strong { font-weight: 600; }
+.answer__from { font-size: 14px; color: var(--grey); margin: 12px 0 0; }
+.answer__meta { font-size: 13px; color: var(--grey); margin: 4px 0 0; font-style: italic; }
+
+.chips { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0 0 8px; }
+.chip {
+  font-size: 14px; padding: 5px 10px; border: 1px solid var(--rule);
+  border-radius: 999px; color: var(--grey);
+}
+.gap { color: var(--deep); }
