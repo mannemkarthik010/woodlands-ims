@@ -79,6 +79,11 @@ class Section:
         return not self.ingredients and not self.notes
 
     @property
+    def skip_when_scaled(self) -> bool:
+        """A yield is a fact about one batch, not a quantity to multiply."""
+        return self.heading.lower().startswith("yield")
+
+    @property
     def is_per_serving(self) -> bool:
         """
         A section written for one plate rather than one batch.
@@ -323,6 +328,52 @@ def scale(sections: list[Section], factor: Decimal) -> list[Section]:
     return out
 
 
+def _scaled_from_batch(
+    lines: list[str], sections: list[Section], servings: int, per_batch: int | None
+) -> str:
+    """Scale the whole recipe, if anybody has said how many servings a batch gives."""
+    made = yield_text(sections) or "not recorded"
+
+    if not per_batch:
+        lines += [
+            "  This cannot be worked out yet. The record says one batch makes",
+            f"  “{made}”, and how many servings that is has not been written down.",
+            "",
+            "  Ask the chef how many servings one batch gives, enter it against",
+            "  this recipe, and it scales by itself from then on.",
+        ]
+        return "\n".join(lines)
+
+    exact, batches = batches_for(servings, per_batch)
+    scaled = scale(sections, exact)
+
+    lines += [
+        f"  {per_batch} servings a batch, so {servings} needs {tidy(exact)} batches.",
+        f"  Make {batches}.",
+        "",
+    ]
+    for section in scaled:
+        # The yield is a fact about one batch, not a quantity to multiply.
+        # "3.75 large chafer pots" is not something anybody cooks.
+        if section.heading.lower().startswith("yield"):
+            continue
+        if section.heading:
+            lines += [f"  {section.heading}"]
+        width = max((len(i.name) for i in section.ingredients), default=0)
+        for item in section.ingredients:
+            tail = f"   ({item.weighed})" if item.weighed else ""
+            if not item.scaled and item.quantity:
+                tail += "   [not a number — judge by eye]"
+            lines.append(f"    {item.name.ljust(width)}   {item.quantity}{tail}".rstrip())
+        lines.append("")
+
+    lines += [
+        f"  Scaled for {tidy(exact)} batches. Making {batches} leaves",
+        f"  {tidy(Decimal(batches) * per_batch - servings)} servings over.",
+    ]
+    return "\n".join(lines)
+
+
 def yield_text(sections: list[Section]) -> str:
     """What the record says a batch makes, if it says."""
     for section in sections:
@@ -339,7 +390,22 @@ def per_serving(sections: list[Section]) -> Section | None:
     return None
 
 
-def as_scaled_text(title: str, sections: list[Section], servings: int) -> str:
+def batches_for(servings: int, per_batch: int) -> tuple[Decimal, int]:
+    """
+    How many batches 150 servings needs, and how many to actually make.
+
+    Rounded up, because three and three quarter batches of dhal fry is four
+    batches. The exact figure is kept alongside so the difference is visible --
+    somebody ordering ingredients wants to know they are making a quarter of a
+    batch more than they will serve.
+    """
+    import math
+
+    exact = Decimal(servings) / Decimal(per_batch)
+    return exact, math.ceil(exact)
+
+
+def as_scaled_text(title: str, sections: list[Section], servings: int, per_batch: int | None = None) -> str:
     """
     Enough for a given number of people, or an honest account of why not.
 
@@ -355,15 +421,7 @@ def as_scaled_text(title: str, sections: list[Section], servings: int) -> str:
 
     section = per_serving(sections)
     if section is None:
-        made = yield_text(sections) or "not recorded"
-        lines += [
-            "  This cannot be worked out yet. The record says one batch makes",
-            f"  “{made}”, and how many servings that is has not been written down.",
-            "",
-            "  Ask the chef how many servings one batch gives. Once that is",
-            "  recorded, this scales by itself.",
-        ]
-        return "\n".join(lines)
+        return _scaled_from_batch(lines, sections, servings, per_batch)
 
     scaled = scale([section], Decimal(servings))[0]
     width = max((len(i.name) for i in scaled.ingredients), default=0)

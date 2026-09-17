@@ -73,12 +73,36 @@
             still a question for the chef.
           {% endif %}
         </p>
+      {% elif whole %}
+        <p class="recipe__note">
+          {{ per_batch }} servings a batch, so {{ servings }} needs
+          <strong>{{ batches }} batch{{ batches|pluralize:"es" }}</strong>.
+        </p>
+        {% for section in whole %}
+          {% if not section.skip_when_scaled %}
+            {% if section.heading %}<h3 class="recipe__section">{{ section.heading }}</h3>{% endif %}
+            <ul class="ing">
+              {% for item in section.ingredients %}
+                <li>
+                  <span class="ing__name">{{ item.name }}</span>
+                  <span class="ing__qty">
+                    {{ item.quantity }}
+                    {% if item.weighed %}<span class="ing__weighed">{{ item.weighed }}</span>{% endif %}
+                    {% if item.quantity and not item.scaled %}
+                      <span class="ing__judge">judge by eye</span>
+                    {% endif %}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endfor %}
       {% else %}
         <p class="recipe__gap">
           This cannot be worked out yet. The record says one batch makes
           “{{ batch_makes|default:"an unrecorded amount" }}”, and how many servings that is
-          has not been written down. Ask the chef how many servings one batch gives, and
-          this will scale by itself.
+          has not been written down. Ask the chef how many servings one batch gives, enter
+          it against this recipe, and it scales by itself from then on.
         </p>
       {% endif %}
     </article>

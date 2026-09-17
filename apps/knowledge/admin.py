@@ -13,10 +13,28 @@ class PassageInline(admin.TabularInline):
 
 @admin.register(Record)
 class RecordAdmin(admin.ModelAdmin):
-    list_display = ("title", "item", "source", "language", "approved_by", "approved_at")
-    list_filter = ("source", "approved_at", "language")
+    list_display = (
+        "title",
+        "item",
+        "servings_per_batch",
+        "source",
+        "approved_by",
+        "approved_at",
+    )
+    list_filter = ("source", "approved_at", "language", "servings_per_batch")
     search_fields = ("title", "body", "origin")
     autocomplete_fields = ("item",)
+    fields = (
+        "title",
+        "item",
+        "body",
+        "source",
+        "origin",
+        "language",
+        ("servings_per_batch", "serving_note"),
+        "captured_on",
+        ("approved_by", "approved_at"),
+    )
     inlines = [PassageInline]
     actions = ["approve", "withdraw"]
 

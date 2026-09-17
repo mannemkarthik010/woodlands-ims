@@ -1,0 +1,164 @@
+"""
+What the kitchen has not written down, as one sheet.
+
+    python manage.py gaps
+    python manage.py gaps --worksheet data/from-client/chef-worksheet.md
+
+The chef should be asked once, from one page, rather than interrupted twenty
+times over three weeks. --worksheet writes a printable version with blanks to
+fill in.
+"""
+
+from pathlib import Path
+
+from django.core.management.base import BaseCommand
+
+from apps.knowledge import gaps as survey
+
+
+class Command(BaseCommand):
+    help = "List what the recipes are missing, and optionally write a sheet for the chef."
+
+    def add_arguments(self, parser):
+        parser.add_argument("--worksheet", default="", help="Write a printable sheet here.")
+
+    def handle(self, *args, **options):
+        found = survey.survey()
+        w = self.stdout.write
+
+        if not found:
+            w(self.style.WARNING("No records yet. Ingest a recipe document first."))
+            return
+
+        needs_servings = [g for g in found if g.needs_servings]
+        needs_method = [g for g in found if g.needs_method]
+        measures = survey.measures_wanted(found)
+
+        w("")
+        w(
+            self.style.MIGRATE_HEADING(
+                f"{len(found)} recipes. {len(found) - len([g for g in found if g.is_clear])} "
+                f"have something missing."
+            )
+        )
+
+        w("")
+        w(
+            self.style.MIGRATE_HEADING(
+                f"Servings per batch — missing on {len(needs_servings)} of {len(found)}"
+            )
+        )
+        w("  One number each. Until it exists these cannot be scaled to a headcount.")
+        for gap in needs_servings:
+            w(f"   {gap.record.title}")
+
+        w("")
+        w(self.style.MIGRATE_HEADING(f"Method — missing on {len(needs_method)} of {len(found)}"))
+        w("  The document gives quantities only.")
+        for gap in needs_method[:8]:
+            w(f"   {gap.record.title}")
+        if len(needs_method) > 8:
+            w(f"   … and {len(needs_method) - 8} more")
+
+        pairs = survey.pairs_wanted(found)
+        if measures:
+            w("")
+            w(self.style.MIGRATE_HEADING(f"{len(pairs)} quantities we cannot convert yet"))
+            w("  A spoon of turmeric has been weighed; a spoon of hing has not.")
+            for name, count in measures:
+                w(f"   {name:<10} {count} line{'s' if count != 1 else ''}")
+            w("")
+            for line in pairs[:14]:
+                w(f"   1 {line}")
+            if len(pairs) > 14:
+                w(f"   … and {len(pairs) - 14} more")
+
+        asked = survey.questions_nobody_could_answer()
+        if asked:
+            w("")
+            w(self.style.MIGRATE_HEADING("Asked, and nobody had written the answer down"))
+            for question in asked:
+                w(f"   “{question.text}”")
+
+        if options["worksheet"]:
+            path = Path(options["worksheet"])
+            path.write_text(self.worksheet(found, measures))
+            w("")
+            w(self.style.SUCCESS(f"Sheet for the chef written to {path}"))
+
+    # ------------------------------------------------------------------
+    def worksheet(self, found, measures) -> str:
+        """A page to put in front of the chef, with blanks rather than guesses."""
+        lines = [
+            "# Woodlands — what we still need from the kitchen",
+            "",
+            "Everything below is a blank we have deliberately left empty. A plausible",
+            "number written here by anybody other than the kitchen would be believed,",
+            "and would be wrong.",
+            "",
+            "## 1. What the measures weigh",
+            "",
+            "A scoop is a vessel, not a weight — a scoop of toor dal is 32 oz and a scoop",
+            "of sambar powder is 14 oz — so each of these needs its own answer. Some are",
+            "done already and are not listed.",
+            "",
+            "| Measure | It weighs / holds |",
+            "|---|---|",
+        ]
+        for line in survey.pairs_wanted(found):
+            lines.append(f"| 1 {line} | |")
+
+        lines += [
+            "",
+            "## 2. How many servings a batch gives",
+            "",
+            "One number each. Without it we cannot answer “enough for 100 people”.",
+            "",
+            "| Recipe | One batch makes | Servings from that |",
+            "|---|---|---|",
+        ]
+        from apps.knowledge import format as recipe
+
+        for gap in found:
+            if not gap.needs_servings:
+                continue
+            made = recipe.yield_text(recipe.parse(gap.record.body)) or "—"
+            lines.append(f"| {gap.record.title} | {made} | |")
+
+        lines += [
+            "",
+            "## 3. The method",
+            "",
+            "The document we have gives quantities only. For each of these, the order",
+            "things go in, roughly how long, and what it should look like when it is",
+            "right. Rough notes are fine — they will be typed up and brought back for",
+            "checking.",
+            "",
+        ]
+        for gap in found:
+            if gap.needs_method:
+                lines.append(f"- [ ] {gap.record.title}")
+
+        lines += [
+            "",
+            "## 4. Still completely missing",
+            "",
+            "- [ ] Dosa batter — urad, rice, dalia, fenugreek per grind, and what one grind makes",
+            "- [ ] Idly batter — the same",
+            "- [ ] Coconut chutney, mint chutney",
+            "- [ ] The dosas, uthappam, biryani, the paneer curries, vada, idly",
+            "",
+            "## 5. Serving sizes",
+            "",
+            "For the things sold both on a plate and in a tub — how many ounces is one",
+            "serving of each?",
+            "",
+            "| Item | A plated serving is | A tub is |",
+            "|---|---|---|",
+            "| Rasam | | 16 oz |",
+            "| Chana masala | | 4 / 8 / 16 oz |",
+            "| Sambar | | 8 / 16 oz |",
+            "| Dosa batter | | 32 oz |",
+            "| Idly batter | | 32 oz |",
+        ]
+        return "\n".join(lines) + "\n"

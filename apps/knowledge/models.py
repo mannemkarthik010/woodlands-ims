@@ -64,6 +64,28 @@ class Record(TimeStamped):
     )
     language = models.CharField(max_length=8, default="en")
 
+    # How many plates one batch of this gives.
+    #
+    # The one number that turns "dhal fry for 150" from a refusal into an
+    # answer. Every recipe here states a yield in the kitchen's own terms --
+    # "2 buckets", "1 large chafer pot", "one 2.5 inch full pan" -- and none of
+    # them says how many people that feeds. Without it a base recipe cannot be
+    # scaled at all, because a hundred times two buckets is not a question
+    # anybody is asking.
+    #
+    # Left empty until somebody in the kitchen says. A plausible guess here
+    # would be indistinguishable from a measured figure, and would be believed.
+    servings_per_batch = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Plates from one batch. Ask the chef — never estimate it.",
+    )
+    serving_note = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="How that was arrived at, e.g. “one chafer fills 40 thali bowls”.",
+    )
+
     captured_on = models.DateField(null=True, blank=True)
     approved_by = models.ForeignKey(
         "core.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+"

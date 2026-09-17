@@ -75,6 +75,14 @@ def ask(request):
     ]
 
     per_serving = recipe.per_serving(sections) if servings else None
+    per_batch = primary.servings_per_batch if primary else None
+
+    # Where there is no per-serving line but somebody has recorded how many
+    # servings a batch gives, the whole recipe scales instead.
+    batches = whole = None
+    if servings and per_serving is None and per_batch:
+        exact, batches = recipe.batches_for(servings, per_batch)
+        whole = recipe.scale(sections, exact)
 
     return render(
         request,
@@ -86,6 +94,9 @@ def ask(request):
             "has_method": recipe.has_method(sections),
             "servings": servings,
             "scaled": recipe.scale([per_serving], Decimal(servings))[0] if per_serving else None,
+            "whole": whole,
+            "batches": batches,
+            "per_batch": per_batch,
             "batch_makes": recipe.yield_text(sections) if servings else "",
             "components": made_here,
             "related": list(dict.fromkeys(related)),

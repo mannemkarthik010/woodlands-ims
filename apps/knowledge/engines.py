@@ -77,7 +77,9 @@ class Passages:
         parts = [recipe.as_text(primary.title, sections)]
 
         if servings:
-            parts.append(recipe.as_scaled_text(primary.title, sections, servings))
+            parts.append(
+                recipe.as_scaled_text(primary.title, sections, servings, per_batch=primary.servings_per_batch)
+            )
 
         # Components are named, never read out. Butter masala is built from
         # kadai sauce and basic gravy; printing both of those here is how a
