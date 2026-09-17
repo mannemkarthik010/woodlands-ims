@@ -121,6 +121,7 @@ Somewhere stock can sit. Three kinds today: the restaurant, the Devonshire Stree
 | `waste_events` | ForeignKey → WasteEvent | yes |  |
 | `batches` | ForeignKey → ProductionBatch | yes |  |
 | `pos_items` | ForeignKey → PosItem | yes |  |
+| `knowledge` | ForeignKey → Record | yes |  |
 | `id` | BigAuto |  |  |
 | `created_at` | DateTime |  |  |
 | `updated_at` | DateTime |  |  |

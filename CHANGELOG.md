@@ -5,6 +5,11 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- The kitchen's knowledge base: 15 base recipes ingested, searchable by dish, ingredient
+  or step, answering in the chef's own words with the record named
+- Retrieval runs entirely on the restaurant's own machine; only the wording of an answer
+  can involve an outside model, and only with the client's recorded consent (ADR 0007)
+- A dish with no record is named as missing rather than answered from a similar recipe
 - Low-stock alerts: the system notices what is below its par level and tells the owners,
   once per item per day — a base "needs making", a raw material "needs ordering"
 - Messages are recorded first and carried second, on a channel chosen by configuration;

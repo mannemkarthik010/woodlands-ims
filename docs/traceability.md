@@ -10,7 +10,7 @@ Write `FR-403` in a docstring, a comment or a test name and it appears here.
 Nothing is inferred from a function looking roughly relevant — that would
 make this table reassuring and wrong, which is worse than an empty one.
 
-**75 of 158** requirements referenced in code · **31** covered by a test.
+**83 of 158** requirements referenced in code · **38** covered by a test.
 
 ## M1 — Time and attendance
 
@@ -159,19 +159,19 @@ make this table reassuring and wrong, which is worse than an empty one.
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **FR-1001** | Every dish on the menu has a structured, complete preparation record authored with the head chef. | Must | — | — |
-| **FR-1002** | Records include quantities, sequence, timing, temperature, equipment, and the sensory cues the chef uses to judge doneness. | Must | — | — |
+| **FR-1001** | Every dish on the menu has a structured, complete preparation record authored with the head chef. | Must | `apps/knowledge/models.py` | — |
+| **FR-1002** | Records include quantities, sequence, timing, temperature, equipment, and the sensory cues the chef uses to judge doneness. | Must | — | `apps/knowledge/tests/test_ask.py` |
 | **FR-1003** | Records include what to do when something goes wrong — batter too thin, curry too salty, dosa sticking. | Should | — | — |
 | **FR-1004** | Records include acceptable substitutions and what changes when they are used. | Should | — | — |
 | **FR-1005** | Records include photographs or short videos of correct technique and correct appearance. | Should | — | — |
-| **FR-1006** | A cook can search the knowledge base by dish, ingredient or symptom. | Must | — | — |
-| **FR-1007** | A cook can ask a question in plain language and receive an answer drawn only from the captured knowledge. | Should | — | — |
-| **FR-1008** | Every answer states its source, so the cook can read the underlying record. | Must | — | — |
-| **FR-1009** | The assistant says "this has not been recorded — ask the chef" rather than guessing. | Must | — | — |
-| **FR-1010** | The head chef can review, correct and approve every record, and nothing is published without his approval. | Must | — | — |
+| **FR-1006** | A cook can search the knowledge base by dish, ingredient or symptom. | Must | `apps/knowledge/models.py` | `apps/knowledge/tests/test_ask.py` |
+| **FR-1007** | A cook can ask a question in plain language and receive an answer drawn only from the captured knowledge. | Should | `apps/knowledge/models.py` | `apps/knowledge/tests/test_ask.py` |
+| **FR-1008** | Every answer states its source, so the cook can read the underlying record. | Must | `apps/knowledge/models.py` | `apps/knowledge/tests/test_ask.py` |
+| **FR-1009** | The assistant says "this has not been recorded — ask the chef" rather than guessing. | Must | `apps/knowledge/engines.py`<br>`apps/knowledge/models.py`<br>`apps/knowledge/services.py` | `apps/knowledge/tests/test_ask.py` |
+| **FR-1010** | The head chef can review, correct and approve every record, and nothing is published without his approval. | Must | `apps/knowledge/management/commands/ingest_recipes.py`<br>`apps/knowledge/models.py` | `apps/knowledge/tests/test_ask.py` |
 | **FR-1011** | The assistant works in the languages the kitchen uses. See D-08. | Should | — | — |
-| **FR-1012** | The knowledge base is exportable by the client in a readable format they own outright. | Must | — | — |
-| **FR-1013** | Recipe content is not sent to any third-party service without the client's explicit, informed consent. See D-16. | Must | — | — |
+| **FR-1012** | The knowledge base is exportable by the client in a readable format they own outright. | Must | `apps/knowledge/models.py` | — |
+| **FR-1013** | Recipe content is not sent to any third-party service without the client's explicit, informed consent. See D-16. | Must | `apps/knowledge/engines.py`<br>`apps/knowledge/models.py`<br>`apps/knowledge/retrieval.py` | `apps/knowledge/tests/test_ask.py` |
 
 ## M11 — Reporting
 

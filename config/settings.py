@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "apps.production",
     "apps.sales",
     "apps.notify",
+    "apps.knowledge",
     "apps.labour",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -184,6 +185,26 @@ NOTIFY_CHANNEL = os.environ.get("NOTIFY_CHANNEL", "RECORDED")
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
 TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
+
+
+# ---------------------------------------------------------------------------
+# The kitchen's knowledge base
+# ---------------------------------------------------------------------------
+#
+# Retrieval always runs here, on this machine, over the restaurant's own
+# records. Only the wording of an answer can involve an outside service, and
+# only when BOTH of the following are true:
+#
+#   KNOWLEDGE_ENGINE=claude     somebody chose it
+#   KNOWLEDGE_CONSENT=1         the client agreed, informed, in advance
+#
+# The second is not a duplicate of the first. Configuration gets changed by
+# accident; consent is the client's decision, and the code refuses to send
+# recipes outside without it whatever the engine is set to (FR-1013).
+KNOWLEDGE_ENGINE = os.environ.get("KNOWLEDGE_ENGINE", "records")
+KNOWLEDGE_CONSENT = env_bool("KNOWLEDGE_CONSENT", default=False)
+KNOWLEDGE_API_KEY = os.environ.get("KNOWLEDGE_API_KEY", "")
+KNOWLEDGE_MODEL = os.environ.get("KNOWLEDGE_MODEL", "claude-sonnet-4-5")
 
 
 LOGIN_URL = "login"
