@@ -21,6 +21,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--worksheet", default="", help="Write a printable sheet here.")
+        parser.add_argument("--json", default="", help="Write the gaps as data, for tools/chef_form.py.")
 
     def handle(self, *args, **options):
         found = survey.survey()
@@ -79,6 +80,32 @@ class Command(BaseCommand):
             w(self.style.MIGRATE_HEADING("Asked, and nobody had written the answer down"))
             for question in asked:
                 w(f"   “{question.text}”")
+
+        if options["json"]:
+            import json
+
+            from apps.knowledge import format as recipe
+
+            Path(options["json"]).write_text(
+                json.dumps(
+                    {
+                        "measures": pairs,
+                        "servings": [
+                            {
+                                "title": g.record.title,
+                                "makes": recipe.yield_text(recipe.parse(g.record.body)) or "",
+                            }
+                            for g in found
+                            if g.needs_servings
+                        ],
+                        "methods": [g.record.title for g in found if g.needs_method],
+                        "totals": {"recipes": len(found)},
+                    },
+                    indent=1,
+                )
+            )
+            w("")
+            w(self.style.SUCCESS(f"Gaps written as data to {options['json']}"))
 
         if options["worksheet"]:
             path = Path(options["worksheet"])
