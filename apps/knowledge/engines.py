@@ -68,11 +68,16 @@ class Passages:
     sends_externally = False
 
     def answer(self, question: str, hits) -> str:
-        parts = []
+        from apps.knowledge import format as recipe
+
+        parts, seen = [], set()
         for hit in hits:
-            heading = hit.passage.heading or hit.record.title
-            parts.append(f"**{heading}** — from {hit.record.title}\n\n{hit.passage.text.strip()}")
-        return "\n\n---\n\n".join(parts)
+            record = hit.record
+            if record.pk in seen:
+                continue
+            seen.add(record.pk)
+            parts.append(recipe.as_text(record.title, recipe.parse(record.body)))
+        return "\n\n\n".join(parts)
 
 
 class Claude:

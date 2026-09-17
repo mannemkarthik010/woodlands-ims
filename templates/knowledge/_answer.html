@@ -1,23 +1,53 @@
 {% if blank %}
   <p class="muted small">Type a question first.</p>
-{% elif question %}
-  <div class="answer {% if question.outcome == 'NOT_RECORDED' %}answer--gap{% endif %}">
+
+{% elif question.outcome == 'NOT_RECORDED' %}
+  <div class="answer answer--gap">
     <div class="answer__body">{{ question.answer|linebreaks }}</div>
-
-    {% if sources %}
-      <p class="answer__from">
-        From
-        {% for record in sources %}<strong>{{ record.title }}</strong>{% if not forloop.last %}, {% endif %}{% endfor %}
-        — written by the chef{% if record.captured_on %} on {{ record.captured_on }}{% endif %}.
-      </p>
-    {% endif %}
-
-    <p class="answer__meta">
-      {% if sends_externally %}
-        Worded by the assistant from those records.
-      {% else %}
-        The chef's own words. Nothing left the restaurant to answer this.
-      {% endif %}
-    </p>
   </div>
+
+{% elif recipes %}
+  {% for entry in recipes %}
+    <article class="recipe">
+      <h2 class="recipe__title">{{ entry.record.title }}</h2>
+
+      {% for section in entry.sections %}
+        {% if section.heading %}
+          <h3 class="recipe__section">{{ section.heading }}</h3>
+        {% elif section.ingredients %}
+          <h3 class="recipe__section">Ingredients</h3>
+        {% endif %}
+
+        {% if section.ingredients %}
+          <ul class="ing">
+            {% for item in section.ingredients %}
+              <li>
+                <span class="ing__name">{{ item.name }}</span>
+                <span class="ing__qty">
+                  {{ item.quantity }}
+                  {% if item.weighed %}<span class="ing__weighed">{{ item.weighed }}</span>{% endif %}
+                </span>
+                {% if item.aside %}<span class="ing__aside">{{ item.aside }}</span>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% for note in section.notes %}<p class="recipe__note">{{ note }}</p>{% endfor %}
+      {% endfor %}
+
+      {% if not entry.has_method %}
+        <h3 class="recipe__section">Method</h3>
+        <p class="recipe__gap">
+          Not recorded. This document gives quantities only — no steps, no order,
+          no timings. Ask the chef, and write down what he says.
+        </p>
+      {% endif %}
+
+      <p class="answer__from">
+        Written by the chef{% if entry.record.captured_on %}, {{ entry.record.captured_on }}{% endif %}.
+        {% if not sends_externally %}Nothing left the restaurant to answer this.{% endif %}
+      </p>
+    </article>
+  {% endfor %}
 {% endif %}

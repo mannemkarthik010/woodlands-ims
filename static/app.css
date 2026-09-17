@@ -289,3 +289,35 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
   border-radius: 999px; color: var(--grey);
 }
 .gap { color: var(--deep); }
+
+/* ---- a recipe, as a cook reads one -------------------------------------- */
+
+.recipe {
+  border: 1px solid var(--rule); border-left: 3px solid var(--green);
+  border-radius: var(--radius); padding: 14px 16px; margin: 14px 0; background: #fff;
+}
+.recipe__title { font-size: 20px; margin: 0 0 4px; }
+.recipe__section {
+  font-size: 13px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--grey); margin: 16px 0 6px; font-weight: 600;
+}
+.recipe__section:first-of-type { margin-top: 10px; }
+.recipe__note { margin: 6px 0; font-size: 15px; }
+.recipe__gap {
+  margin: 4px 0 0; font-size: 15px; color: var(--amber);
+  background: var(--tint); border-radius: var(--radius); padding: 10px 12px;
+}
+
+.ing { list-style: none; margin: 0; padding: 0; }
+.ing li {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
+  padding: 5px 0; border-bottom: 1px solid var(--tint); font-size: 16px;
+}
+.ing li:last-child { border-bottom: 0; }
+.ing__name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.ing__qty {
+  flex: 0 0 auto; font-weight: 600; font-variant-numeric: tabular-nums;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.ing__weighed { font-weight: 400; font-size: 14px; color: var(--green); }
+.ing__aside { flex: 1 0 100%; font-size: 13px; color: var(--grey); }

@@ -21,6 +21,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
 from apps.knowledge import engines, services
+from apps.knowledge import format as recipe
 from apps.knowledge.models import Outcome, Question, Record
 
 
@@ -52,12 +53,21 @@ def ask(request):
         return render(request, "knowledge/_answer.html", {"blank": True, **_context()})
 
     answer = services.ask(text, user=request.user)
+
+    # The same parse the text answer uses, so the tablet and the terminal show
+    # the same recipe. One rendering, two surfaces.
+    records, seen = [], set()
+    for passage in answer.passages.select_related("record").all():
+        record = passage.record
+        if record.pk in seen:
+            continue
+        seen.add(record.pk)
+        sections = recipe.parse(record.body)
+        records.append({"record": record, "sections": sections, "has_method": recipe.has_method(sections)})
+    records.sort(key=lambda r: r["record"].title)
+
     return render(
         request,
         "knowledge/_answer.html",
-        {
-            "question": answer,
-            "sources": sorted({p.record for p in answer.passages.all()}, key=lambda r: r.title),
-            **_context(),
-        },
+        {"question": answer, "recipes": records, **_context()},
     )
