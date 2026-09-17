@@ -81,6 +81,7 @@ Somewhere stock can sit. Three kinds today: the restaurant, the Devonshire Stree
 | Field | Type | Null | Notes |
 |---|---|---|---|
 | `batches_made` | ForeignKey → ProductionBatch | yes |  |
+| `notifications` | ForeignKey → Notification | yes |  |
 | `shifts` | ForeignKey → Shift | yes |  |
 | `logentry` | ForeignKey → LogEntry | yes |  |
 | `id` | BigAuto |  |  |
@@ -97,6 +98,8 @@ Somewhere stock can sit. Three kinds today: the restaurant, the Devonshire Stree
 | `role` | Char(16) |  | _OWNER, HEAD_CHEF, KITCHEN, FOH_ |
 | `pin` | Char(128) |  | Hashed PIN for the shared tablet. Never stored in clear. |
 | `display_name` | Char(80) |  |  |
+| `mobile` | Char(24) |  | For alerts. In full international form: +1818… |
+| `receives_alerts` | Boolean |  | Unticking stops messages without removing the number. |
 | `preferred_language` | Char(8) |  |  |
 | `is_active_staff` | Boolean |  | Unticking keeps all history intact but stops the person signing in. |
 | `groups` | ManyToMany → Group |  | The groups this user belongs to. A user will get all permissions granted to each of their groups. |

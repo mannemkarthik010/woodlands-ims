@@ -10,7 +10,7 @@ Write `FR-403` in a docstring, a comment or a test name and it appears here.
 Nothing is inferred from a function looking roughly relevant — that would
 make this table reassuring and wrong, which is worse than an empty one.
 
-**69 of 148** requirements referenced in code · **27** covered by a test.
+**75 of 158** requirements referenced in code · **31** covered by a test.
 
 ## M1 — Time and attendance
 
@@ -46,7 +46,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 | **FR-209** | Items can be marked as raw material, prepared component, packaging, consumable or non-stock. | Must | `apps/catalog/models.py`<br>`apps/sales/views.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_mapping.py` |
 | **FR-210** | Items can be marked as allergen-relevant, and dishes inherit that flag through their recipe. | Should | — | — |
 | **FR-211** | An item can be deactivated without deleting its history. | Must | `apps/catalog/models.py`<br>`apps/sales/views.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_import_menu.py`<br>`apps/sales/tests/test_mapping.py` |
-| **FR-212** | Each item has a par level per location — the quantity that should be on hand. | Should | `apps/catalog/models.py` | — |
+| **FR-212** | Each item has a par level per location — the quantity that should be on hand. | Should | `apps/catalog/models.py`<br>`apps/stock/alerts.py` | — |
 
 ## M3 — Purchasing and goods receipt
 
@@ -252,7 +252,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **NFR-12** | Personal data handled in line with California privacy law; retained no longer than required. | Must | — | — |
+| **NFR-12** | Personal data handled in line with California privacy law; retained no longer than required. | Must | `apps/core/models.py` | — |
 
 ## NFR — Backup
 
@@ -289,4 +289,19 @@ make this table reassuring and wrong, which is worse than an empty one.
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
 | **NFR-18** | Every financially material record is traceable to who created it and when. | Must | `apps/core/models.py`<br>`apps/stock/models.py`<br>`apps/stock/services.py` | — |
+
+## M13 — Alerts and assignments
+
+| Ref | Requirement | Priority | Code | Tests |
+|---|---|---|---|---|
+| **FR-1301** | The system knows when a stocked item is running out, from its par level and its current balance, without anybody asking it. | Must | `apps/stock/alerts.py` | `apps/notify/tests/test_alerts.py` |
+| **FR-1302** | The owners are told where they already are — on their phone, in the channel they already read — rather than only inside a screen they would have to remember to open. | Must | `apps/notify/models.py`<br>`apps/stock/alerts.py` | `apps/notify/tests/test_alerts.py` |
+| **FR-1303** | Nobody is told the same thing twice. An item that is low stays low for days, and an alert that repeats daily is an alert that gets muted. | Must | `apps/notify/models.py`<br>`apps/stock/alerts.py` | `apps/notify/tests/test_alerts.py` |
+| **FR-1304** | Kitchen staff can see what is left at a glance, by tapping, with no typing and no searching — the common case is a cook with wet hands asking whether there is enough sambar for tonight. | Must | — | — |
+| **FR-1305** | A member of staff can record what they see on the shelf by tapping a level — plenty, getting low, nearly out — without entering a number. A rough figure that gets recorded beats an exact one that does not. | Should | — | — |
+| **FR-1306** | The system flags a prepared base or batter that is below what the next service is likely to need, not merely below zero. | Must | `apps/stock/alerts.py` | `apps/notify/tests/test_alerts.py` |
+| **FR-1307** | The owners can assign a named member of staff to make a base or batter, with the quantity wanted and when it is needed by. | Must | — | — |
+| **FR-1308** | The assigned person is notified where they will actually see it, and can see what they have been asked to make. | Must | `apps/notify/models.py` | — |
+| **FR-1309** | An assignment is closed by recording the production batch, not by a separate tick. Two places to say the same thing means one of them is always wrong. | Should | — | — |
+| **FR-1310** | Par levels can differ by day of the week, because a Saturday needs more batter than a Tuesday. | Could | — | — |
 

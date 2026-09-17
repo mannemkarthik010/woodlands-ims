@@ -1034,5 +1034,75 @@
     "module_name": "Auditability",
     "text": "Every financially material record is traceable to who created it and when.",
     "priority": "Must"
+  },
+  {
+    "ref": "FR-1301",
+    "module": "M13",
+    "module_name": "Alerts and assignments",
+    "text": "The system knows when a stocked item is running out, from its par level and its current balance, without anybody asking it.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1302",
+    "module": "M13",
+    "module_name": "Alerts and assignments",
+    "text": "The owners are told where they already are \u2014 on their phone, in the channel they already read \u2014 rather than only inside a screen they would have to remember to open.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1303",
+    "module": "M13",
+    "module_name": "Alerts and assignments",
+    "text": "Nobody is told the same thing twice. An item that is low stays low for days, and an alert that repeats daily is an alert that gets muted.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1304",
+    "module": "M13",
+    "module_name": "Alerts and assignments",
+    "text": "Kitchen staff can see what is left at a glance, by tapping, with no typing and no searching \u2014 the common case is a cook with wet hands asking whether there is enough sambar for tonight.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1305",
+    "module": "M13",
+    "module_name": "Alerts and assignments",
+    "text": "A member of staff can record what they see on the shelf by tapping a level \u2014 plenty, getting low, nearly out \u2014 without entering a number. A rough figure that gets recorded beats an exact one that does not.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1306",
+    "module": "M13",
+    "module_name": "Alerts and assignments",
+    "text": "The system flags a prepared base or batter that is below what the next service is likely to need, not merely below zero.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1307",
+    "module": "M13",
+    "module_name": "Alerts and assignments",
+    "text": "The owners can assign a named member of staff to make a base or batter, with the quantity wanted and when it is needed by.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1308",
+    "module": "M13",
+    "module_name": "Alerts and assignments",
+    "text": "The assigned person is notified where they will actually see it, and can see what they have been asked to make.",
+    "priority": "Must"
+  },
+  {
+    "ref": "FR-1309",
+    "module": "M13",
+    "module_name": "Alerts and assignments",
+    "text": "An assignment is closed by recording the production batch, not by a separate tick. Two places to say the same thing means one of them is always wrong.",
+    "priority": "Should"
+  },
+  {
+    "ref": "FR-1310",
+    "module": "M13",
+    "module_name": "Alerts and assignments",
+    "text": "Par levels can differ by day of the week, because a Saturday needs more batter than a Tuesday.",
+    "priority": "Could"
   }
 ]

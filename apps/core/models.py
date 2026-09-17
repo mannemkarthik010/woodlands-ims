@@ -51,6 +51,16 @@ class User(AbstractUser):
         help_text="Hashed PIN for the shared tablet. Never stored in clear.",
     )
     display_name = models.CharField(max_length=80, blank=True)
+
+    # Personal data. Visible only to the owners and the administrator, kept
+    # because a text message needs somewhere to go, and deleted with the
+    # person's record when they ask (NFR-11, NFR-12).
+    mobile = models.CharField(
+        max_length=24, blank=True, help_text="For alerts. In full international form: +1818…"
+    )
+    receives_alerts = models.BooleanField(
+        default=True, help_text="Unticking stops messages without removing the number."
+    )
     preferred_language = models.CharField(max_length=8, default="en")
     is_active_staff = models.BooleanField(
         default=True,

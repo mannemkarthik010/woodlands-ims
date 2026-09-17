@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "apps.stock",
     "apps.production",
     "apps.sales",
+    "apps.notify",
     "apps.labour",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -165,6 +166,25 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 AUTH_USER_MODEL = "core.User"
+
+# ---------------------------------------------------------------------------
+# Alerts
+# ---------------------------------------------------------------------------
+#
+# Messages are always RECORDED -- written to the database -- and only then
+# carried by a channel. The channel is configuration, not code: nothing in the
+# stock or production modules knows or cares which one is in use.
+#
+# The default is "recorded", which sends nothing. Text messages cost the client
+# money every month, so they stay switched off until the owners have agreed to
+# that, and switching them on is one environment variable rather than a
+# release.
+NOTIFY_CHANNEL = os.environ.get("NOTIFY_CHANNEL", "RECORDED")
+
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
+
 
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"

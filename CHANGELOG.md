@@ -5,6 +5,10 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Low-stock alerts: the system notices what is below its par level and tells the owners,
+  once per item per day — a base "needs making", a raw material "needs ordering"
+- Messages are recorded first and carried second, on a channel chosen by configuration;
+  nothing is sent until text messaging is explicitly switched on (ADR 0006)
 - Append-only stock ledger with reversal-based corrections (ADR 0001)
 - Item master covering raw materials, prepared components and dishes (ADR 0002)
 - Unit conversion with per-supplier purchase units
