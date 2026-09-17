@@ -226,6 +226,17 @@ So the conversion belongs to the item and there is no global figure to store.
 One number applied to everything would be wrong nearly everywhere it was used,
 and wrong quietly: nobody re-checks a conversion.
 
+**Prepared components are held by weight.** A bucket — the unit every recipe
+yield is counted in — is 14.52 kg, 32 lb. The kitchen weighs its inputs in
+ounces and counts its yields in buckets, and nobody has measured the density of
+sambar, so weight is the only unit all the evidence is already in. Sambar,
+the chutneys, the batters and the rest sit in pounds, and a 16 oz tub is 1 lb.
+
+One assumption sits inside that, recorded here rather than hidden: a deli
+container labelled "16 oz" is usually 16 *fluid* ounces, and it is being read
+as 16 ounces of weight. For sambar the two are within a few per cent. It is
+still an assumption, and it is on the list for the chef.
+
 This is why the table is `ItemMeasure` and not `PurchaseUnit`. It always held
 "a named quantity of this item, worth this much in base units"; it was named
 for the only use there was at the time. A name that is a lie in the schema is
