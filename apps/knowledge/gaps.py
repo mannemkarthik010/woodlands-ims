@@ -120,11 +120,7 @@ def survey() -> list[Gap]:
 
 
 def measures_wanted(gaps: list[Gap]) -> list[tuple[str, int]]:
-    """
-    Which measure-and-ingredient pairs are still unconvertible, commonest
-    measure first. A spoon of turmeric has been weighed; a spoon of hing has
-    not, and the recipes cannot be costed until it is.
-    """
+    """Which vessels appear in the most lines we cannot yet convert."""
     counted = Counter(line.split(" of ")[0] for gap in gaps for line in gap.unweighed)
     return counted.most_common()
 
@@ -132,6 +128,39 @@ def measures_wanted(gaps: list[Gap]) -> list[tuple[str, int]]:
 def pairs_wanted(gaps: list[Gap]) -> list[str]:
     """Every "measure of ingredient" still waiting to be weighed."""
     return sorted({line for gap in gaps for line in gap.unweighed})
+
+
+def vessels_wanted(gaps: list[Gap]) -> list[tuple[str, int]]:
+    """
+    The vessels themselves, unmeasured, commonest first.
+
+    There is one scoop and one spoon in that kitchen. Asking what a spoon of
+    each of thirty-two ingredients weighs is a morning of somebody's life and
+    will not happen; asking how much the spoon holds is one measurement with a
+    jug, and it is true of everything that goes in it afterwards.
+    """
+    from apps.catalog.models import Vessel
+
+    known = {v.name.lower() for v in Vessel.objects.exclude(volume_ml=None)}
+    counted = Counter(line.split(" of ")[0] for gap in gaps for line in gap.unweighed)
+    return [(name, count) for name, count in counted.most_common() if name.lower() not in known]
+
+
+# Ingredients where the WEIGHT is worth asking for on top of the vessel's
+# volume: the bulk of a recipe, where being ten per cent out is pounds of dal
+# rather than grams of asafoetida.
+BULK = {"scoop", "bar", "can", "bucket", "packet"}
+
+
+def weights_wanted(gaps: list[Gap]) -> list[str]:
+    """
+    The per-ingredient weighings still worth somebody's time.
+
+    Only the bulk measures. A scoop of chana dal decides whether the system
+    thinks you used four pounds or six; a spoon of fennel decides nothing, and
+    the vessel's volume covers it well enough.
+    """
+    return sorted({line for gap in gaps for line in gap.unweighed if line.split(" of ")[0].lower() in BULK})
 
 
 def questions_nobody_could_answer(limit: int = 20) -> list[Question]:

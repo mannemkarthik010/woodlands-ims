@@ -9,6 +9,7 @@ from apps.catalog.models import (
     Recipe,
     RecipeLine,
     Unit,
+    Vessel,
 )
 
 
@@ -85,3 +86,14 @@ class ItemMeasureAdmin(admin.ModelAdmin):
     list_filter = ("supplier", "is_approximate", "is_active")
     search_fields = ("item__name", "item__code", "name", "supplier__name")
     autocomplete_fields = ("item", "supplier")
+
+
+@admin.register(Vessel)
+class VesselAdmin(admin.ModelAdmin):
+    """
+    One scoop, one spoon, one ladle. Measured once each, in millilitres or
+    fluid ounces, and true for everything put in them.
+    """
+
+    list_display = ("name", "volume_ml", "measured_on", "note")
+    search_fields = ("name", "note")

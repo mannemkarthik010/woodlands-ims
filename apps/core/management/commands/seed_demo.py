@@ -61,17 +61,33 @@ class Command(BaseCommand):
     help = "Add (or remove) sample items and opening stock for trying the screens."
 
     def add_arguments(self, parser):
-        parser.add_argument("--clear", action="store_true", help="Remove all DEMO- items instead.")
+        parser.add_argument(
+            "--clear", action="store_true", help="Retire all DEMO- items instead of adding them."
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
         if options["clear"]:
+            # Retired, not deleted.
+            #
+            # The first version deleted, and it worked right up until somebody
+            # used the demo data the way it was meant to be used: recording a
+            # transfer and a count against it. After that the ledger refers to
+            # these items, and the foreign keys refuse -- correctly. An item
+            # the record mentions cannot be made to have never existed.
+            #
+            # So the demo items stop appearing and their history stays
+            # readable, which is what happens to every other item in this
+            # system when it goes out of use.
             demo = Item.objects.filter(code__startswith="DEMO-")
+            count = demo.update(is_active=False)
             moves = StockMovement.objects.filter(item__in=demo).count()
-            StockMovement.objects.filter(item__in=demo).delete()
-            count = demo.count()
-            demo.delete()
-            self.stdout.write(self.style.SUCCESS(f"Removed {count} demo items and {moves} movements."))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Retired {count} demo items. {moves} movement(s) against them stay in the "
+                    f"ledger, because that is what the ledger is for."
+                )
+            )
             return
 
         storage = Location.objects.filter(kind=Location.Kind.STORAGE).first()

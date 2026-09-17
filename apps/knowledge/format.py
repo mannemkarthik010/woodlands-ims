@@ -29,6 +29,8 @@ import re
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
+from apps.sales.naming import FLUID_OUNCE_ML
+
 FRACTIONS = {"½": Decimal("0.5"), "¼": Decimal("0.25"), "¾": Decimal("0.75"), "⅓": Decimal("1") / 3}
 
 # "3 scoop", "16 oz", "½ pot", "7 pieces", "a pinch", "handful", "to taste"
@@ -125,6 +127,28 @@ def readable(total: Decimal, unit: str) -> str:
     return f"{text} {unit}"
 
 
+def vessel_volume(measure: str, count: Decimal) -> str:
+    """
+    What the vessel holds, when nobody has weighed this particular ingredient.
+
+    Shown as a volume and labelled as one. "1 spoon (2 fl oz)" is true of
+    every spoon of everything; "1 spoon (2 oz)" would be a weight nobody
+    measured, and a cook reading it has no way to tell the two apart.
+    """
+    from apps.catalog.models import Vessel
+
+    row = Vessel.objects.filter(name__iexact=measure.rstrip("s")).first()
+    if row is None or not row.volume_ml:
+        return ""
+    total = count * row.volume_ml / FLUID_OUNCE_ML
+    return f"{readable_number(total)} fl oz"
+
+
+def readable_number(value: Decimal) -> str:
+    rounded = value.quantize(Decimal("0.01"))
+    return f"{rounded:f}".rstrip("0").rstrip(".") or "0"
+
+
 def measured(name: str, quantity: str) -> str:
     """
     What "3 scoop" of this ingredient actually weighs, if anybody weighed it.
@@ -145,11 +169,11 @@ def measured(name: str, quantity: str) -> str:
         return ""
 
     item = (
-        Item.objects.filter(name__iexact=name).first()
-        or Item.objects.filter(aliases__alias__iexact=name).first()
+        Item.objects.filter(name__iexact=name, is_active=True).first()
+        or Item.objects.filter(aliases__alias__iexact=name, is_active=True).first()
     )
     if item is None:
-        return ""
+        return vessel_volume(measure, count)
 
     row = (
         ItemMeasure.objects.filter(
@@ -158,7 +182,9 @@ def measured(name: str, quantity: str) -> str:
         or ItemMeasure.objects.filter(item=item, kind=MeasureKind.KITCHEN, name__iexact=measure).first()
     )
     if row is None:
-        return ""
+        # Nobody has weighed a spoon of this. The spoon itself may have been
+        # measured though, and its volume is true of everything in it.
+        return vessel_volume(measure, count)
 
     return readable(count * row.quantity_in_base_units, item.base_unit.code)
 

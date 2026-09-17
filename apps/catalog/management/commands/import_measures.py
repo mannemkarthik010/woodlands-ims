@@ -53,9 +53,13 @@ class Command(BaseCommand):
         with open(options["csv_path"], newline="", encoding="utf-8-sig") as fh:
             for row in csv.DictReader(fh):
                 name = (row["item"] or "").strip()
+                # Active items only. A retired item -- a demo fixture, or one
+                # merged away -- can share a name with the real one, and
+                # recording the kitchen's weighing against the dead copy loses
+                # it silently.
                 item = (
-                    Item.objects.filter(name__iexact=name).first()
-                    or Item.objects.filter(aliases__alias__iexact=name).first()
+                    Item.objects.filter(name__iexact=name, is_active=True).first()
+                    or Item.objects.filter(aliases__alias__iexact=name, is_active=True).first()
                 )
                 if item is None:
                     missing.append(name)

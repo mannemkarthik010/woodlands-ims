@@ -5,6 +5,10 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- `Vessel`: what the scoop, the spoon and the ladle hold — measured once, true of everything
+  put in them, with per-ingredient weights kept for the bulk items where it matters
+- The kitchen's note of 16 September fully imported: 13 measures, and the six ingredients it
+  named that the catalogue was missing
 - The kitchen's knowledge base: 15 base recipes ingested, searchable by dish, ingredient
   or step, answering in the chef's own words with the record named
 - Retrieval runs entirely on the restaurant's own machine; only the wording of an answer

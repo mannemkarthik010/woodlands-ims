@@ -138,6 +138,48 @@ class ItemAlias(TimeStamped):
         return self.alias
 
 
+# Implements: FR-205.
+class Vessel(TimeStamped):
+    """
+    A thing the kitchen scoops with. There is one scoop, one spoon, one ladle.
+
+    This is the other half of FR-205, and the half the first design missed.
+    A vessel holds a fixed VOLUME -- that is a property of the object, true
+    for everything you put in it, and it only has to be measured once. What
+    that volume WEIGHS depends on what is in it, which is why a scoop of toor
+    dal is 32 oz and a scoop of sambar powder is 14.
+
+    So both are recorded, and they answer different questions:
+
+        Vessel       how much the scoop holds.          Asked once.
+        ItemMeasure  what a scoop of THIS weighs.       Asked per ingredient,
+                     and only where the weight matters enough to be worth
+                     somebody's time -- the dals and the rice, not every spice.
+
+    Where an ingredient has been weighed, the weight is used. Where it has
+    not, the volume is shown instead and marked as a volume, which is honest:
+    "1 spoon (2 fl oz)" tells a cook something true, and does not pretend to
+    be a weight nobody measured.
+    """
+
+    name = models.CharField(max_length=40, unique=True)  # scoop, spoon, large ladle, cap
+    volume_ml = models.DecimalField(
+        null=True, blank=True, help_text="What it holds, level. Measured once.", **QTY
+    )
+    note = models.CharField(
+        max_length=200, blank=True, help_text="Which one, where it lives, how it was measured."
+    )
+    measured_on = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        if self.volume_ml:
+            return f"{self.name} ({self.volume_ml:g} ml)"
+        return f"{self.name} (not measured)"
+
+
 # Implements: FR-204, FR-205.
 class MeasureKind(models.TextChoices):
     PURCHASE = "PURCHASE", "How it is bought"

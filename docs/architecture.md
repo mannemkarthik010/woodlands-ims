@@ -226,6 +226,19 @@ So the conversion belongs to the item and there is no global figure to store.
 One number applied to everything would be wrong nearly everywhere it was used,
 and wrong quietly: nobody re-checks a conversion.
 
+**But there is only one scoop.** The first design followed that reasoning to a
+place the kitchen would never have gone: a sheet asking what a spoon of each of
+thirty-two ingredients weighs. So `Vessel` records what the scoop, the spoon
+and the ladle *hold* — a volume, a property of the object, measured once with a
+jug and true of everything put in it afterwards — while `ItemMeasure` records
+what a scoopful of a particular thing *weighs*, and is asked only where the
+answer is worth somebody's time: the dals and the rice, not every spice.
+
+Where an ingredient has been weighed, the weight is shown. Where it has not,
+the volume is shown **and labelled as a volume**: "1 spoon (2.03 fl oz)" is
+true of every spoon of everything, while "1 spoon (2 oz)" would be a weight
+nobody measured, and a cook could not tell the two apart.
+
 **Prepared components are held by weight.** A bucket — the unit every recipe
 yield is counted in — is 14.52 kg, 32 lb. The kitchen weighs its inputs in
 ounces and counts its yields in buckets, and nobody has measured the density of

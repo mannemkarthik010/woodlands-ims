@@ -252,6 +252,21 @@ A unit of measure. Conversion between units of the same kind only.
 | `kind` | Char(8) |  | _WEIGHT, VOLUME, COUNT_ |
 | `to_canonical` | Decimal(18,8) |  |  |
 
+### Vessel
+
+A thing the kitchen scoops with. There is one scoop, one spoon, one ladle. This is the other half of FR-205, and the half the first design missed. A vessel holds a fixed VOLUME -- that is a property of the object, true for everything you put in it, and it only has to be measured once. What that vol…
+
+| Field | Type | Null | Notes |
+|---|---|---|---|
+| `id` | BigAuto |  |  |
+| `created_at` | DateTime |  |  |
+| `updated_at` | DateTime |  |  |
+| `created_by` | ForeignKey → User | yes |  |
+| `name` | Char(40) |  |  |
+| `volume_ml` | Decimal(14,4) | yes | What it holds, level. Measured once. |
+| `note` | Char(200) |  | Which one, where it lives, how it was measured. |
+| `measured_on` | Date | yes |  |
+
 ## `stock`
 
 ### GoodsReceipt

@@ -33,7 +33,6 @@ class Command(BaseCommand):
 
         needs_servings = [g for g in found if g.needs_servings]
         needs_method = [g for g in found if g.needs_method]
-        measures = survey.measures_wanted(found)
 
         w("")
         w(
@@ -61,18 +60,24 @@ class Command(BaseCommand):
         if len(needs_method) > 8:
             w(f"   … and {len(needs_method) - 8} more")
 
-        pairs = survey.pairs_wanted(found)
-        if measures:
+        vessels = survey.vessels_wanted(found)
+        weights = survey.weights_wanted(found)
+
+        if vessels:
             w("")
-            w(self.style.MIGRATE_HEADING(f"{len(pairs)} quantities we cannot convert yet"))
-            w("  A spoon of turmeric has been weighed; a spoon of hing has not.")
-            for name, count in measures:
-                w(f"   {name:<10} {count} line{'s' if count != 1 else ''}")
+            w(self.style.MIGRATE_HEADING(f"{len(vessels)} vessels not measured"))
+            w("  One measurement each, true of everything put in them afterwards.")
+            for name, count in vessels:
+                w(f"   the {name:<10} appears in {count} line{'s' if count != 1 else ''}")
+
+        if weights:
             w("")
-            for line in pairs[:14]:
+            w(self.style.MIGRATE_HEADING(f"{len(weights)} bulk quantities still worth weighing separately"))
+            w("  A scoop of chana dal decides pounds. A spoon of fennel decides nothing.")
+            for line in weights[:12]:
                 w(f"   1 {line}")
-            if len(pairs) > 14:
-                w(f"   … and {len(pairs) - 14} more")
+            if len(weights) > 12:
+                w(f"   … and {len(weights) - 12} more")
 
         asked = survey.questions_nobody_could_answer()
         if asked:
@@ -89,7 +94,8 @@ class Command(BaseCommand):
             Path(options["json"]).write_text(
                 json.dumps(
                     {
-                        "measures": pairs,
+                        "vessels": [name for name, _ in survey.vessels_wanted(found)],
+                        "weights": survey.weights_wanted(found),
                         "servings": [
                             {
                                 "title": g.record.title,
@@ -109,12 +115,12 @@ class Command(BaseCommand):
 
         if options["worksheet"]:
             path = Path(options["worksheet"])
-            path.write_text(self.worksheet(found, measures))
+            path.write_text(self.worksheet(found))
             w("")
             w(self.style.SUCCESS(f"Sheet for the chef written to {path}"))
 
     # ------------------------------------------------------------------
-    def worksheet(self, found, measures) -> str:
+    def worksheet(self, found) -> str:
         """A page to put in front of the chef, with blanks rather than guesses."""
         lines = [
             "# Woodlands — what we still need from the kitchen",
@@ -123,16 +129,26 @@ class Command(BaseCommand):
             "number written here by anybody other than the kitchen would be believed,",
             "and would be wrong.",
             "",
-            "## 1. What the measures weigh",
+            "## 1. What each vessel holds",
             "",
-            "A scoop is a vessel, not a weight — a scoop of toor dal is 32 oz and a scoop",
-            "of sambar powder is 14 oz — so each of these needs its own answer. Some are",
-            "done already and are not listed.",
+            "There is one scoop and one spoon. How much each HOLDS is one measurement with",
+            "a jug, and it is true of everything put in them afterwards. What a scoopful",
+            "WEIGHS depends on what is in it — toor dal 32 oz, sambar powder 14.6 oz — so",
+            "that is asked only for the bulk ingredients, where being wrong costs pounds.",
             "",
-            "| Measure | It weighs / holds |",
+            "| Vessel | It holds |",
             "|---|---|",
         ]
-        for line in survey.pairs_wanted(found):
+        for name, _count in survey.vessels_wanted(found):
+            lines.append(f"| the {name} | |")
+        lines += [
+            "",
+            "### And what a scoop of these weighs",
+            "",
+            "| Measure | It weighs |",
+            "|---|---|",
+        ]
+        for line in survey.weights_wanted(found):
             lines.append(f"| 1 {line} | |")
 
         lines += [
