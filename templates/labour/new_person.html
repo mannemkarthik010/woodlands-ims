@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Add me{% endblock %}
+{% block wrap_class %}wrap--form{% endblock %}
+{% block content %}
+<h1>Add me</h1>
+<p class="muted">Only if your name is not on the list. An owner will check your details.</p>
+
+{% if listed %}
+  <a class="btn btn--primary btn--wide" href="{% url 'hours_start' %}?person={{ listed.pk }}">I'm {{ listed }} — go to my hours</a>
+{% endif %}
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <input type="hidden" name="step" value="add">
+  {% for field in form %}
+    <label class="field">
+      <span class="field__label">{{ field.label }}</span>
+      {{ field }}
+      {% for e in field.errors %}<span class="field__error">{{ e }}</span>{% endfor %}
+    </label>
+  {% endfor %}
+  <button class="btn btn--primary btn--big" type="submit">Add me</button>
+</form>
+
+<a class="btn btn--ghost btn--wide" href="{% url 'hours_start' %}">Back to the list</a>
+{% endblock %}

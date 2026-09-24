@@ -10,7 +10,7 @@ Write `FR-403` in a docstring, a comment or a test name and it appears here.
 Nothing is inferred from a function looking roughly relevant — that would
 make this table reassuring and wrong, which is worse than an empty one.
 
-**84 of 158** requirements referenced in code · **48** covered by a test.
+**85 of 158** requirements referenced in code · **50** covered by a test.
 
 ## M1 — Time and attendance
 
@@ -20,14 +20,14 @@ make this table reassuring and wrong, which is worse than an empty one.
 | **FR-102** | The system prevents one employee clocking in on behalf of another. See D-04 for the method. | Must | `apps/core/models.py`<br>`apps/core/pins.py`<br>`apps/labour/models.py`<br>`apps/labour/views.py` | `apps/core/tests/test_pins.py`<br>`apps/labour/tests/test_hours_flow.py` |
 | **FR-103** | The daily break is handled as a fixed closed period. The restaurant closes between 3:00~pm and 5:00~pm and staff take their lunch in that window, so the system treats it as a standard unpaid break rather than asking each person to clock out and back in. Staff who work through it, or who take their break at another time, can record that as an exception. | Must | — | — |
 | **FR-104** | Any shift that departs from the standard 3:00--5:00~pm break pattern is visible to the owners as an exception, so it is not lost. | Should | — | — |
-| **FR-105** | The owners can correct a missed or wrong clock event; every correction is logged with who changed it, when, from what value, to what value, and why. | Must | `apps/labour/admin.py`<br>`apps/labour/models.py`<br>`apps/labour/services.py` | `apps/labour/tests/test_clock.py` |
-| **FR-106** | The system calculates hours worked per shift, per day and per week, with the standard break deducted. | Must | `apps/labour/models.py`<br>`apps/labour/services.py` | `apps/labour/tests/test_clock.py` |
-| **FR-107** | The system flags a shift with no clock-out, or an unusually long one, so the owners can review it. | Should | `apps/labour/services.py` | `apps/labour/tests/test_clock.py` |
+| **FR-105** | The owners can correct a missed or wrong clock event; every correction is logged with who changed it, when, from what value, to what value, and why. | Must | `apps/labour/admin.py`<br>`apps/labour/models.py`<br>`apps/labour/services.py`<br>`apps/labour/views.py` | `apps/labour/tests/test_clock.py`<br>`apps/labour/tests/test_report.py` |
+| **FR-106** | The system calculates hours worked per shift, per day and per week, with the standard break deducted. | Must | `apps/labour/models.py`<br>`apps/labour/reports.py`<br>`apps/labour/services.py`<br>`apps/labour/views.py` | `apps/labour/tests/test_clock.py`<br>`apps/labour/tests/test_report.py` |
+| **FR-107** | The system flags a shift with no clock-out, or an unusually long one, so the owners can review it. | Should | `apps/labour/services.py`<br>`apps/labour/views.py` | `apps/labour/tests/test_clock.py`<br>`apps/labour/tests/test_report.py` |
 | **FR-108** | The system distinguishes work performed at the restaurant from work performed at a catering event. | Should | `apps/labour/models.py`<br>`apps/labour/services.py`<br>`apps/labour/views.py` | `apps/labour/tests/test_clock.py` |
-| **FR-109** | An employee can view their own hours to date. | Should | `apps/labour/services.py`<br>`apps/labour/views.py` | `apps/labour/tests/test_hours_flow.py`<br>`apps/labour/tests/test_record.py` |
+| **FR-109** | An employee can view their own hours to date. | Should | `apps/labour/reports.py`<br>`apps/labour/services.py`<br>`apps/labour/views.py` | `apps/labour/tests/test_hours_flow.py`<br>`apps/labour/tests/test_record.py` |
 | **FR-110** | The owners can build and publish a staff rota, if they want one. | Could | — | — |
 | **FR-111** | The system compares rota hours against actual hours and reports the difference. | Could | — | — |
-| **FR-112** | Hours can be exported to a spreadsheet or PDF for the owners' own use. This is an export for reading, not a payroll file. | Should | — | — |
+| **FR-112** | Hours can be exported to a spreadsheet or PDF for the owners' own use. This is an export for reading, not a payroll file. | Should | `apps/labour/reports.py`<br>`apps/labour/views.py` | `apps/labour/tests/test_report.py` |
 | **FR-113** | Time records cannot be silently deleted, and the history of any edit is retained. | Must | `apps/labour/admin.py`<br>`apps/labour/models.py`<br>`apps/labour/services.py` | `apps/labour/tests/test_clock.py` |
 | **FR-114** | Clock-in works when the internet connection is down, and syncs when it returns. | Should | — | — |
 
@@ -193,14 +193,14 @@ make this table reassuring and wrong, which is worse than an empty one.
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **FR-1201** | Users are created, deactivated and assigned roles by an administrator. | Must | `apps/core/admin.py`<br>`apps/core/models.py` | — |
+| **FR-1201** | Users are created, deactivated and assigned roles by an administrator. | Must | `apps/core/admin.py`<br>`apps/core/models.py`<br>`apps/labour/services.py`<br>`apps/labour/views.py` | `apps/labour/tests/test_people_flow.py` |
 | **FR-1202** | Access is enforced by role, per Section~{sec:roles}. | Must | `apps/core/models.py` | `apps/knowledge/tests/test_ask.py`<br>`apps/sales/tests/test_mapping.py`<br>`apps/stock/tests/test_transfer_flow.py` |
 | **FR-1203** | Every change to stock, time records, recipes or costs is logged with user, timestamp and previous value. | Must | `apps/stock/models.py`<br>`apps/stock/services.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/stock/tests/test_count_flow.py`<br>`apps/stock/tests/test_ledger.py` |
 | **FR-1204** | The audit log cannot be edited or deleted by any user, including the administrator. | Must | `apps/stock/admin.py`<br>`apps/stock/models.py`<br>`apps/stock/services.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/stock/tests/test_ledger.py` |
 | **FR-1205** | Locations, categories, waste reasons, par levels and shelf lives are configurable without developer involvement. | Should | — | — |
 | **FR-1206** | Data is backed up automatically, and a restore has been tested and documented. | Must | — | — |
 | **FR-1207** | The client can export all of their data, in full, at any time, without asking us. | Must | — | — |
-| **FR-1208** | A deactivated employee's historical records remain intact. | Must | `apps/core/models.py` | `apps/core/tests/test_pins.py` |
+| **FR-1208** | A deactivated employee's historical records remain intact. | Must | `apps/core/models.py`<br>`apps/labour/services.py` | `apps/core/tests/test_pins.py` |
 
 ## NFR — Speed
 

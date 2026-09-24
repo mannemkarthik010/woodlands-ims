@@ -79,6 +79,22 @@ class User(AbstractUser):
         help_text="The job whose shift times apply. Empty for the owners.",
     )
 
+    # People can add themselves on the tablet, so that nobody is ever stuck
+    # unable to record a shift. The owners then look each one over: a real new
+    # starter is confirmed, a second spelling of somebody already on the list
+    # is merged into them (see `apps.labour.services.merge_person`).
+    needs_review = models.BooleanField(
+        default=False, help_text="Added on the tablet and not yet confirmed by an owner."
+    )
+    possible_duplicate_of = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        help_text="The existing person they said they were not, when adding themselves.",
+    )
+
     # A four-digit PIN has ten thousand possibilities, so it is only as good
     # as the limit on guessing it. See `apps.core.pins`.
     pin_failed_attempts = models.PositiveSmallIntegerField(default=0, editable=False)

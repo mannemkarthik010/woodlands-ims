@@ -98,6 +98,31 @@ A worker can fill in any of the last 14 days. Anything older, or anything
 wrong on an entry, is for an owner to add or correct; every correction keeps
 the original and the reason.
 
+### Somebody is not on the list
+
+They tap **My name isn't on the list — add me** and give their name, job and a
+PIN. The tablet refuses a name already on the list (whatever the spelling of
+capitals, spacing or order) and asks "Is this you?" about a close one. Everybody
+added this way appears at the top of **Staff hours** for an owner to look at:
+
+- **Confirm — new person** if they are who they say.
+- **Merge** into the right name if they are a second spelling of somebody. Every
+  shift moves across and each move is kept with the shift's corrections. A merge
+  is refused if both names hold the same hours; correct one of them first.
+
+### Paying out
+
+**Staff hours** (owners only) adds every shift in the period into one total per
+person — morning, evening, the part of it that was catering, and the total in
+both `41 h 35 m` and `41.58`. Totals are added in minutes, so they always equal
+the shifts they came from. A shift with no end time is **not counted** and is
+shown in red, so it is fixed before payday rather than paid as nothing.
+
+Open a person for their statement: every shift, with anything written late or
+corrected marked. **Print or save as PDF** gives the page to hand to them;
+**Download (CSV)** gives the same in a spreadsheet. The week starts on Monday
+(`LABOUR_WEEK_STARTS` in settings, 0 = Monday).
+
 To try it with sample people: `python manage.py seed_demo` adds three demo
 staff (PIN 2580) and a `demo-tablet` sign-in. `seed_demo --clear` deactivates
 them.

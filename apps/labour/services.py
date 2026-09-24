@@ -370,3 +370,65 @@ def recent_days(user: User, *, days: int = 7, today: date | None = None) -> list
             Day(day=d, shifts=shifts, hours=(Decimal(minutes) / Decimal(60)).quantize(Decimal("0.01")))
         )
     return out
+
+
+def _must_be_owner(by: User) -> None:
+    if by.role != Role.OWNER and not by.is_superuser:
+        raise NotAllowed("Only an owner can do that.")
+
+
+# Implements: FR-1201.
+def confirm_person(person: User, *, by: User) -> None:
+    """An owner has looked at somebody added on the tablet and they are real and new."""
+    _must_be_owner(by)
+    person.needs_review = False
+    person.possible_duplicate_of = None
+    person.save(update_fields=["needs_review", "possible_duplicate_of"])
+
+
+# Implements: FR-105, FR-113, FR-1208.
+@transaction.atomic
+def merge_person(duplicate: User, *, into: User, by: User) -> int:
+    """
+    `duplicate` was the same person as `into` all along. Every shift moves
+    across, each move is written to that shift's corrections, and the
+    duplicate is switched off rather than deleted -- the record that the
+    name once existed is part of the history.
+
+    Refused if any moved shift would overlap one `into` already has: that
+    is two records of the same hours, and an owner must decide which is
+    right before they are added together. Returns the number of shifts moved.
+    """
+    _must_be_owner(by)
+    if duplicate.pk == into.pk:
+        raise ClockError("Pick a different person to merge into.")
+    if not into.can_use_pin or not duplicate.can_use_pin:
+        raise NotAllowed("Owners are not on the clock.")
+
+    shifts = list(Shift.objects.select_for_update().filter(employee=duplicate).order_by("clocked_in_at"))
+    for shift in shifts:
+        end = shift.clocked_out_at or shift.clocked_in_at + timedelta(minutes=1)
+        if _overlapping(into, shift.clocked_in_at, end).exists():
+            when = timezone.localtime(shift.clocked_in_at)
+            raise ClockError(
+                f"{duplicate} and {into} both have hours on {when:%a %-d %b} around {when:%-I:%M %p}. "
+                "Correct one of them first, then merge."
+            )
+
+    reason = f"Merged: {duplicate} was a second entry for {into}"
+    for shift in shifts:
+        ShiftEdit.objects.create(
+            shift=shift,
+            field_name="employee",
+            old_value=str(duplicate)[:80],
+            new_value=str(into)[:80],
+            reason=reason[:240],
+            created_by=by,
+        )
+    Shift.objects.filter(pk__in=[s.pk for s in shifts]).update(employee=into, updated_at=timezone.now())
+
+    duplicate.is_active_staff = False
+    duplicate.needs_review = False
+    duplicate.pin = ""
+    duplicate.save(update_fields=["is_active_staff", "needs_review", "pin"])
+    return len(shifts)

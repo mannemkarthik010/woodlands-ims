@@ -115,6 +115,8 @@ A job in the kitchen or on the floor -- dosa station, prep, server, dishwasher. 
 | `pin` | Char(128) |  | Hashed PIN for the shared tablet. Never stored in clear. |
 | `display_name` | Char(80) |  |  |
 | `position` | ForeignKey → Position | yes | The job whose shift times apply. Empty for the owners. |
+| `needs_review` | Boolean |  | Added on the tablet and not yet confirmed by an owner. |
+| `possible_duplicate_of` | ForeignKey → User | yes | The existing person they said they were not, when adding themselves. |
 | `pin_failed_attempts` | PositiveSmallInteger |  |  |
 | `pin_locked_until` | DateTime | yes |  |
 | `mobile` | Char(24) |  | For alerts. In full international form: +1818… |

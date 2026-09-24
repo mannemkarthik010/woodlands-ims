@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}My hours{% endblock %}
+{% block wrap_class %}wrap--form{% endblock %}
 {% block content %}
+{% if welcome %}
+  <p class="banner" role="status">You're added, {{ worker }}. An owner will check your details. From now on, choose your name from the list.</p>
+{% endif %}
 {% if saved %}
   <p class="banner" role="status">
     Saved: {{ saved.business_date|date:"D j M" }} · {{ saved.get_period_display }} ·

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}My hours{% endblock %}
+{% block wrap_class %}wrap--form{% endblock %}
+{% block content %}
+<h1>My hours</h1>
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <label class="field">
+    <span class="field__label">Your name</span>
+    <select name="person" class="select" required>
+      <option value="">Choose your name</option>
+      {% for person in staff %}
+        <option value="{{ person.pk }}" {% if selected == person.pk|stringformat:"d" %}selected{% endif %}>{{ person }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="field">
+    <span class="field__label">Your PIN</span>
+    <input class="pin" type="password" name="pin" inputmode="numeric" pattern="[0-9]*"
+           autocomplete="off" maxlength="6" required>
+  </label>
+  <button class="btn btn--primary btn--big" type="submit">Continue</button>
+</form>
+
+<a class="btn btn--ghost btn--wide" href="{% url 'hours_new' %}">My name isn't on the list — add me</a>
+{% endblock %}

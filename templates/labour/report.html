@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load hours %}
+{% block title %}Staff hours{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<h1>Staff hours</h1>
+
+<form method="get" class="period no-print">
+  <div class="filters">
+    {% for key, label in periods.items %}
+      <a class="chip{% if period == key %} chip--on{% endif %}" href="?period={{ key }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <div class="period__custom">
+    <input type="hidden" name="period" value="custom">
+    <label>From <input type="date" name="from" value="{{ report.start|date:'Y-m-d' }}"></label>
+    <label>To <input type="date" name="to" value="{{ report.end|date:'Y-m-d' }}"></label>
+    <button class="btn btn--ghost" type="submit">Show</button>
+  </div>
+</form>
+
+<p class="period__title"><strong>{{ report.start|date:"D j M" }} – {{ report.end|date:"D j M Y" }}</strong></p>
+
+{% if review %}
+  <section class="review no-print">
+    <h2 class="h2">New on the tablet — please check</h2>
+    {% for p in review %}
+      <div class="review__row">
+        <div>
+          <strong>{{ p }}</strong>{% if p.position %} · {{ p.position }}{% endif %}
+          <small class="muted">added {{ p.date_joined|date:"D j M" }}</small>
+          {% if p.possible_duplicate_of %}
+            <div class="nudge">Said they are not <strong>{{ p.possible_duplicate_of }}</strong>. If they are, merge them.</div>
+          {% endif %}
+        </div>
+        <div class="review__actions">
+          <form method="post" action="{% url 'hours_confirm' p.pk %}">
+            {% csrf_token %}<input type="hidden" name="back" value="{{ query }}">
+            <button class="btn btn--add" type="submit">Confirm — new person</button>
+          </form>
+          <form method="post" action="{% url 'hours_merge' p.pk %}" class="review__merge">
+            {% csrf_token %}<input type="hidden" name="back" value="{{ query }}">
+            <select name="into" class="select" required>
+              <option value="">Same person as…</option>
+              {% for s in staff %}{% if s.pk != p.pk %}
+                <option value="{{ s.pk }}" {% if s.pk == p.possible_duplicate_of_id %}selected{% endif %}>{{ s }}</option>
+              {% endif %}{% endfor %}
+            </select>
+            <button class="btn btn--ghost" type="submit">Merge</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </section>
+{% endif %}
+
+{% if report.open_shifts %}
+  <p class="alert">{{ report.open_shifts }} shift{{ report.open_shifts|pluralize }} with no end time {{ report.open_shifts|pluralize:"is,are" }} <strong>not counted</strong> below. Open the person to see which.</p>
+{% endif %}
+
+{% if report.rows %}
+  <div class="table-wrap">
+    <table class="hours">
+      <thead>
+        <tr>
+          <th>Name</th><th>Days</th><th>Morning</th><th>Evening</th><th title="Already included in morning and evening">of which catering</th>
+          <th class="hours__total">Total</th><th>Check</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in report.rows %}
+          <tr>
+            <td><a href="{% url 'hours_person' r.person.pk %}?{{ query }}">{{ r.person }}</a>
+              {% if r.person.position %}<small class="muted">{{ r.person.position }}</small>{% endif %}</td>
+            <td>{{ r.days }}</td>
+            <td>{{ r.morning|hm }}</td>
+            <td>{{ r.evening|hm }}</td>
+            <td>{% if r.catering %}{{ r.catering|hm }}{% else %}—{% endif %}</td>
+            <td class="hours__total">{{ r.total|hm }}<small>{{ r.total|decimal_hours }} h</small></td>
+            <td class="hours__flags">
+              {% if r.open_shifts %}<span class="flag flag--bad">{{ r.open_shifts }} unfinished</span>{% endif %}
+              {% if r.late_entries %}<span class="flag">{{ r.late_entries }} written late</span>{% endif %}
+              {% if r.corrected %}<span class="flag">{{ r.corrected }} corrected</span>{% endif %}
+              {% if r.person.needs_review %}<span class="flag">new</span>{% endif %}
+              {% if not r.needs_attention and not r.corrected %}<span class="muted">—</span>{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th>Everyone</th><th></th><th></th><th></th><th></th>
+          <th class="hours__total">{{ report.total|hm }}<small>{{ report.total|decimal_hours }} h</small></th><th></th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="actions no-print">
+    <a class="btn btn--ghost" href="?{{ query }}&amp;format=csv">Download spreadsheet (CSV)</a>
+    <button class="btn btn--ghost" type="button" onclick="window.print()">Print</button>
+  </div>
+{% else %}
+  <p class="muted">No hours recorded in this period.</p>
+{% endif %}
+{% endblock %}

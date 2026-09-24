@@ -382,3 +382,82 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 .summary__date  { font-weight: 700; font-size: 18px; }
 .summary__times { font-size: 22px; margin-top: 6px; font-variant-numeric: tabular-nums; }
 .summary__hours { font-size: 28px; font-weight: 800; margin-top: 4px; color: var(--green); }
+
+/* ---- Name list, and the owners' hours report ------------------------ */
+
+.select {
+  width: 100%; min-height: 56px; padding: 0 12px; font: inherit; font-size: 19px;
+  border: 2px solid var(--rule); border-radius: var(--radius); background: #fff;
+}
+.stack select { font-size: 19px; }
+
+.wrap--wide { max-width: 1000px; }
+
+.chip {
+  display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px;
+  border: 1px solid var(--rule); border-radius: 20px; color: var(--ink);
+  text-decoration: none; font-size: 15px;
+}
+.chip--on { background: var(--brand); color: #fff; border-color: var(--brand); }
+.period__custom { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin: 4px 0 8px; }
+.period__custom label { display: flex; flex-direction: column; font-size: 13px; color: var(--grey); gap: 3px; }
+.period__custom input { min-height: 40px; font: inherit; font-size: 15px; padding: 0 8px;
+  border: 1px solid var(--rule); border-radius: 8px; }
+.period__title { margin: 10px 0 14px; }
+
+.review { border: 1px solid var(--rule); border-radius: var(--radius); padding: 4px 14px 10px; margin-bottom: 16px; }
+.review .h2 { margin-top: 10px; }
+.review__row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px;
+  padding: 10px 0; border-top: 1px solid var(--rule); }
+.review__row small { margin-left: 6px; }
+.review__row .nudge { margin-top: 6px; font-size: 14px; }
+.review__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.review__merge { display: flex; gap: 6px; }
+.review__merge .select { min-height: 48px; font-size: 15px; width: auto; }
+
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.hours { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
+.hours th, .hours td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.hours th { font-size: 13px; color: var(--grey); font-weight: 600; white-space: nowrap; }
+.hours td small, .hours th small { display: block; color: var(--grey); font-size: 13px; font-weight: 400; }
+.hours td a { color: var(--ink); font-weight: 600; }
+.hours__total { font-weight: 700; white-space: nowrap; }
+.hours tfoot th { color: var(--ink); font-size: 15px; border-top: 2px solid var(--ink); border-bottom: 0; }
+.hours__open td { background: #fdf3f1; }
+.hours__flags { min-width: 120px; }
+.flag { display: inline-block; font-size: 12px; padding: 1px 8px; margin: 1px 2px 1px 0;
+  border-radius: 10px; background: #fdf6e7; color: var(--amber); white-space: nowrap; }
+.flag--bad { background: #fdf3f1; color: var(--deep); }
+.edit { font-size: 12px; color: var(--grey); margin-top: 3px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.actions .btn--primary { width: auto; }
+.back { display: inline-flex; min-height: 44px; align-items: center; color: var(--grey); text-decoration: none; }
+
+.statement { margin-bottom: 14px; }
+.statement__brand { color: var(--grey); font-size: 13px; letter-spacing: .04em; }
+.statement h1 { margin: 4px 0; }
+.statement__foot { font-size: 13px; margin-top: 18px; }
+.totals { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.totals div { background: var(--tint); border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 10px 14px; min-width: 110px; }
+.totals span { display: block; font-size: 12px; color: var(--grey); }
+.totals strong { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.totals small { color: var(--grey); font-size: 12px; }
+
+/* A statement handed to a worker is printed or saved as a PDF: no buttons,
+   no navigation, black on white. */
+@media print {
+  .no-print, .actions, .back { display: none !important; }
+  body { font-size: 12px; }
+  .wrap { max-width: none; padding: 0; }
+  .totals div { border-color: #999; background: none; }
+  .hours th, .hours td { padding: 5px 6px; border-color: #bbb; }
+  .hours__open td { background: none; }
+  a { color: inherit; text-decoration: none; }
+}
+
+/* The hours screens are used on a tablet at arm's length: one column, one
+   width, so the fields and the buttons under them line up. */
+.wrap--form { max-width: 520px; }
+.wrap--form .stack { max-width: none; }

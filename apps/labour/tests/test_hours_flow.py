@@ -23,13 +23,15 @@ class HoursFlowTests(TestCase):
         Location.objects.create(code="restaurant", name="Restaurant", kind=Location.Kind.RESTAURANT)
         self.tablet = User.objects.create_user("kitchen-tablet", password="pw", role=Role.KITCHEN)
         self.client.force_login(self.tablet)
-        self.ravi = User.objects.create_user("ravi", display_name="Ravi", role=Role.KITCHEN)
+        self.ravi = User.objects.create_user(
+            "ravi", display_name="Ravi", role=Role.KITCHEN, date_joined=timezone.now() - timedelta(days=30)
+        )
         set_pin(self.ravi, "4829")
         self.owner = User.objects.create_user("owner", display_name="Owner", role=Role.OWNER)
         self.yesterday = timezone.localdate() - timedelta(days=1)
 
     def sign_in(self, pin="4829"):
-        return self.client.post(reverse("hours_pin", args=[self.ravi.pk]), {"pin": pin})
+        return self.client.post(reverse("hours_start"), {"person": self.ravi.pk, "pin": pin})
 
     def shift_form(self, **extra):
         data = {"day": self.yesterday.isoformat(), "start": "10:00", "end": "15:00"}
@@ -38,8 +40,8 @@ class HoursFlowTests(TestCase):
 
     # Covers: FR-101, FR-102, FR-109.
     def test_the_whole_visit_from_name_to_saved(self):
-        names = self.client.get(reverse("hours_names"))
-        self.assertContains(names, "Ravi")
+        names = self.client.get(reverse("hours_start"))
+        self.assertContains(names, f'<option value="{self.ravi.pk}"')
         self.assertNotContains(names, "Owner")  # owners never appear on the tablet
 
         self.assertRedirects(self.sign_in(), reverse("hours_me"))
@@ -61,7 +63,7 @@ class HoursFlowTests(TestCase):
 
         # Done ends the visit; the next person starts from the names.
         self.client.post(reverse("hours_done"))
-        self.assertRedirects(self.client.get(reverse("hours_me")), reverse("hours_names"))
+        self.assertRedirects(self.client.get(reverse("hours_me")), reverse("hours_start"))
 
     def test_no_changes_it_goes_back_to_the_filled_in_form(self):
         self.sign_in()
@@ -88,23 +90,31 @@ class HoursFlowTests(TestCase):
     def test_a_wrong_pin_lets_nobody_in_and_too_many_lock_it(self):
         response = self.sign_in("1357")
         self.assertContains(response, "That PIN is not right.")
-        self.assertRedirects(self.client.get(reverse("hours_me")), reverse("hours_names"))
+        self.assertRedirects(self.client.get(reverse("hours_me")), reverse("hours_start"))
 
         for _ in range(MAX_FAILED_ATTEMPTS - 1):
             response = self.sign_in("1357")
         self.assertContains(response, "Too many wrong tries")
         self.assertContains(self.sign_in("4829"), "Too many wrong tries")
 
+    def test_choosing_nobody_is_explained(self):
+        response = self.client.post(reverse("hours_start"), {"person": "", "pin": "4829"})
+        self.assertContains(response, "Please choose your name from the list.")
+
+    def test_the_name_stays_chosen_after_a_wrong_pin(self):
+        response = self.sign_in("1357")
+        self.assertContains(response, f'<option value="{self.ravi.pk}" selected>')
+
     def test_a_visit_left_idle_expires(self):
         self.sign_in()
         session = self.client.session
         session[SESSION_KEY] = {"pk": self.ravi.pk, "at": 0}
         session.save()
-        self.assertRedirects(self.client.get(reverse("hours_me")), reverse("hours_names"))
+        self.assertRedirects(self.client.get(reverse("hours_me")), reverse("hours_start"))
 
     def test_the_tablet_itself_must_be_signed_in(self):
         self.client.logout()
-        response = self.client.get(reverse("hours_names"))
+        response = self.client.get(reverse("hours_start"))
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("login"), response.url)
 

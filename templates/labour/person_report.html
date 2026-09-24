@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load hours %}
+{% block title %}Hours — {{ person }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<a class="back no-print" href="{% url 'hours_report' %}?{{ query }}">← All staff</a>
+
+<header class="statement">
+  <div class="statement__brand">Woodlands Indian Cuisine · Chatsworth</div>
+  <h1>Hours — {{ person }}</h1>
+  <div>{{ start|date:"l j F" }} – {{ end|date:"l j F Y" }}{% if person.position %} · {{ person.position }}{% endif %}</div>
+</header>
+
+<div class="totals">
+  <div><span>Total</span><strong>{{ row.total|hm }}</strong><small>{{ row.total|decimal_hours }} hours</small></div>
+  <div><span>Days</span><strong>{{ row.days }}</strong></div>
+  <div><span>Morning</span><strong>{{ row.morning|hm }}</strong></div>
+  <div><span>Evening</span><strong>{{ row.evening|hm }}</strong></div>
+  {% if row.catering %}<div><span>of which catering</span><strong>{{ row.catering|hm }}</strong></div>{% endif %}
+</div>
+
+{% if row.open_shifts %}
+  <p class="alert">{{ row.open_shifts }} shift{{ row.open_shifts|pluralize }} below {{ row.open_shifts|pluralize:"has,have" }} no end time and {{ row.open_shifts|pluralize:"is,are" }} not counted in the total.</p>
+{% endif %}
+
+{% if row.shifts %}
+  <div class="table-wrap">
+    <table class="hours">
+      <thead><tr><th>Date</th><th>Shift</th><th>Started</th><th>Left</th><th class="hours__total">Hours</th><th>Notes</th></tr></thead>
+      <tbody>
+        {% for s in row.shifts %}
+          <tr{% if s.is_open %} class="hours__open"{% endif %}>
+            <td>{{ s.business_date|date:"D j M" }}</td>
+            <td>{{ s.get_period_display }}</td>
+            <td>{{ s.clocked_in_at|time:"g:i A" }}</td>
+            <td>{% if s.clocked_out_at %}{{ s.clocked_out_at|time:"g:i A" }}{% if s.clocked_out_at|date:"Ymd" != s.clocked_in_at|date:"Ymd" %} <small>(next day)</small>{% endif %}{% else %}<strong>not finished</strong>{% endif %}</td>
+            <td class="hours__total">{% if s.worked_minutes is not None %}{{ s.worked_minutes|hm }}{% else %}—{% endif %}</td>
+            <td class="hours__flags">
+              {% if s.is_catering_event %}<span class="flag">catering</span>{% endif %}
+              {% if s.days_late_entered >= 2 %}<span class="flag">written {{ s.days_late_entered }} days later</span>{% endif %}
+              {% for e in s.edit_list %}<div class="edit">Corrected {{ e.field_name|cut:"_at"|cut:"clocked_" }}: {{ e.old_value|default:"—" }} → {{ e.new_value }} — {{ e.reason }}</div>{% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="muted">No hours recorded in this period.</p>
+{% endif %}
+
+<p class="muted statement__foot">Printed {% now "j M Y, g:i A" %}. Hours only; any questions, please speak to an owner.</p>
+
+<div class="actions no-print">
+  <button class="btn btn--primary" type="button" onclick="window.print()">Print or save as PDF</button>
+  <a class="btn btn--ghost" href="?{{ query }}&amp;format=csv">Download (CSV)</a>
+</div>
+{% endblock %}

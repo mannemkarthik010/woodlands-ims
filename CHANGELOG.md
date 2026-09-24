@@ -5,6 +5,19 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- The tablet asks for your name from a list, not a row of buttons, with the PIN on the same
+  screen — so the same person is never spelled two ways
+- "My name isn't on the list — add me": first name, last name, job and a PIN. The same name
+  in any form (capitals, spacing, first and last swapped) is refused and points at the person;
+  a close one ("Ravi Kumaar", "Ravi K") asks "Is this you?" first. The PIN never travels
+  through the page
+- Staff hours, for the owners: every shift in a period added into one total per person, in
+  minutes so the total always equals its shifts; morning, evening and the catering part;
+  unfinished shifts shown and not counted; late, corrected and new entries marked
+- A statement per person, printable or saved as a PDF to hand over, and CSV downloads of the
+  report and of each statement
+- People added on the tablet are listed for an owner to confirm, or merge into the right
+  name — every shift moves across and the move is kept with the shift
 - **My hours** on the shared tablet: a worker taps their name, enters their PIN and writes in
   the date, when they started and when they left — checked on a summary before it is saved
 - The worker's last seven days, with the empty ones named and one tap from being filled in,

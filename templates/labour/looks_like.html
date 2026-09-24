@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Is this you?{% endblock %}
+{% block wrap_class %}wrap--form{% endblock %}
+{% block content %}
+<h1>Is this you?</h1>
+<p class="muted">You typed <strong>{{ pending.first }} {{ pending.last }}</strong>. These names are already on the list:</p>
+
+<div class="stack">
+  {% for person in people %}
+    <a class="btn btn--primary btn--big" href="{% url 'hours_start' %}?person={{ person.pk }}">Yes, I'm {{ person }}</a>
+  {% endfor %}
+</div>
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <input type="hidden" name="step" value="different">
+  <button class="btn btn--ghost btn--wide" type="submit">No, I'm a different person — add me</button>
+</form>
+{% endblock %}

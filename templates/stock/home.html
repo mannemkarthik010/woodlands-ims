@@ -3,10 +3,17 @@
 {% block content %}
 <h1>What are you doing?</h1>
 
-<a class="tile" href="{% url 'hours_names' %}">
+<a class="tile" href="{% url 'hours_start' %}">
   <span class="tile__title">My hours</span>
   <span class="tile__sub">Record when you started and when you left</span>
 </a>
+
+{% if user.role == "OWNER" or user.is_superuser %}
+  <a class="tile" href="{% url 'hours_report' %}">
+    <span class="tile__title">Staff hours</span>
+    <span class="tile__sub">Everyone's hours for the pay period, with anything to check first</span>
+  </a>
+{% endif %}
 
 <a class="tile" href="{% url 'transfer_new' %}">
   <span class="tile__title">Storage run</span>

@@ -9,7 +9,7 @@
 <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
 </head>
 <body>
-<header class="bar">
+<header class="bar no-print">
   <a class="bar__home" href="{% url 'home' %}">Woodlands</a>
   {% if user.is_authenticated %}
     <span class="bar__who">{{ user.display_name|default:user.username }}</span>
@@ -17,6 +17,9 @@
 </header>
 
 <main class="wrap {% block wrap_class %}{% endblock %}">
+  {% for m in messages %}
+    <p class="{% if m.level_tag == 'error' %}alert{% else %}banner{% endif %}" role="status">{{ m }}</p>
+  {% endfor %}
   {% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
   {% block content %}{% endblock %}
 </main>
