@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}My hours{% endblock %}
+{% block content %}
+{% if saved %}
+  <p class="banner" role="status">
+    Saved: {{ saved.business_date|date:"D j M" }} · {{ saved.get_period_display }} ·
+    {{ saved.clocked_in_at|time:"g:i A" }} – {{ saved.clocked_out_at|time:"g:i A" }} ·
+    <strong>{{ saved.hours_worked }} hours</strong>
+  </p>
+{% endif %}
+
+<h1>{{ worker }}, your last 7 days</h1>
+
+{% if empty_days %}
+  <p class="nudge">
+    Nothing recorded for
+    {% for d in empty_days %}<strong>{{ d.day|date:"D j" }}</strong>{% if not forloop.last %}, {% endif %}{% endfor %}.
+    If you worked, add it below.
+  </p>
+{% endif %}
+
+<a class="btn btn--primary btn--big" href="{% url 'hours_add' %}">Record today's shift</a>
+
+<ul class="days">
+  {% for d in days %}
+    <li class="days__row{% if d.is_empty %} days__row--empty{% endif %}">
+      <div class="days__head">
+        <span class="days__date">{{ d.day|date:"D j M" }}</span>
+        {% if not d.is_empty %}<span class="days__total">{{ d.hours }} h</span>{% endif %}
+      </div>
+      {% for s in d.shifts %}
+        <div class="days__shift">
+          {{ s.get_period_display }} · {{ s.clocked_in_at|time:"g:i A" }} –
+          {% if s.clocked_out_at %}{{ s.clocked_out_at|time:"g:i A" }}{% else %}<em>not finished — tell an owner</em>{% endif %}
+          {% if s.is_catering_event %}<span class="count">catering</span>{% endif %}
+        </div>
+      {% empty %}
+        <div class="days__shift muted">Nothing recorded</div>
+      {% endfor %}
+      <a class="days__add" href="{% url 'hours_add' %}?date={{ d.day|date:'Y-m-d' }}">
+        {% if d.is_empty %}+ Add hours{% else %}+ Add another shift{% endif %}
+      </a>
+    </li>
+  {% endfor %}
+</ul>
+
+<p class="muted">This week so far: <strong>{{ week_hours }} hours</strong>.
+  Something wrong on an entry? Tell an owner — they can correct it.</p>
+
+<form method="post" action="{% url 'hours_done' %}">
+  {% csrf_token %}
+  <button class="btn btn--ghost btn--wide" type="submit">Done</button>
+</form>
+{% endblock %}

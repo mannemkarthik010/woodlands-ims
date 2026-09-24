@@ -22,7 +22,7 @@ from datetime import timedelta
 from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
 
-from apps.core.models import User
+from apps.core.models import Role, User
 
 MIN_LENGTH = 4
 MAX_LENGTH = 6
@@ -42,15 +42,21 @@ def _is_obvious(pin: str) -> bool:
     return steps in ({1}, {-1})
 
 
-# Implements: FR-102, NFR-09.
-def set_pin(user: User, pin: str) -> None:
-    if not user.can_use_pin:
+def validate_pin(pin: str, *, role: str) -> str:
+    """The rules for a PIN, on their own, so a form can check before saving anything."""
+    if role == Role.OWNER:
         raise PinError("Owners sign in with a password, not a PIN.")
     pin = (pin or "").strip()
     if not pin.isdigit() or not MIN_LENGTH <= len(pin) <= MAX_LENGTH:
         raise PinError(f"A PIN is {MIN_LENGTH} to {MAX_LENGTH} digits.")
     if _is_obvious(pin):
         raise PinError("That PIN is too easy to guess. Avoid repeated or consecutive digits.")
+    return pin
+
+
+# Implements: FR-102, NFR-09.
+def set_pin(user: User, pin: str) -> None:
+    pin = validate_pin(pin, role=user.role)
     user.pin = make_password(pin)
     user.pin_failed_attempts = 0
     user.pin_locked_until = None

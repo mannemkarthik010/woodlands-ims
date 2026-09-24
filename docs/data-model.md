@@ -596,6 +596,7 @@ One CSV, one business date.
 | `clock_in_photo` | File(100) | yes |  |
 | `is_catering_event` | Boolean |  |  |
 | `note` | Char(240) |  |  |
+| `source` | Char(8) |  | _CLOCK, ENTERED_ |
 
 ### ShiftEdit
 

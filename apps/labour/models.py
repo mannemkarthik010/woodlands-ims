@@ -22,6 +22,7 @@ from decimal import Decimal
 
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 from apps.core.models import Location, Position, TimeStamped
 
@@ -29,6 +30,18 @@ from apps.core.models import Location, Position, TimeStamped
 class Period(models.TextChoices):
     MORNING = "MORNING", "Morning"
     EVENING = "EVENING", "Evening"
+
+
+class Source(models.TextChoices):
+    """
+    How the times got onto the record. The owners asked to start with staff
+    writing in their own hours at the end of a shift; tapping in and out as it
+    happens can follow. Both are kept apart so the owners always know which
+    they are looking at.
+    """
+
+    CLOCK = "CLOCK", "Clocked in and out"
+    ENTERED = "ENTERED", "Entered by the worker"
 
 
 class Weekday(models.IntegerChoices):
@@ -112,6 +125,10 @@ class Shift(TimeStamped):
     is_catering_event = models.BooleanField(default=False)
     note = models.CharField(max_length=240, blank=True)
 
+    # `created_at` is when this row was written. For an entered shift that is
+    # when the worker filled it in, which may be days after they worked.
+    source = models.CharField(max_length=8, choices=Source.choices, default=Source.CLOCK)
+
     class Meta:
         ordering = ["-clocked_in_at"]
         indexes = [models.Index(fields=["employee", "business_date"])]
@@ -132,6 +149,11 @@ class Shift(TimeStamped):
     @property
     def is_open(self) -> bool:
         return self.clocked_out_at is None
+
+    @property
+    def days_late_entered(self) -> int:
+        """How many days after the shift it was written down. 0 for the same day."""
+        return (timezone.localdate(self.created_at) - self.business_date).days
 
     @property
     def has_schedule(self) -> bool:

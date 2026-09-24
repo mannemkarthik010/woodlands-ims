@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}PIN{% endblock %}
+{% block content %}
+<h1>Hello, {{ person }}</h1>
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <label class="field">
+    <span class="field__label">Your PIN</span>
+    <input class="pin" type="password" name="pin" inputmode="numeric" pattern="[0-9]*"
+           autocomplete="off" maxlength="6" autofocus required>
+  </label>
+  <button class="btn btn--primary btn--big" type="submit">Continue</button>
+</form>
+
+<a class="btn btn--ghost btn--wide" href="{% url 'hours_names' %}">Not {{ person }}? Go back</a>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Is this right?{% endblock %}
+{% block content %}
+<h1>Is this right?</h1>
+
+<div class="summary">
+  <div class="summary__date">{{ shift.business_date|date:"l j F" }}</div>
+  <div class="summary__times">{{ shift.clocked_in_at|time:"g:i A" }} – {{ shift.clocked_out_at|time:"g:i A" }}
+    {% if shift.clocked_out_at|date:"Ymd" != shift.clocked_in_at|date:"Ymd" %}<small>(next day)</small>{% endif %}
+  </div>
+  <div class="summary__hours">{{ shift.hours_worked }} hours</div>
+  <div class="muted">{{ shift.get_period_display }} shift{% if shift.is_catering_event %} · catering{% endif %}</div>
+</div>
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <input type="hidden" name="step" value="save">
+  {% for field in form %}{% if field.name != "catering" %}<input type="hidden" name="{{ field.name }}" value="{{ field.value }}">{% endif %}{% endfor %}
+  {% if form.cleaned_data.catering %}<input type="hidden" name="catering" value="on">{% endif %}
+  <button class="btn btn--primary btn--big" type="submit">Yes, save it</button>
+</form>
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <input type="hidden" name="step" value="edit">
+  {% for field in form %}{% if field.name != "catering" %}<input type="hidden" name="{{ field.name }}" value="{{ field.value }}">{% endif %}{% endfor %}
+  {% if form.cleaned_data.catering %}<input type="hidden" name="catering" value="on">{% endif %}
+  <button class="btn btn--ghost btn--wide" type="submit">No, change it</button>
+</form>
+{% endblock %}

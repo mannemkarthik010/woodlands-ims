@@ -2,8 +2,9 @@
 Sample items and opening stock, so the screens can be tried before the real
 ingredients list arrives.
 
-THIS IS MADE-UP DATA. Every item code starts with DEMO- so it is obvious in
-any list and easy to remove:
+THIS IS MADE-UP DATA. Every item code starts with DEMO-, every sample person's
+username with demo-, and every sample position with "DEMO", so it is obvious
+in any list and easy to remove:
 
     python manage.py seed_demo            add it
     python manage.py seed_demo --clear    take it away again
@@ -14,6 +15,7 @@ the chef -- a list assembled from a menu always misses the things nobody
 thinks to mention.
 """
 
+from datetime import time
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand
@@ -21,7 +23,9 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.catalog.models import Item, ItemAlias, ItemCategory, ItemKind, Unit
-from apps.core.models import Location
+from apps.core.models import Location, Position, Role, User
+from apps.core.pins import set_pin
+from apps.labour.models import Period, ShiftTemplate
 from apps.stock.models import MovementType, StockMovement
 from apps.stock.services import post_movement
 
@@ -48,6 +52,20 @@ ITEMS = [
     ("DEMO-tomato", "Tomatoes", "lb", "Fresh produce", [], 60),
     ("DEMO-tamarind", "Tamarind block", "lb", "Tinned and jarred", ["imli"], 20),
 ]
+
+# Made-up positions and hours -- the real ones are the owners' to give.
+POSITIONS = [
+    ("DEMO Dosa station", (time(10, 0), time(15, 0)), (time(17, 0), time(22, 0))),
+    ("DEMO Server", (time(11, 0), time(15, 0)), (time(17, 0), time(21, 30))),
+]
+# username, name shown on the tablet, position
+STAFF = [
+    ("demo-ravi", "Ravi (demo)", "DEMO Dosa station"),
+    ("demo-meera", "Meera (demo)", "DEMO Dosa station"),
+    ("demo-arjun", "Arjun (demo)", "DEMO Server"),
+]
+DEMO_PIN = "2580"
+TABLET = ("demo-tablet", "demo-tablet")  # username, password -- a development convenience only
 
 BASES = [
     ("DEMO-batter-dosa", "Dosa batter", "gal", "Batters (in-house)"),
@@ -79,6 +97,12 @@ class Command(BaseCommand):
             # So the demo items stop appearing and their history stays
             # readable, which is what happens to every other item in this
             # system when it goes out of use.
+            people = User.objects.filter(username__startswith="demo-").update(
+                is_active=False, is_active_staff=False
+            )
+            Position.objects.filter(name__startswith="DEMO ").update(is_active=False)
+            self.stdout.write(f"Deactivated {people} demo people; their shifts stay on record.")
+
             demo = Item.objects.filter(code__startswith="DEMO-")
             count = demo.update(is_active=False)
             moves = StockMovement.objects.filter(item__in=demo).count()
@@ -135,7 +159,40 @@ class Command(BaseCommand):
             )
             made += created
 
+        for name, morning, evening in POSITIONS:
+            position, _ = Position.objects.get_or_create(name=name)
+            for period, (start, end) in ((Period.MORNING, morning), (Period.EVENING, evening)):
+                ShiftTemplate.objects.get_or_create(
+                    position=position,
+                    period=period,
+                    weekday=None,
+                    defaults={"starts_at": start, "ends_at": end},
+                )
+        for username, display, position in STAFF:
+            person, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    "display_name": display,
+                    "role": Role.KITCHEN,
+                    "position": Position.objects.get(name=position),
+                },
+            )
+            if created:
+                person.set_unusable_password()
+                person.save()
+                set_pin(person, DEMO_PIN)
+        tablet, created = User.objects.get_or_create(
+            username=TABLET[0], defaults={"display_name": "Kitchen tablet (demo)", "role": Role.KITCHEN}
+        )
+        if created:
+            tablet.set_password(TABLET[1])
+            tablet.save()
+
         self.stdout.write(
             self.style.SUCCESS(f"Added {made} demo items with opening stock at {storage.name}.")
+        )
+        self.stdout.write(
+            f"Demo staff: {', '.join(d for _, d, _ in STAFF)} -- PIN {DEMO_PIN}. "
+            f"Tablet sign-in: {TABLET[0]} / {TABLET[1]}."
         )
         self.stdout.write(self.style.WARNING("Sample data. Remove with: python manage.py seed_demo --clear"))

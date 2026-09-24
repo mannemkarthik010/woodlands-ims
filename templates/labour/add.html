@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Record a shift{% endblock %}
+{% block content %}
+<h1>Record a shift</h1>
+<p class="muted">{{ worker }}</p>
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <input type="hidden" name="step" value="check">
+  <label class="field">
+    <span class="field__label">Date</span>
+    {{ form.day }}
+    {% for e in form.day.errors %}<span class="field__error">{{ e }}</span>{% endfor %}
+  </label>
+  <div class="field-row">
+    <label class="field">
+      <span class="field__label">Started</span>
+      {{ form.start }}
+      {% for e in form.start.errors %}<span class="field__error">{{ e }}</span>{% endfor %}
+    </label>
+    <label class="field">
+      <span class="field__label">Left</span>
+      {{ form.end }}
+      {% for e in form.end.errors %}<span class="field__error">{{ e }}</span>{% endfor %}
+    </label>
+  </div>
+  <label class="check">
+    {{ form.catering }} <span>This was a catering job</span>
+  </label>
+  <button class="btn btn--primary btn--big" type="submit">Check</button>
+</form>
+
+<a class="btn btn--ghost btn--wide" href="{% url 'hours_me' %}">Back</a>
+{% endblock %}

@@ -5,6 +5,16 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- **My hours** on the shared tablet: a worker taps their name, enters their PIN and writes in
+  the date, when they started and when they left — checked on a summary before it is saved
+- The worker's last seven days, with the empty ones named and one tap from being filled in,
+  because people forget; a second shift can be added to any day for a double
+- Entered hours are refused when they are in the future, overlap another shift, run over
+  16 hours (a typo), or are more than 14 days old (an owner adds those); an end time before
+  the start time means past midnight
+- Entered shifts are marked as entered by the worker, and when they were written down is kept
+- Owners set each person's tablet PIN from the staff page, under the same rules
+- Demo staff, positions and a tablet sign-in in `seed_demo`
 - Clocking in and out, as the owners describe the day: a morning shift and an evening shift,
   each job with its own hours, and a few people working both (ADR 0008)
 - Positions (dosa station, prep, server…) with morning and evening times, and a weekday

@@ -73,7 +73,38 @@ the first request. Check the simplest thing that distinguishes the two.
 
 ---
 
-## 3. Everyday commands
+## 3. Setting up the hours tablet
+
+Staff write in their own hours at the end of a shift: date, when they
+started, when they left. It runs on one shared tablet at the kitchen.
+
+1. **Positions and their hours.** Admin → Positions. One row per job (dosa
+   station, prep, server…), each with a morning and an evening start and end.
+   Add a row with a weekday only for a day that runs differently.
+2. **A sign-in for the tablet itself.** Admin → Users → add a user such as
+   `kitchen-tablet`, role *Kitchen staff*, with a long password. Sign in as it
+   once on the tablet and leave it signed in. It is the tablet's account, not
+   a person's.
+3. **Each person.** Admin → Users → the person: set their *Position*, a
+   *Display name* (what shows on the tablet), and a *New tablet PIN*. Somebody
+   without a PIN does not appear on the tablet.
+4. On the tablet, open **My hours** from the home screen.
+
+A PIN is 4–6 digits; 1111, 1234 and the like are refused. Five wrong tries
+lock that person out for five minutes. Owners have no PIN and never appear on
+the tablet.
+
+A worker can fill in any of the last 14 days. Anything older, or anything
+wrong on an entry, is for an owner to add or correct; every correction keeps
+the original and the reason.
+
+To try it with sample people: `python manage.py seed_demo` adds three demo
+staff (PIN 2580) and a `demo-tablet` sign-in. `seed_demo --clear` deactivates
+them.
+
+---
+
+## 4. Everyday commands
 
 | Task | Command |
 |---|---|
@@ -91,7 +122,7 @@ build otherwise, which is the only reliable way documentation stays true.
 
 ---
 
-## 4. When something is wrong
+## 5. When something is wrong
 
 ### Stock on hand looks wrong
 
@@ -168,7 +199,7 @@ Read the error rather than deleting anything.
 
 ---
 
-## 5. The database
+## 6. The database
 
 Development uses SQLite: a single file, `db.sqlite3`, in the project root. It is
 git-ignored, so it is **not** recoverable from the repository.
@@ -207,7 +238,7 @@ python manage.py changepassword <username>
 
 ---
 
-## 6. Branching and release
+## 7. Branching and release
 
 - `main` is always green. Work happens on `feat/…` or `fix/…` branches.
 - A pull request runs lint, format check, Django system check, the missing
@@ -226,7 +257,7 @@ python manage.py changepassword <username>
 
 ---
 
-## 7. Deployment
+## 8. Deployment
 
 Deliberately not configured yet. Hosting carries a monthly cost and the choice
 is the client's to make, informed, in advance. Nothing has been committed on
@@ -246,7 +277,7 @@ throwaway database.
 
 ---
 
-## 8. Getting data out
+## 9. Getting data out
 
 The client can take their data at any time, without asking anybody (FR-1207):
 

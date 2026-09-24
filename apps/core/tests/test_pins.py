@@ -72,3 +72,46 @@ class PinTests(TestCase):
         self.cook.is_active_staff = False
         self.cook.save()
         self.assertFalse(check_pin(self.cook, "4829"))
+
+
+class PinAdminTests(TestCase):
+    """The owners set PINs from the staff page. It must hold the same rules."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser("admin", password="pw")
+        self.client.force_login(self.admin)
+        self.cook = User.objects.create_user("ravi", role=Role.KITCHEN)
+
+    def post(self, pin, role=Role.KITCHEN):
+        url = f"/admin/core/user/{self.cook.pk}/change/"
+        data = self.client.get(url).context["adminform"].form.initial
+        form = {k: v for k, v in data.items() if v is not None and k not in ("groups", "user_permissions")}
+        form.update(
+            {
+                "role": role,
+                "new_pin": pin,
+                "date_joined_0": self.cook.date_joined.strftime("%Y-%m-%d"),
+                "date_joined_1": self.cook.date_joined.strftime("%H:%M:%S"),
+            }
+        )
+        form.pop("date_joined", None)
+        form.pop("last_login", None)
+        form.pop("pin", None)
+        form.pop("position", None)
+        return self.client.post(url, form)
+
+    def test_an_owner_sets_a_pin_from_the_staff_page(self):
+        response = self.post("4829")
+        self.assertEqual(response.status_code, 302, response.content.decode()[:2000])
+        self.cook.refresh_from_db()
+        self.assertTrue(check_pin(self.cook, "4829"))
+
+    def test_an_easy_pin_is_refused_on_the_page_and_nothing_changes(self):
+        response = self.post("1234")
+        self.assertContains(response, "too easy to guess")
+        self.cook.refresh_from_db()
+        self.assertEqual(self.cook.pin, "")
+
+    def test_an_owner_account_cannot_be_given_a_pin(self):
+        response = self.post("4829", role=Role.OWNER)
+        self.assertContains(response, "Owners sign in with a password")

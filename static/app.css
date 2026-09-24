@@ -328,3 +328,57 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
   border-radius: 4px; padding: 0 5px; margin-left: 6px; white-space: nowrap;
 }
 .ing__judge { font-weight: 400; font-size: 13px; color: var(--amber); }
+
+/* ---- My hours (shared tablet) ---------------------------------------- */
+
+/* Names are the first thing a worker touches, often with wet hands: big,
+   two to a row on a phone, more on a tablet. */
+.names { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.names__btn {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  min-height: 72px; padding: 8px; border-radius: var(--radius);
+  background: var(--tint); border: 1px solid var(--rule);
+  color: var(--ink); font-size: 19px; font-weight: 700; text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.names__btn:active { background: var(--rule); }
+
+.stack .pin {
+  font-size: 32px; letter-spacing: .4em; text-align: center; min-height: 64px;
+}
+.btn--wide { width: 100%; margin-top: 12px; }
+.stack + .btn--wide, .stack + form { margin-top: 12px; }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stack input[type=date], .stack input[type=time] { font-size: 20px; min-height: 56px; }
+.field__error { color: var(--deep); font-size: 14px; }
+.stack label.check { flex-direction: row; align-items: center; gap: 10px; font-size: 17px; color: var(--ink); min-height: 48px; }
+.stack .check input { width: 26px; height: 26px; min-height: 0; padding: 0; }
+
+.banner {
+  background: #eef6f1; border-left: 3px solid var(--green);
+  padding: 10px 12px; border-radius: 4px; margin: 0 0 14px;
+}
+.nudge {
+  background: #fdf6e7; border-left: 3px solid var(--amber);
+  padding: 10px 12px; border-radius: 4px; margin: 0 0 4px;
+}
+
+.days { list-style: none; margin: 18px 0; padding: 0; }
+.days__row { padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.days__row--empty .days__date { color: var(--amber); }
+.days__head { display: flex; justify-content: space-between; font-weight: 700; }
+.days__total { font-variant-numeric: tabular-nums; }
+.days__shift { font-size: 15px; margin-top: 2px; }
+.days__add {
+  display: inline-flex; align-items: center; min-height: 44px;
+  color: var(--green); font-weight: 600; text-decoration: none; font-size: 15px;
+}
+
+.summary {
+  background: var(--tint); border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 18px; margin-bottom: 16px; max-width: 360px;
+}
+.summary__date  { font-weight: 700; font-size: 18px; }
+.summary__times { font-size: 22px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.summary__hours { font-size: 28px; font-weight: 800; margin-top: 4px; color: var(--green); }

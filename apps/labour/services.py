@@ -28,7 +28,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.core.models import Location, Role, User
-from apps.labour.models import Period, Shift, ShiftEdit, ShiftTemplate
+from apps.labour.models import Period, Shift, ShiftEdit, ShiftTemplate, Source
 
 # Used only for a position with no schedule set. The restaurant closes at 3pm,
 # so anybody clocking in from then on is there for the evening.
@@ -38,6 +38,16 @@ UNSCHEDULED_EVENING_FROM = time(15, 0)
 # be clocked out; shorter than the gap to the next morning, so a shift nobody
 # closed yesterday is recognised as missed rather than still going.
 STALE_AFTER = timedelta(hours=16)
+
+# Entered shifts (a worker writing in their own hours afterwards).
+# A shift longer than this is almost certainly a typo -- 5pm to 10am instead
+# of 10pm -- and is refused rather than paid.
+MAX_SHIFT = timedelta(hours=16)
+# How far back a worker may fill in a day themselves. Older than this, the
+# memory is not reliable enough to take on trust; an owner enters it.
+ENTRY_WINDOW_DAYS = 14
+# Somebody filling in their hours as they walk out may be a few minutes early.
+FUTURE_GRACE = timedelta(minutes=15)
 
 
 class ClockError(Exception):
@@ -242,3 +252,121 @@ def hours_for_day(user: User, day: date) -> Decimal:
     """Closed shifts only; an open shift has no hours until somebody closes it."""
     total = sum((s.worked_minutes or 0) for s in Shift.objects.filter(employee=user, business_date=day))
     return (Decimal(total) / Decimal(60)).quantize(Decimal("0.01"))
+
+
+def _overlapping(user: User, start: datetime, end: datetime):
+    return Shift.objects.filter(employee=user, clocked_in_at__lt=end).filter(
+        Q(clocked_out_at__gt=start) | Q(clocked_out_at__isnull=True, clocked_in_at__gte=start)
+    )
+
+
+# Implements: FR-101, FR-108.
+def record_shift(
+    user: User,
+    *,
+    day: date,
+    start: time,
+    end: time,
+    location: Location,
+    is_catering_event: bool = False,
+    now: datetime | None = None,
+    save: bool = True,
+) -> Shift:
+    """
+    A shift written in by the worker afterwards: the date, when they started,
+    when they left.
+
+    An end time at or before the start time means the shift ran past
+    midnight. With `save=False` the shift is checked and returned unsaved, so
+    the screen can show exactly what will be recorded before it is.
+    """
+    now = now or timezone.now()
+    _check_may_clock(user)
+    today = timezone.localdate(now)
+
+    if day > today:
+        raise ClockError("That date hasn't happened yet.")
+    if (today - day).days >= ENTRY_WINDOW_DAYS:
+        raise ClockError(f"That is more than {ENTRY_WINDOW_DAYS} days ago. Please ask an owner to add it.")
+
+    started = timezone.make_aware(datetime.combine(day, start))
+    ended = timezone.make_aware(datetime.combine(day, end))
+    if ended <= started:
+        ended = timezone.make_aware(datetime.combine(day + timedelta(days=1), end))
+    if ended - started > MAX_SHIFT:
+        hours = int((ended - started).total_seconds() // 3600)
+        raise ClockError(f"That is {hours} hours. Please check the start and end times.")
+    if ended > now + FUTURE_GRACE:
+        raise ClockError("The end time hasn't happened yet. Record the shift when you leave.")
+
+    clash = _overlapping(user, started, ended).first()
+    if clash:
+        a = timezone.localtime(clash.clocked_in_at)
+        b = (
+            f"{timezone.localtime(clash.clocked_out_at):%-I:%M %p}"
+            if clash.clocked_out_at
+            else "not finished"
+        )
+        raise ClockError(f"This overlaps a shift already recorded: {a:%a %-d %b, %-I:%M %p} – {b}.")
+
+    schedule = schedule_for(user, started)
+    shift = Shift(
+        employee=user,
+        location=location,
+        business_date=day,
+        clocked_in_at=started,
+        clocked_out_at=ended,
+        period=schedule.period,
+        position_id=user.position_id,
+        scheduled_start=schedule.starts_at,
+        scheduled_end=schedule.ends_at,
+        is_catering_event=is_catering_event,
+        source=Source.ENTERED,
+        created_by=user,
+    )
+    if save:
+        with transaction.atomic():
+            # Two quick submissions of the same form must not both pass the
+            # overlap check above.
+            User.objects.select_for_update().get(pk=user.pk)
+            if _overlapping(user, started, ended).exists():
+                raise ClockError("This overlaps a shift already recorded.")
+            shift.save()
+    return shift
+
+
+@dataclass(frozen=True)
+class Day:
+    day: date
+    shifts: list
+    hours: Decimal
+
+    @property
+    def is_empty(self) -> bool:
+        return not self.shifts
+
+
+# Implements: FR-109.
+def recent_days(user: User, *, days: int = 7, today: date | None = None) -> list[Day]:
+    """
+    The last `days` days for one person, newest first, including the days
+    with nothing recorded -- those are the ones a forgetful week leaves
+    behind, and the screen offers to fill them in.
+    """
+    today = today or timezone.localdate()
+    first = today - timedelta(days=days - 1)
+    by_day: dict[date, list[Shift]] = {}
+    for shift in Shift.objects.filter(employee=user, business_date__range=(first, today)).order_by(
+        "clocked_in_at"
+    ):
+        by_day.setdefault(shift.business_date, []).append(shift)
+
+    out = []
+    for i in range(days):
+        d = today - timedelta(days=i)
+        shifts = by_day.get(d, [])
+        minutes = sum(s.worked_minutes or 0 for s in shifts)
+        out.append(
+            Day(day=d, shifts=shifts, hours=(Decimal(minutes) / Decimal(60)).quantize(Decimal("0.01")))
+        )
+    return out

@@ -3,6 +3,11 @@
 {% block content %}
 <h1>What are you doing?</h1>
 
+<a class="tile" href="{% url 'hours_names' %}">
+  <span class="tile__title">My hours</span>
+  <span class="tile__sub">Record when you started and when you left</span>
+</a>
+
 <a class="tile" href="{% url 'transfer_new' %}">
   <span class="tile__title">Storage run</span>
   <span class="tile__sub">Record stock coming from Devonshire Street</span>
