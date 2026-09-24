@@ -1,0 +1,32 @@
+{% if review %}
+  <section class="review no-print">
+    <h2 class="h2">New on the tablet — please check before paying</h2>
+    {% for p in review %}
+      <div class="review__row">
+        <div>
+          <strong>{{ p }}</strong>{% if p.position %} · {{ p.position }}{% endif %}
+          <small class="muted">added {{ p.date_joined|date:"D j M" }}</small>
+          {% if p.possible_duplicate_of %}
+            <div class="nudge">Said they are not <strong>{{ p.possible_duplicate_of }}</strong>. If they are, merge them.</div>
+          {% endif %}
+        </div>
+        <div class="review__actions">
+          <form method="post" action="{% url 'hours_confirm' p.pk %}">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button class="btn btn--add" type="submit">Confirm — new person</button>
+          </form>
+          <form method="post" action="{% url 'hours_merge' p.pk %}" class="review__merge">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <select name="into" class="select" required>
+              <option value="">Same person as…</option>
+              {% for s in staff %}{% if s.pk != p.pk %}
+                <option value="{{ s.pk }}" {% if s.pk == p.possible_duplicate_of_id %}selected{% endif %}>{{ s }}</option>
+              {% endif %}{% endfor %}
+            </select>
+            <button class="btn btn--ghost" type="submit">Merge</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </section>
+{% endif %}

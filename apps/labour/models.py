@@ -129,6 +129,13 @@ class Shift(TimeStamped):
     # when the worker filled it in, which may be days after they worked.
     source = models.CharField(max_length=8, choices=Source.choices, default=Source.CLOCK)
 
+    # The payment that covered this shift. Empty means not paid yet -- which
+    # is decided by this link, not by the date, so a shift written in late
+    # for a week already paid is still picked up by the next payment.
+    pay_run = models.ForeignKey(
+        "PayRun", null=True, blank=True, on_delete=models.PROTECT, related_name="shifts"
+    )
+
     class Meta:
         ordering = ["-clocked_in_at"]
         indexes = [models.Index(fields=["employee", "business_date"])]
@@ -195,3 +202,65 @@ class ShiftEdit(TimeStamped):
 
     def __str__(self) -> str:
         return f"{self.shift}: {self.field_name} {self.old_value or '—'} → {self.new_value or '—'}"
+
+
+# Implements: FR-106, FR-112.
+class PayRun(TimeStamped):
+    """
+    One payment: the owners chose a date, and every unpaid, finished shift up
+    to it was paid. `created_by` is the owner who marked it paid.
+
+    A payment made by mistake is undone, not deleted: `voided_at` is set, its
+    shifts become unpaid again, and this row and its lines stay as the record
+    that it happened.
+    """
+
+    paid_up_to = models.DateField(help_text="Every unpaid shift up to and including this day.")
+    paid_on = models.DateField()
+    note = models.CharField(max_length=240, blank=True)
+
+    voided_at = models.DateTimeField(null=True, blank=True)
+    voided_by = models.ForeignKey(
+        "core.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    void_reason = models.CharField(max_length=240, blank=True)
+
+    class Meta:
+        ordering = ["-paid_up_to", "-created_at"]
+
+    def __str__(self) -> str:
+        return f"Paid {self.paid_on:%-d %b %Y}, up to {self.paid_up_to:%-d %b}"
+
+    @property
+    def is_void(self) -> bool:
+        return self.voided_at is not None
+
+    def delete(self, *args, **kwargs):
+        raise PermissionError("A payment is never deleted. Undo it instead; the record is kept.")
+
+
+class PayRunLine(TimeStamped):
+    """
+    What one person was paid for in one payment, fixed at the moment it was
+    paid. The shifts are linked too, but this is the figure that was handed
+    over, and it does not move if anything is corrected afterwards.
+    """
+
+    pay_run = models.ForeignKey(PayRun, on_delete=models.PROTECT, related_name="lines")
+    employee = models.ForeignKey("core.User", on_delete=models.PROTECT, related_name="pay_lines")
+    first_day = models.DateField()
+    last_day = models.DateField()
+    shift_count = models.PositiveIntegerField()
+    minutes = models.PositiveIntegerField()
+    morning_minutes = models.PositiveIntegerField()
+    evening_minutes = models.PositiveIntegerField()
+    catering_minutes = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["pay_run", "employee__display_name"]
+        constraints = [
+            models.UniqueConstraint(fields=["pay_run", "employee"], name="one_line_per_person_per_payment"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.employee} · {self.pay_run}"

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load hours %}
+{% block title %}Payment {{ run.paid_on|date:"j M Y" }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<h1>Staff hours</h1>
+{% include "labour/_tabs.html" %}
+
+<h2 class="payment__title">Paid {{ run.paid_on|date:"l j F Y" }} — every unpaid hour up to {{ run.paid_up_to|date:"j F" }}</h2>
+<p class="muted">Marked as paid by {{ run.created_by|default:"—" }}{% if run.note %} · {{ run.note }}{% endif %}</p>
+
+{% if run.is_void %}
+  <p class="alert">Undone on {{ run.voided_at|date:"j M Y, g:i A" }} by {{ run.voided_by }}: “{{ run.void_reason }}”. These hours are unpaid again. The figures below are what this payment said at the time.</p>
+{% endif %}
+
+<div class="table-wrap">
+  <table class="hours">
+    <thead><tr><th>Name</th><th>Work from</th><th>to</th><th>Shifts</th><th>Morning</th><th>Evening</th><th class="hours__total">Total</th><th></th></tr></thead>
+    <tbody>
+      {% for li in lines %}
+        <tr>
+          <td><strong>{{ li.employee }}</strong>{% if li.employee.position %}<small>{{ li.employee.position }}</small>{% endif %}</td>
+          <td>{{ li.first_day|date:"D j M" }}</td><td>{{ li.last_day|date:"D j M" }}</td>
+          <td>{{ li.shift_count }}</td>
+          <td>{{ li.morning_minutes|hm }}</td><td>{{ li.evening_minutes|hm }}</td>
+          <td class="hours__total">{{ li.minutes|hm }}<small>{{ li.minutes|decimal_hours }} h</small></td>
+          <td><a class="no-print" href="{% url 'hours_pay_statement' run.pk li.employee_id %}">Statement</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot><tr><th>Everyone</th><th></th><th></th><th></th><th></th><th></th>
+      <th class="hours__total">{{ total|hm }}<small>{{ total|decimal_hours }} h</small></th><th></th></tr></tfoot>
+  </table>
+</div>
+
+<div class="actions no-print">
+  <a class="btn btn--ghost" href="?format=csv">Download spreadsheet (CSV)</a>
+  <button class="btn btn--ghost" type="button" onclick="window.print()">Print</button>
+</div>
+
+{% if not run.is_void %}
+  <details class="undo no-print">
+    <summary>Undo this payment</summary>
+    <p class="muted">Only if it was marked by mistake. Its hours become unpaid again and appear under To pay. This payment stays in the list, marked as undone.</p>
+    <form method="post" action="{% url 'hours_payment_undo' run.pk %}" class="stack">
+      {% csrf_token %}
+      <label class="field"><span class="field__label">Why?</span><input type="text" name="reason" maxlength="240" required></label>
+      <button class="btn btn--ghost" type="submit">Undo payment</button>
+    </form>
+  </details>
+{% endif %}
+{% endblock %}

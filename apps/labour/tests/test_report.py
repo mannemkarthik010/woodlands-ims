@@ -168,7 +168,7 @@ class ReportScreenTests(ReportTestCase):
     def test_the_report_shows_the_total_and_downloads_as_a_spreadsheet(self):
         page = self.get("hours_report")
         self.assertContains(page, "Ravi Kumar")
-        self.assertContains(page, "5 h 30 m")
+        self.assertContains(page, "5\u00a0h\u00a030\u00a0m")
         csv = self.get("hours_report", format="csv")
         self.assertEqual(csv["Content-Type"], "text/csv; charset=utf-8")
         lines = csv.content.decode().splitlines()
@@ -196,7 +196,16 @@ class ReportScreenTests(ReportTestCase):
         self.assertContains(page, "New on the tablet")
         self.assertContains(page, "Said they are not <strong>Ravi Kumar</strong>")
 
-        response = self.client.post(reverse("hours_merge", args=[dup.pk]), {"into": self.ravi.pk, "back": ""})
-        self.assertRedirects(response, f"{reverse('hours_report')}?")
+        came_from = f"{reverse('hours_report')}?period=last_week"
+        response = self.client.post(
+            reverse("hours_merge", args=[dup.pk]), {"into": self.ravi.pk, "next": came_from}
+        )
+        self.assertRedirects(response, came_from, fetch_redirect_response=False)
+        # A "next" pointing off the site is ignored.
+        other = User.objects.create_user("x", display_name="X", role=Role.KITCHEN, needs_review=True)
+        response = self.client.post(
+            reverse("hours_confirm", args=[other.pk]), {"next": "https://evil.example/"}
+        )
+        self.assertRedirects(response, reverse("hours_pay"), fetch_redirect_response=False)
         dup.refresh_from_db()
         self.assertFalse(dup.is_active_staff)

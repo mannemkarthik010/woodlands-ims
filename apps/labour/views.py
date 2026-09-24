@@ -24,17 +24,20 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import PermissionDenied
+from django.db.models import Count, Prefetch, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
 from apps.core.models import Location, Position, Role, User
 from apps.core.people import AlreadyListed, LooksLike, PersonError, add_person
 from apps.core.pins import LOCKOUT, PinError, check_pin, is_locked, validate_pin
-from apps.labour.models import Shift
+from apps.labour.models import PayRun, PayRunLine, Shift
+from apps.labour.pay import default_up_to, pay, undo_payment, unpaid
 from apps.labour.reports import PERIODS, hours, hours_report, people_to_review, period_dates, person_hours
 from apps.labour.services import (
     ENTRY_WINDOW_DAYS,
@@ -383,6 +386,7 @@ def report(request):
             "review": people_to_review(),
             "staff": _people(),
             "query": request.GET.urlencode(),
+            "tab": "period",
         },
     )
 
@@ -422,13 +426,21 @@ def person_report(request, pk):
     )
 
 
+def _back(request) -> str:
+    """Where the owner came from, if it is a page on this site; the pay screen otherwise."""
+    target = request.POST.get("next", "")
+    if url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}):
+        return target
+    return reverse("hours_pay")
+
+
 @owner_required
 @require_POST
 def confirm(request, pk):
     person = get_object_or_404(User, pk=pk)
     confirm_person(person, by=request.user)
     messages.success(request, f"{person} confirmed.")
-    return redirect(f"{reverse('hours_report')}?{request.POST.get('back', '')}")
+    return redirect(_back(request))
 
 
 # Implements: FR-105.
@@ -437,7 +449,7 @@ def confirm(request, pk):
 def merge(request, pk):
     duplicate = get_object_or_404(User, pk=pk)
     into = _people().filter(pk=request.POST.get("into") or 0).first()
-    back = f"{reverse('hours_report')}?{request.POST.get('back', '')}"
+    back = _back(request)
     if into is None:
         messages.error(request, "Choose who they really are.")
         return redirect(back)
@@ -450,3 +462,146 @@ def merge(request, pk):
         request, f"{duplicate} merged into {into}: {moved} shift{'s' if moved != 1 else ''} moved."
     )
     return redirect(back)
+
+
+# --- Paying out -------------------------------------------------------------
+
+
+def _up_to(value: str | None) -> date:
+    try:
+        return min(date.fromisoformat(value or ""), timezone.localdate())
+    except ValueError:
+        return default_up_to()
+
+
+# Implements: FR-106.
+@owner_required
+def pay_screen(request):
+    """
+    Everybody's unpaid hours up to a day the owner chooses. Tick who is being
+    paid, check the summary, mark as paid.
+    """
+    source = request.POST if request.method == "POST" else request.GET
+    up_to = _up_to(source.get("up_to"))
+    preview = unpaid(up_to)
+    context = {
+        "preview": preview,
+        "up_to": up_to,
+        "review": people_to_review(),
+        "staff": _people(),
+        "query": f"up_to={up_to.isoformat()}",
+        "tab": "pay",
+    }
+
+    if request.method != "POST":
+        return render(request, "labour/pay.html", context)
+
+    chosen_ids = {int(i) for i in request.POST.getlist("person") if i.isdigit()}
+    rows = [r for r in preview.payable if r.person.pk in chosen_ids]
+    if request.POST.get("step") == "pay":
+        try:
+            run = pay(
+                up_to, people=[r.person for r in rows], by=request.user, note=request.POST.get("note", "")
+            )
+        except ClockError as e:
+            context["error"] = str(e)
+            return render(request, "labour/pay.html", context)
+        messages.success(request, f"Marked as paid: {run.lines.count()} people, up to {up_to:%-d %b}.")
+        return redirect("hours_payment", pk=run.pk)
+
+    if not rows:
+        context["error"] = "Choose at least one person to pay."
+        return render(request, "labour/pay.html", context)
+    return render(
+        request,
+        "labour/pay_confirm.html",
+        {
+            "rows": rows,
+            "up_to": up_to,
+            "total": sum(r.total for r in rows),
+            "tab": "pay",
+            "skipped_open": sum(r.open_shifts for r in rows),
+        },
+    )
+
+
+@owner_required
+def payments(request):
+    # Explicit order: a query with totals ignores the model's default ordering.
+    runs = (
+        PayRun.objects.annotate(people=Count("lines"), minutes=Sum("lines__minutes"))
+        .select_related("created_by", "voided_by")
+        .order_by("-paid_up_to", "-created_at")
+    )
+    return render(request, "labour/payments.html", {"runs": runs, "tab": "payments"})
+
+
+@owner_required
+def payment(request, pk):
+    run = get_object_or_404(PayRun.objects.select_related("created_by", "voided_by"), pk=pk)
+    lines = run.lines.select_related("employee", "employee__position")
+    if request.GET.get("format") == "csv":
+        return _csv(
+            f"paid-{run.paid_on:%Y-%m-%d}-up-to-{run.paid_up_to:%Y-%m-%d}.csv",
+            [
+                "Name",
+                "From",
+                "To",
+                "Shifts",
+                "Morning h",
+                "Evening h",
+                "of which Catering h (already in Morning/Evening)",
+                "Total h",
+                "Total h:m",
+            ],
+            [
+                [
+                    str(li.employee),
+                    li.first_day.isoformat(),
+                    li.last_day.isoformat(),
+                    li.shift_count,
+                    hours(li.morning_minutes),
+                    hours(li.evening_minutes),
+                    hours(li.catering_minutes),
+                    hours(li.minutes),
+                    f"{li.minutes // 60}:{li.minutes % 60:02d}",
+                ]
+                for li in lines
+            ],
+        )
+    return render(
+        request,
+        "labour/payment.html",
+        {"run": run, "lines": lines, "total": sum(li.minutes for li in lines), "tab": "payments"},
+    )
+
+
+@owner_required
+@require_POST
+def payment_undo(request, pk):
+    run = get_object_or_404(PayRun, pk=pk)
+    try:
+        undo_payment(run, by=request.user, reason=request.POST.get("reason", ""))
+    except ClockError as e:
+        messages.error(request, str(e))
+    else:
+        messages.success(request, "Payment undone. Its hours are unpaid again and show under To pay.")
+    return redirect("hours_payment", pk=run.pk)
+
+
+# Implements: FR-109, FR-112.
+@owner_required
+def pay_statement(request, pk, person_pk):
+    """What one person was paid for in one payment: the page to print and hand them."""
+    run = get_object_or_404(PayRun, pk=pk)
+    line = get_object_or_404(
+        PayRunLine.objects.select_related("employee", "employee__position"),
+        pay_run=run,
+        employee_id=person_pk,
+    )
+    shifts = (
+        Shift.objects.filter(pay_run=run, employee_id=person_pk)
+        .prefetch_related(Prefetch("edits", to_attr="edit_list"))
+        .order_by("clocked_in_at")
+    )
+    return render(request, "labour/pay_statement.html", {"run": run, "line": line, "shifts": shifts})

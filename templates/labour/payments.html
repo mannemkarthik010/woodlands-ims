@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load hours %}
+{% block title %}Payments{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<h1>Staff hours</h1>
+{% include "labour/_tabs.html" %}
+
+{% if runs %}
+  <div class="table-wrap">
+    <table class="hours">
+      <thead><tr><th>Paid on</th><th>Up to</th><th>People</th><th class="hours__total">Hours</th><th>By</th><th></th></tr></thead>
+      <tbody>
+        {% for run in runs %}
+          <tr{% if run.is_void %} class="is-void"{% endif %}>
+            <td><a href="{% url 'hours_payment' run.pk %}">{{ run.paid_on|date:"D j M Y" }}</a></td>
+            <td>{{ run.paid_up_to|date:"D j M" }}</td>
+            <td>{{ run.people }}</td>
+            <td class="hours__total">{{ run.minutes|default:0|hm }}</td>
+            <td>{{ run.created_by|default:"—" }}</td>
+            <td>{% if run.is_void %}<span class="flag flag--bad">undone</span>{% endif %}{% if run.note %}<small>{{ run.note }}</small>{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="muted">No payments yet. They appear here once hours are marked as paid under <a href="{% url 'hours_pay' %}">To pay</a>.</p>
+{% endif %}
+{% endblock %}

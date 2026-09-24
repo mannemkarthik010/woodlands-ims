@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load hours %}
+{% block title %}Mark as paid?{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<h1>Mark as paid?</h1>
+<p>Every unpaid hour up to <strong>{{ up_to|date:"l j F Y" }}</strong> for these {{ rows|length }} {{ rows|length|pluralize:"person,people" }}.
+  After this, these hours are locked and the next payment starts from what is left unpaid.</p>
+
+<div class="table-wrap">
+  <table class="hours">
+    <thead><tr><th>Name</th><th>Work from</th><th>to</th><th class="hours__total">Total</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+        <tr><td>{{ r.person }}</td><td>{{ r.first_day|date:"D j M" }}</td><td>{{ r.last_day|date:"D j M" }}</td>
+          <td class="hours__total">{{ r.total|hm }}<small>{{ r.total|decimal_hours }} h</small></td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot><tr><th>Total</th><th></th><th></th><th class="hours__total">{{ total|hm }}<small>{{ total|decimal_hours }} h</small></th></tr></tfoot>
+  </table>
+</div>
+
+{% if skipped_open %}<p class="alert">{{ skipped_open }} unfinished shift{{ skipped_open|pluralize }} {{ skipped_open|pluralize:"is,are" }} not included.</p>{% endif %}
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <input type="hidden" name="up_to" value="{{ up_to|date:'Y-m-d' }}">
+  <input type="hidden" name="step" value="pay">
+  {% for r in rows %}<input type="hidden" name="person" value="{{ r.person.pk }}">{% endfor %}
+  <label class="field">
+    <span class="field__label">Note (optional) — e.g. "Cash, 16 Sep"</span>
+    <input type="text" name="note" maxlength="240">
+  </label>
+  <div class="actions">
+    <button class="btn btn--primary" type="submit">Yes, mark as paid</button>
+    <a class="btn btn--ghost" href="{% url 'hours_pay' %}?up_to={{ up_to|date:'Y-m-d' }}">Back</a>
+  </div>
+</form>
+{% endblock %}

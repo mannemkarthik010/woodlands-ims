@@ -107,7 +107,7 @@ class Report:
 def _shifts(start: date, end: date):
     return (
         Shift.objects.filter(business_date__range=(start, end))
-        .select_related("employee", "employee__position")
+        .select_related("employee", "employee__position", "pay_run")
         .annotate(edit_count=Count("edits"))
         .order_by("clocked_in_at")
     )
@@ -134,14 +134,18 @@ def _add(row: PersonHours, shift: Shift) -> None:
         row.catering += minutes
 
 
+def aggregate(shifts, row_class=PersonHours) -> list:
+    """One row per person, alphabetical, from any set of shifts."""
+    rows: dict = {}
+    for shift in shifts:
+        row = rows.setdefault(shift.employee_id, row_class(person=shift.employee))
+        _add(row, shift)
+    return sorted(rows.values(), key=lambda r: str(r.person).casefold())
+
+
 # Implements: FR-106, FR-112.
 def hours_report(start: date, end: date) -> Report:
-    rows: dict[int, PersonHours] = {}
-    for shift in _shifts(start, end):
-        row = rows.setdefault(shift.employee_id, PersonHours(person=shift.employee))
-        _add(row, shift)
-    ordered = sorted(rows.values(), key=lambda r: str(r.person).casefold())
-    return Report(start=start, end=end, rows=ordered)
+    return Report(start=start, end=end, rows=aggregate(_shifts(start, end)))
 
 
 # Implements: FR-109, FR-112.

@@ -112,7 +112,25 @@ added this way appears at the top of **Staff hours** for an owner to look at:
 
 ### Paying out
 
-**Staff hours** (owners only) adds every shift in the period into one total per
+The owners run their own pay cycle. **Staff hours & pay → To pay** shows every
+unpaid hour up to a day they choose, one line per person, starting from the
+first day not yet paid. Tick who is being paid, **Mark as paid…**, check the
+summary, confirm. Next time the screen starts from what is left.
+
+- "Unpaid" is kept per shift, not by date. A shift written in late for a
+  fortnight already paid is picked up by the next payment and marked
+  *from a period already paid*. Pressing the button twice pays nothing twice.
+- People added on the tablet cannot be paid until confirmed or merged. Shifts
+  with no end time are never paid; they wait until an owner fixes them.
+- A paid shift cannot be corrected. If a payment was marked by mistake, open it
+  under **Payments** and **Undo this payment** with a reason: its hours become
+  unpaid again and the payment stays in the list, marked undone.
+- Each payment has a **Statement** per person to print or save as a PDF and hand
+  over, and a CSV of the whole payment.
+
+### Hours for any period
+
+**Any period** adds every shift in a range into one total per
 person — morning, evening, the part of it that was catering, and the total in
 both `41 h 35 m` and `41.58`. Totals are added in minutes, so they always equal
 the shifts they came from. A shift with no end time is **not counted** and is

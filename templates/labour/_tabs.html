@@ -1,0 +1,5 @@
+<nav class="tabs no-print">
+  <a class="tabs__tab{% if tab == 'pay' %} tabs__tab--on{% endif %}" href="{% url 'hours_pay' %}">To pay</a>
+  <a class="tabs__tab{% if tab == 'payments' %} tabs__tab--on{% endif %}" href="{% url 'hours_payments' %}">Payments</a>
+  <a class="tabs__tab{% if tab == 'period' %} tabs__tab--on{% endif %}" href="{% url 'hours_report' %}">Any period</a>
+</nav>

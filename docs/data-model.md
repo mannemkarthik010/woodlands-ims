@@ -99,6 +99,7 @@ A job in the kitchen or on the floor -- dosa station, prep, server, dishwasher. 
 | `batches_made` | ForeignKey → ProductionBatch | yes |  |
 | `notifications` | ForeignKey → Notification | yes |  |
 | `shifts` | ForeignKey → Shift | yes |  |
+| `pay_lines` | ForeignKey → PayRunLine | yes |  |
 | `logentry` | ForeignKey → LogEntry | yes |  |
 | `id` | BigAuto |  |  |
 | `password` | Char(128) |  |  |
@@ -577,6 +578,45 @@ One CSV, one business date.
 
 ## `labour`
 
+### PayRun
+
+One payment: the owners chose a date, and every unpaid, finished shift up to it was paid. `created_by` is the owner who marked it paid. A payment made by mistake is undone, not deleted: `voided_at` is set, its shifts become unpaid again, and this row and its lines stay as the record that it happene…
+
+| Field | Type | Null | Notes |
+|---|---|---|---|
+| `shifts` | ForeignKey → Shift | yes |  |
+| `lines` | ForeignKey → PayRunLine | yes |  |
+| `id` | BigAuto |  |  |
+| `created_at` | DateTime |  |  |
+| `updated_at` | DateTime |  |  |
+| `created_by` | ForeignKey → User | yes |  |
+| `paid_up_to` | Date |  | Every unpaid shift up to and including this day. |
+| `paid_on` | Date |  |  |
+| `note` | Char(240) |  |  |
+| `voided_at` | DateTime | yes |  |
+| `voided_by` | ForeignKey → User | yes |  |
+| `void_reason` | Char(240) |  |  |
+
+### PayRunLine
+
+What one person was paid for in one payment, fixed at the moment it was paid. The shifts are linked too, but this is the figure that was handed over, and it does not move if anything is corrected afterwards.
+
+| Field | Type | Null | Notes |
+|---|---|---|---|
+| `id` | BigAuto |  |  |
+| `created_at` | DateTime |  |  |
+| `updated_at` | DateTime |  |  |
+| `created_by` | ForeignKey → User | yes |  |
+| `pay_run` | ForeignKey → PayRun |  |  |
+| `employee` | ForeignKey → User |  |  |
+| `first_day` | Date |  |  |
+| `last_day` | Date |  |  |
+| `shift_count` | PositiveInteger |  |  |
+| `minutes` | PositiveInteger |  |  |
+| `morning_minutes` | PositiveInteger |  |  |
+| `evening_minutes` | PositiveInteger |  |  |
+| `catering_minutes` | PositiveInteger |  |  |
+
 ### Shift
 
 | Field | Type | Null | Notes |
@@ -599,6 +639,7 @@ One CSV, one business date.
 | `is_catering_event` | Boolean |  |  |
 | `note` | Char(240) |  |  |
 | `source` | Char(8) |  | _CLOCK, ENTERED_ |
+| `pay_run` | ForeignKey → PayRun | yes |  |
 
 ### ShiftEdit
 

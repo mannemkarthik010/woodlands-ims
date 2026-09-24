@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load hours %}
+{% block title %}Pay statement — {{ line.employee }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<a class="back no-print" href="{% url 'hours_payment' run.pk %}">← This payment</a>
+
+<header class="statement">
+  <div class="statement__brand">Woodlands Indian Cuisine · Chatsworth</div>
+  <h1>Pay statement — {{ line.employee }}</h1>
+  <div>Paid {{ run.paid_on|date:"l j F Y" }} for work {{ line.first_day|date:"j M" }} – {{ line.last_day|date:"j M Y" }}{% if line.employee.position %} · {{ line.employee.position }}{% endif %}</div>
+</header>
+
+{% if run.is_void %}<p class="alert">This payment was undone on {{ run.voided_at|date:"j M Y" }}: “{{ run.void_reason }}”.</p>{% endif %}
+
+<div class="totals">
+  <div><span>Hours paid</span><strong>{{ line.minutes|hm }}</strong><small>{{ line.minutes|decimal_hours }} hours</small></div>
+  <div><span>Shifts</span><strong>{{ line.shift_count }}</strong></div>
+  <div><span>Morning</span><strong>{{ line.morning_minutes|hm }}</strong></div>
+  <div><span>Evening</span><strong>{{ line.evening_minutes|hm }}</strong></div>
+  {% if line.catering_minutes %}<div><span>of which catering</span><strong>{{ line.catering_minutes|hm }}</strong></div>{% endif %}
+</div>
+
+{% if shifts %}
+  <div class="table-wrap">
+    <table class="hours">
+      <thead><tr><th>Date</th><th>Shift</th><th>Started</th><th>Left</th><th class="hours__total">Hours</th><th>Notes</th></tr></thead>
+      <tbody>
+        {% for s in shifts %}
+          <tr>
+            <td>{{ s.business_date|date:"D j M" }}</td><td>{{ s.get_period_display }}</td>
+            <td>{{ s.clocked_in_at|time:"g:i A" }}</td>
+            <td>{{ s.clocked_out_at|time:"g:i A" }}{% if s.clocked_out_at|date:"Ymd" != s.clocked_in_at|date:"Ymd" %} <small>(next day)</small>{% endif %}</td>
+            <td class="hours__total">{{ s.worked_minutes|hm }}</td>
+            <td class="hours__flags">
+              {% if s.is_catering_event %}<span class="flag">catering</span>{% endif %}
+              {% for e in s.edit_list %}<div class="edit">Corrected: {{ e.old_value|default:"—" }} → {{ e.new_value }} — {{ e.reason }}</div>{% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+<p class="muted statement__foot">Hours only. Printed {% now "j M Y, g:i A" %}. Any questions, please speak to an owner.</p>
+<div class="actions no-print">
+  <button class="btn btn--primary" type="button" onclick="window.print()">Print or save as PDF</button>
+</div>
+{% endblock %}

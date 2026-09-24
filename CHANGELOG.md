@@ -5,6 +5,16 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Paying out on the owners' own cycle: choose a day, every unpaid hour up to it is listed per
+  person from the first day not yet paid, tick who is paid, check, mark as paid
+- Unpaid is kept per shift, so a shift written in late for a period already paid is picked up
+  by the next payment and says so; nothing is paid twice or falls between two periods
+- Paid hours are locked: a paid shift cannot be corrected, and a duplicate holding paid hours
+  cannot be merged, until the payment is undone — with a reason, the record kept
+- People added on the tablet cannot be paid until an owner confirms or merges them; shifts
+  with no end time are never paid
+- Payments history, a pay statement per person to print or save as a PDF, and a CSV per payment
+- Workers see "paid" against their own shifts
 - The tablet asks for your name from a list, not a row of buttons, with the PIN on the same
   screen — so the same person is never spelled two ways
 - "My name isn't on the list — add me": first name, last name, job and a PIN. The same name

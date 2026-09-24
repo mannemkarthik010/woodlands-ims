@@ -37,6 +37,7 @@
             <td class="hours__total">{% if s.worked_minutes is not None %}{{ s.worked_minutes|hm }}{% else %}—{% endif %}</td>
             <td class="hours__flags">
               {% if s.is_catering_event %}<span class="flag">catering</span>{% endif %}
+              {% if s.pay_run_id %}<span class="flag flag--paid">paid {{ s.pay_run.paid_on|date:"j M" }}</span>{% else %}<span class="flag">unpaid</span>{% endif %}
               {% if s.days_late_entered >= 2 %}<span class="flag">written {{ s.days_late_entered }} days later</span>{% endif %}
               {% for e in s.edit_list %}<div class="edit">Corrected {{ e.field_name|cut:"_at"|cut:"clocked_" }}: {{ e.old_value|default:"—" }} → {{ e.new_value }} — {{ e.reason }}</div>{% endfor %}
             </td>

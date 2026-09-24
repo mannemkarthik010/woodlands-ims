@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load hours %}
+{% block title %}To pay{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<h1>Staff hours</h1>
+{% include "labour/_tabs.html" %}
+
+<form method="get" class="payto">
+  <label>Pay everything unpaid up to and including
+    <input type="date" name="up_to" value="{{ up_to|date:'Y-m-d' }}" max="{% now 'Y-m-d' %}" onchange="this.form.submit()">
+  </label>
+  <noscript><button class="btn btn--ghost" type="submit">Show</button></noscript>
+</form>
+
+{% include "labour/_review.html" %}
+
+{% if preview.payable %}
+  <p class="period__title">
+    Unpaid hours from <strong>{{ preview.first_day|date:"D j M" }}</strong> to <strong>{{ up_to|date:"D j M Y" }}</strong>
+  </p>
+
+  {% if preview.open_shifts %}
+    <p class="alert">{{ preview.open_shifts }} shift{{ preview.open_shifts|pluralize }} with no end time {{ preview.open_shifts|pluralize:"is,are" }} not included. Fix {{ preview.open_shifts|pluralize:"it,them" }} and {{ preview.open_shifts|pluralize:"it,they" }} will show here to pay.</p>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="up_to" value="{{ up_to|date:'Y-m-d' }}">
+    <input type="hidden" name="step" value="review">
+    <div class="table-wrap">
+      <table class="hours">
+        <thead>
+          <tr><th>Pay</th><th>Name</th><th>Last paid up to</th><th>Unpaid</th><th>Morning</th><th>Evening</th>
+            <th class="hours__total">Total</th><th>Check</th></tr>
+        </thead>
+        <tbody>
+          {% for r in preview.payable %}
+            <tr>
+              <td>
+                {% if r.person.needs_review %}
+                  <input type="checkbox" disabled aria-label="Confirm {{ r.person }} first">
+                {% else %}
+                  <input type="checkbox" name="person" value="{{ r.person.pk }}" checked aria-label="Pay {{ r.person }}">
+                {% endif %}
+              </td>
+              <td><strong>{{ r.person }}</strong>{% if r.person.position %}<small>{{ r.person.position }}</small>{% endif %}</td>
+              <td>{% if r.last_paid_up_to %}{{ r.last_paid_up_to|date:"D j M" }}{% else %}<span class="muted">never</span>{% endif %}</td>
+              <td>{{ r.first_day|date:"j M" }} – {{ r.last_day|date:"j M" }}<small>{{ r.days }} day{{ r.days|pluralize }}</small></td>
+              <td>{{ r.morning|hm }}</td>
+              <td>{{ r.evening|hm }}</td>
+              <td class="hours__total">{{ r.total|hm }}<small>{{ r.total|decimal_hours }} h</small></td>
+              <td class="hours__flags">
+                {% if r.person.needs_review %}<span class="flag flag--bad">confirm first</span>{% endif %}
+                {% if r.from_paid_period %}<span class="flag">{{ r.from_paid_period }} from a period already paid</span>{% endif %}
+                {% if r.open_shifts %}<span class="flag flag--bad">{{ r.open_shifts }} unfinished</span>{% endif %}
+                {% if r.late_entries %}<span class="flag">{{ r.late_entries }} written late</span>{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr><th></th><th>Everyone</th><th></th><th></th><th></th><th></th>
+            <th class="hours__total">{{ preview.total|hm }}<small>{{ preview.total|decimal_hours }} h</small></th><th></th></tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="actions">
+      <button class="btn btn--primary btn--big" type="submit">Mark as paid…</button>
+    </div>
+  </form>
+{% else %}
+  <p class="banner">Nothing unpaid up to {{ up_to|date:"D j M Y" }}.{% if preview.open_shifts %} {{ preview.open_shifts }} unfinished shift{{ preview.open_shifts|pluralize }} still need{{ preview.open_shifts|pluralize:"s," }} an end time.{% endif %}</p>
+{% endif %}
+{% endblock %}

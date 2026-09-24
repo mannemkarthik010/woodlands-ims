@@ -215,7 +215,11 @@ def correct_shift(shift: Shift, *, by: User, reason: str, **changes) -> Shift:
     if unknown:
         raise ClockError(f"Cannot correct {', '.join(sorted(unknown))}.")
 
-    shift = Shift.objects.select_for_update().get(pk=shift.pk)
+    shift = Shift.objects.select_for_update().select_related("pay_run").get(pk=shift.pk)
+    if shift.pay_run_id:
+        raise ClockError(
+            f"This shift is already paid ({shift.pay_run}). Undo that payment first, then correct it."
+        )
     clocked_in = changes.get("clocked_in_at", shift.clocked_in_at)
     clocked_out = changes.get("clocked_out_at", shift.clocked_out_at)
     if clocked_out is not None and clocked_out <= clocked_in:
@@ -406,6 +410,11 @@ def merge_person(duplicate: User, *, into: User, by: User) -> int:
         raise NotAllowed("Owners are not on the clock.")
 
     shifts = list(Shift.objects.select_for_update().filter(employee=duplicate).order_by("clocked_in_at"))
+    if any(s.pay_run_id for s in shifts):
+        raise ClockError(
+            f"Some of {duplicate}'s hours are already paid. Undo that payment first, then merge, "
+            "so the payment is not left naming the wrong person."
+        )
     for shift in shifts:
         end = shift.clocked_out_at or shift.clocked_in_at + timedelta(minutes=1)
         if _overlapping(into, shift.clocked_in_at, end).exists():

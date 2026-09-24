@@ -13,7 +13,8 @@ def hm(minutes) -> str:
     if minutes is None:
         return "—"
     h, m = divmod(int(minutes), 60)
-    return f"{h} h {m:02d} m"
+    # Non-breaking spaces: "16 h 30 m" must never wrap in the middle of a column.
+    return f"{h}\u00a0h\u00a0{m:02d}\u00a0m"
 
 
 @register.filter
