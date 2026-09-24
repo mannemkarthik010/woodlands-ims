@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load hours %}
 {% block title %}Is this right?{% endblock %}
 {% block wrap_class %}wrap--form{% endblock %}
 {% block content %}
@@ -9,7 +10,7 @@
   <div class="summary__times">{{ shift.clocked_in_at|time:"g:i A" }} – {{ shift.clocked_out_at|time:"g:i A" }}
     {% if shift.clocked_out_at|date:"Ymd" != shift.clocked_in_at|date:"Ymd" %}<small>(next day)</small>{% endif %}
   </div>
-  <div class="summary__hours">{{ shift.hours_worked }} hours</div>
+  <div class="summary__hours">{{ shift.worked_minutes|hm }}</div>
   <div class="muted">{{ shift.get_period_display }} shift{% if shift.is_catering_event %} · catering{% endif %}</div>
 </div>
 

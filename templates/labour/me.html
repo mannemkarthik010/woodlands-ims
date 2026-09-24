@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load hours %}
 {% block title %}My hours{% endblock %}
 {% block wrap_class %}wrap--form{% endblock %}
 {% block content %}
@@ -9,7 +10,7 @@
   <p class="banner" role="status">
     Saved: {{ saved.business_date|date:"D j M" }} · {{ saved.get_period_display }} ·
     {{ saved.clocked_in_at|time:"g:i A" }} – {{ saved.clocked_out_at|time:"g:i A" }} ·
-    <strong>{{ saved.hours_worked }} hours</strong>
+    <strong>{{ saved.worked_minutes|hm }}</strong>
   </p>
 {% endif %}
 
@@ -30,7 +31,7 @@
     <li class="days__row{% if d.is_empty %} days__row--empty{% endif %}">
       <div class="days__head">
         <span class="days__date">{{ d.day|date:"D j M" }}</span>
-        {% if not d.is_empty %}<span class="days__total">{{ d.hours }} h</span>{% endif %}
+        {% if not d.is_empty %}<span class="days__total">{{ d.minutes|hm }}</span>{% endif %}
       </div>
       {% for s in d.shifts %}
         <div class="days__shift">
@@ -49,7 +50,7 @@
   {% endfor %}
 </ul>
 
-<p class="muted">This week so far: <strong>{{ week_hours }} hours</strong>.
+<p class="muted">This week so far: <strong>{{ week_minutes|hm }}</strong>.
   Something wrong on an entry? Tell an owner — they can correct it.</p>
 
 <form method="post" action="{% url 'hours_done' %}">

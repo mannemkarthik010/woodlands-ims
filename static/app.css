@@ -462,6 +462,7 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
    width, so the fields and the buttons under them line up. */
 .wrap--form { max-width: 520px; }
 .wrap--form .stack { max-width: none; }
+.wrap--form .summary { max-width: none; }
 
 /* ---- Paying out ------------------------------------------------------ */
 .payto label { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-weight: 600; }

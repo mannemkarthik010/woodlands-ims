@@ -52,7 +52,7 @@ class HoursFlowTests(TestCase):
         # Check first: nothing is written until the worker says it is right.
         check = self.client.post(reverse("hours_add"), self.shift_form(step="check"))
         self.assertContains(check, "Is this right?")
-        self.assertContains(check, "5.00 hours")
+        self.assertContains(check, "5\u00a0h\u00a000\u00a0m")
         self.assertFalse(Shift.objects.exists())
 
         saved = self.client.post(reverse("hours_add"), self.shift_form(step="save"))

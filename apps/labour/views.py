@@ -243,7 +243,7 @@ def me(request):
             "empty_days": [
                 d for d in days[1:] if d.is_empty and d.day >= timezone.localdate(worker.date_joined)
             ],
-            "week_hours": sum(d.hours for d in days),
+            "week_minutes": sum(d.minutes for d in days),
             "saved": saved,
             "welcome": request.GET.get("welcome") and worker.needs_review,
         },

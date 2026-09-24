@@ -344,6 +344,7 @@ class Day:
     day: date
     shifts: list
     hours: Decimal
+    minutes: int = 0
 
     @property
     def is_empty(self) -> bool:
@@ -371,7 +372,12 @@ def recent_days(user: User, *, days: int = 7, today: date | None = None) -> list
         shifts = by_day.get(d, [])
         minutes = sum(s.worked_minutes or 0 for s in shifts)
         out.append(
-            Day(day=d, shifts=shifts, hours=(Decimal(minutes) / Decimal(60)).quantize(Decimal("0.01")))
+            Day(
+                day=d,
+                shifts=shifts,
+                hours=(Decimal(minutes) / Decimal(60)).quantize(Decimal("0.01")),
+                minutes=minutes,
+            )
         )
     return out
 
