@@ -5,6 +5,18 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Clocking in and out, as the owners describe the day: a morning shift and an evening shift,
+  each job with its own hours, and a few people working both (ADR 0008)
+- Positions (dosa station, prep, server…) with morning and evening times, and a weekday
+  override for days that run differently
+- Clock-in works out which shift is starting from the position's schedule and keeps a copy
+  of it on the shift, so later changes to the hours do not rewrite who was late
+- An evening that runs past midnight can still be clocked out; a shift nobody closed is
+  flagged as a missed clock-out and never blocks the next clock-in
+- Owner corrections to a clock record need a reason, and every changed field is kept;
+  clock records cannot be deleted, from the admin or from code
+- Staff PINs: 4–6 digits, hashed, obvious ones refused, five wrong tries lock it for five
+  minutes, and owners never have one
 - `Vessel`: what the scoop, the spoon and the ladle hold — measured once, true of everything
   put in them, with per-ingredient weights kept for the bulk items where it matters
 - The kitchen's note of 16 September fully imported: 13 measures, and the six ingredients it
@@ -24,9 +36,8 @@ Notable changes per release. Newest first.
 - Production batches: actual inputs, measured yield, maturity and expiry
 - Recipes as a nested bill of materials with recursive explosion
 - Sales import scaffolding with POS-name mapping (ADR 0003)
-- Time and attendance with the 3–5pm closure as a standard break
 - Django admin, with the ledger read-only
-- Seed command for units, categories, locations and break policy
+- Seed command for units, categories and locations
 - CI: lint, format, Django checks, missing-migration check, tests
 - Pre-commit hooks and Architecture Decision Records
 - Storage run screen: search by any name an item is known by, post in one action
@@ -47,6 +58,10 @@ Notable changes per release. Newest first.
 - Menu mapping screen: 311 POS lines grouped into 252 decisions, with the dish created
   from the group in one action, tub sizes read off the name and converted, and
   near-identical existing items offered as a question (ADR 0005)
+
+### Changed
+- The 3–5pm closure is no longer deducted as a standard break. Morning and evening are
+  separate shifts and hours are the plain span of each (ADR 0008 supersedes FR-103/FR-104)
 
 ### Fixed
 - Multi-line `{# … #}` template comments were being shown to the user rather than

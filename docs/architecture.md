@@ -68,7 +68,7 @@ that was a deliberate constraint, not a limitation (ADR 0003).
 | `stock` | **`StockMovement`**, `StockBalance`, `GoodsReceipt`, `Transfer`, `StockCount`, `WasteEvent`, `services.py` | `core`, `catalog` |
 | `production` | `ProductionBatch`, `ProductionInput`, `BatchSplit` | `catalog`, `stock` |
 | `sales` | `PosItem` mapping, `SalesImport`, `SalesImportLine` | `catalog`, `stock` |
-| `labour` | `BreakPolicy`, `Shift`, `ShiftEdit` | `core` |
+| `labour` | `ShiftTemplate`, `Shift`, `ShiftEdit` | `core` |
 
 Dependencies point one way only, left to right in that table. `core` imports from
 nothing; nothing imports from `production` or `sales`. When a new model does not

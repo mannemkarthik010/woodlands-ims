@@ -38,6 +38,25 @@ class Role(models.TextChoices):
     FRONT_OF_HOUSE = "FOH", "Front of house"
 
 
+class Position(TimeStamped):
+    """
+    A job in the kitchen or on the floor -- dosa station, prep, server,
+    dishwasher. Distinct from `Role`, which is about what a person may see in
+    the system; a position is about the hours they keep. Each position has
+    its own morning and evening times (see `labour.ShiftTemplate`, ADR 0008).
+    """
+
+    name = models.CharField(max_length=60, unique=True)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 # Implements: FR-1201, FR-1202, FR-1208, NFR-09, NFR-11.
 class User(AbstractUser):
     role = models.CharField(max_length=16, choices=Role.choices, default=Role.KITCHEN)
@@ -51,6 +70,19 @@ class User(AbstractUser):
         help_text="Hashed PIN for the shared tablet. Never stored in clear.",
     )
     display_name = models.CharField(max_length=80, blank=True)
+    position = models.ForeignKey(
+        Position,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="staff",
+        help_text="The job whose shift times apply. Empty for the owners.",
+    )
+
+    # A four-digit PIN has ten thousand possibilities, so it is only as good
+    # as the limit on guessing it. See `apps.core.pins`.
+    pin_failed_attempts = models.PositiveSmallIntegerField(default=0, editable=False)
+    pin_locked_until = models.DateTimeField(null=True, blank=True, editable=False)
 
     # Personal data. Visible only to the owners and the administrator, kept
     # because a text message needs somewhere to go, and deleted with the

@@ -58,6 +58,22 @@ Somewhere stock can sit. Three kinds today: the restaurant, the Devonshire Stree
 | `is_active` | Boolean |  |  |
 | `sort_order` | PositiveSmallInteger |  |  |
 
+### Position
+
+A job in the kitchen or on the floor -- dosa station, prep, server, dishwasher. Distinct from `Role`, which is about what a person may see in the system; a position is about the hours they keep. Each position has its own morning and evening times (see `labour.ShiftTemplate`, ADR 0008).
+
+| Field | Type | Null | Notes |
+|---|---|---|---|
+| `staff` | ForeignKey → User | yes |  |
+| `shift_templates` | ForeignKey → ShiftTemplate | yes |  |
+| `id` | BigAuto |  |  |
+| `created_at` | DateTime |  |  |
+| `updated_at` | DateTime |  |  |
+| `created_by` | ForeignKey → User | yes |  |
+| `name` | Char(60) |  |  |
+| `is_active` | Boolean |  |  |
+| `sort_order` | PositiveSmallInteger |  |  |
+
 ### Supplier
 
 | Field | Type | Null | Notes |
@@ -98,6 +114,9 @@ Somewhere stock can sit. Three kinds today: the restaurant, the Devonshire Stree
 | `role` | Char(16) |  | _OWNER, HEAD_CHEF, KITCHEN, FOH_ |
 | `pin` | Char(128) |  | Hashed PIN for the shared tablet. Never stored in clear. |
 | `display_name` | Char(80) |  |  |
+| `position` | ForeignKey → Position | yes | The job whose shift times apply. Empty for the owners. |
+| `pin_failed_attempts` | PositiveSmallInteger |  |  |
+| `pin_locked_until` | DateTime | yes |  |
 | `mobile` | Char(24) |  | For alerts. In full international form: +1818… |
 | `receives_alerts` | Boolean |  | Unticking stops messages without removing the number. |
 | `preferred_language` | Char(8) |  |  |
@@ -556,29 +575,6 @@ One CSV, one business date.
 
 ## `labour`
 
-### BreakPolicy
-
-The standard closure. Configurable by weekday, because lunch service does not run every day and the closure may not either -- flagged to the owners for confirmation rather than assumed.
-
-| Field | Type | Null | Notes |
-|---|---|---|---|
-| `shifts` | ForeignKey → Shift | yes |  |
-| `id` | BigAuto |  |  |
-| `created_at` | DateTime |  |  |
-| `updated_at` | DateTime |  |  |
-| `created_by` | ForeignKey → User | yes |  |
-| `name` | Char(60) |  |  |
-| `start_time` | Time |  |  |
-| `end_time` | Time |  |  |
-| `applies_monday` | Boolean |  |  |
-| `applies_tuesday` | Boolean |  |  |
-| `applies_wednesday` | Boolean |  |  |
-| `applies_thursday` | Boolean |  |  |
-| `applies_friday` | Boolean |  |  |
-| `applies_saturday` | Boolean |  |  |
-| `applies_sunday` | Boolean |  |  |
-| `is_active` | Boolean |  |  |
-
 ### Shift
 
 | Field | Type | Null | Notes |
@@ -590,18 +586,20 @@ The standard closure. Configurable by weekday, because lunch service does not ru
 | `created_by` | ForeignKey → User | yes |  |
 | `employee` | ForeignKey → User |  |  |
 | `location` | ForeignKey → Location |  |  |
+| `business_date` | Date |  |  |
 | `clocked_in_at` | DateTime |  |  |
 | `clocked_out_at` | DateTime | yes |  |
+| `period` | Char(8) |  | _MORNING, EVENING_ |
+| `position` | ForeignKey → Position | yes |  |
+| `scheduled_start` | Time | yes |  |
+| `scheduled_end` | Time | yes |  |
 | `clock_in_photo` | File(100) | yes |  |
-| `break_policy` | ForeignKey → BreakPolicy | yes |  |
-| `worked_through_break` | Boolean |  | Exception: the standard closure was not taken. |
-| `break_override_minutes` | PositiveSmallInteger | yes |  |
 | `is_catering_event` | Boolean |  |  |
 | `note` | Char(240) |  |  |
 
 ### ShiftEdit
 
-Every correction to a clock record, kept forever. A time record that can be changed without trace is not a record.
+Every correction to a clock record, kept forever. A time record that can be changed without trace is not a record. `created_by` is who corrected it.
 
 | Field | Type | Null | Notes |
 |---|---|---|---|
@@ -615,3 +613,18 @@ Every correction to a clock record, kept forever. A time record that can be chan
 | `new_value` | Char(80) |  |  |
 | `reason` | Char(240) |  |  |
 
+### ShiftTemplate
+
+When a position's morning or evening normally starts and ends. `weekday` left empty means every day. A row for a particular weekday overrides the every-day row for that day only -- so weekends can run later without repeating the other five days.
+
+| Field | Type | Null | Notes |
+|---|---|---|---|
+| `id` | BigAuto |  |  |
+| `created_at` | DateTime |  |  |
+| `updated_at` | DateTime |  |  |
+| `created_by` | ForeignKey → User | yes |  |
+| `position` | ForeignKey → Position |  |  |
+| `period` | Char(8) |  | _MORNING, EVENING_ |
+| `weekday` | PositiveSmallInteger | yes | Leave empty for every day. _0, 1, 2, 3, 4, 5_ |
+| `starts_at` | Time |  |  |
+| `ends_at` | Time |  |  |

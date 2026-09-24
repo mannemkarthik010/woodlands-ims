@@ -12,7 +12,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # then fill it in
 python manage.py migrate
-python manage.py seed         # units, categories, locations, break policy
+python manage.py seed         # units, categories, locations
 python manage.py seed_demo    # sample items, so the screens have data
 python manage.py createsuperuser
 python manage.py test apps
@@ -95,7 +95,7 @@ inventory, and very hard to unpick later.
 | `stock` | **StockMovement (the ledger)**, StockBalance, GoodsReceipt, Transfer, StockCount, WasteEvent, `services.py` |
 | `production` | ProductionBatch, ProductionInput, BatchSplit |
 | `sales` | PosItem mapping, SalesImport, SalesImportLine |
-| `labour` | BreakPolicy, Shift, ShiftEdit |
+| `labour` | ShiftTemplate, Shift, ShiftEdit, `services.py` |
 
 ## Things decided deliberately, not by accident
 

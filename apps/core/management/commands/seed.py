@@ -14,7 +14,6 @@ from django.db import transaction
 
 from apps.catalog.models import ItemCategory, Unit, UnitKind
 from apps.core.models import Area, Location
-from apps.labour.models import BreakPolicy
 
 UNITS = [
     # code,   name,        kind,             how many canonical units (g / ml / 1)
@@ -77,7 +76,7 @@ LOCATIONS = [
 
 
 class Command(BaseCommand):
-    help = "Create reference data: units, categories, locations, break policy."
+    help = "Create reference data: units, categories, locations."
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -106,19 +105,13 @@ class Command(BaseCommand):
                 )
                 made["areas"] += a_created
 
-        # The restaurant closes 3–5pm and everyone breaks together, so the
-        # closure is a standard deduction rather than four taps a day per
-        # person. Monday is off because the restaurant is closed.
-        # TO CONFIRM with the owners: does this hold on every trading day?
-        _, policy_created = BreakPolicy.objects.get_or_create(
-            name="Standard 3–5pm closure", defaults={"applies_monday": False}
-        )
+        # Positions and their shift times are not seeded. They are the owners'
+        # to state, and a plausible guess here would be believed (ADR 0008).
 
         self.stdout.write(
             self.style.SUCCESS(
                 f"Seeded — units +{made['units']}, categories +{made['categories']}, "
-                f"locations +{made['locations']}, areas +{made['areas']}, "
-                f"break policy {'created' if policy_created else 'already present'}."
+                f"locations +{made['locations']}, areas +{made['areas']}."
             )
         )
         self.stdout.write(

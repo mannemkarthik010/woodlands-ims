@@ -10,25 +10,25 @@ Write `FR-403` in a docstring, a comment or a test name and it appears here.
 Nothing is inferred from a function looking roughly relevant — that would
 make this table reassuring and wrong, which is worse than an empty one.
 
-**83 of 158** requirements referenced in code · **38** covered by a test.
+**83 of 158** requirements referenced in code · **47** covered by a test.
 
 ## M1 — Time and attendance
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **FR-101** | An employee can clock in and clock out, and the system records the exact time of each event. | Must | `apps/labour/models.py` | — |
-| **FR-102** | The system prevents one employee clocking in on behalf of another. See D-04 for the method. | Must | `apps/core/models.py`<br>`apps/labour/models.py` | — |
-| **FR-103** | The daily break is handled as a fixed closed period. The restaurant closes between 3:00~pm and 5:00~pm and staff take their lunch in that window, so the system treats it as a standard unpaid break rather than asking each person to clock out and back in. Staff who work through it, or who take their break at another time, can record that as an exception. | Must | `apps/labour/models.py` | — |
+| **FR-101** | An employee can clock in and clock out, and the system records the exact time of each event. | Must | `apps/labour/models.py`<br>`apps/labour/services.py` | `apps/labour/tests/test_clock.py` |
+| **FR-102** | The system prevents one employee clocking in on behalf of another. See D-04 for the method. | Must | `apps/core/models.py`<br>`apps/core/pins.py`<br>`apps/labour/models.py` | `apps/core/tests/test_pins.py` |
+| **FR-103** | The daily break is handled as a fixed closed period. The restaurant closes between 3:00~pm and 5:00~pm and staff take their lunch in that window, so the system treats it as a standard unpaid break rather than asking each person to clock out and back in. Staff who work through it, or who take their break at another time, can record that as an exception. | Must | — | — |
 | **FR-104** | Any shift that departs from the standard 3:00--5:00~pm break pattern is visible to the owners as an exception, so it is not lost. | Should | — | — |
-| **FR-105** | The owners can correct a missed or wrong clock event; every correction is logged with who changed it, when, from what value, to what value, and why. | Must | `apps/labour/models.py` | — |
-| **FR-106** | The system calculates hours worked per shift, per day and per week, with the standard break deducted. | Must | `apps/labour/models.py` | — |
-| **FR-107** | The system flags a shift with no clock-out, or an unusually long one, so the owners can review it. | Should | — | — |
-| **FR-108** | The system distinguishes work performed at the restaurant from work performed at a catering event. | Should | `apps/labour/models.py` | — |
+| **FR-105** | The owners can correct a missed or wrong clock event; every correction is logged with who changed it, when, from what value, to what value, and why. | Must | `apps/labour/admin.py`<br>`apps/labour/models.py`<br>`apps/labour/services.py` | `apps/labour/tests/test_clock.py` |
+| **FR-106** | The system calculates hours worked per shift, per day and per week, with the standard break deducted. | Must | `apps/labour/models.py`<br>`apps/labour/services.py` | `apps/labour/tests/test_clock.py` |
+| **FR-107** | The system flags a shift with no clock-out, or an unusually long one, so the owners can review it. | Should | `apps/labour/services.py` | `apps/labour/tests/test_clock.py` |
+| **FR-108** | The system distinguishes work performed at the restaurant from work performed at a catering event. | Should | `apps/labour/models.py`<br>`apps/labour/services.py` | `apps/labour/tests/test_clock.py` |
 | **FR-109** | An employee can view their own hours to date. | Should | — | — |
 | **FR-110** | The owners can build and publish a staff rota, if they want one. | Could | — | — |
 | **FR-111** | The system compares rota hours against actual hours and reports the difference. | Could | — | — |
 | **FR-112** | Hours can be exported to a spreadsheet or PDF for the owners' own use. This is an export for reading, not a payroll file. | Should | — | — |
-| **FR-113** | Time records cannot be silently deleted, and the history of any edit is retained. | Must | `apps/labour/models.py` | — |
+| **FR-113** | Time records cannot be silently deleted, and the history of any edit is retained. | Must | `apps/labour/admin.py`<br>`apps/labour/models.py`<br>`apps/labour/services.py` | `apps/labour/tests/test_clock.py` |
 | **FR-114** | Clock-in works when the internet connection is down, and syncs when it returns. | Should | — | — |
 
 ## M2 — Item master and units of measure
@@ -200,7 +200,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 | **FR-1205** | Locations, categories, waste reasons, par levels and shelf lives are configurable without developer involvement. | Should | — | — |
 | **FR-1206** | Data is backed up automatically, and a restore has been tested and documented. | Must | — | — |
 | **FR-1207** | The client can export all of their data, in full, at any time, without asking us. | Must | — | — |
-| **FR-1208** | A deactivated employee's historical records remain intact. | Must | `apps/core/models.py` | — |
+| **FR-1208** | A deactivated employee's historical records remain intact. | Must | `apps/core/models.py` | `apps/core/tests/test_pins.py` |
 
 ## NFR — Speed
 
@@ -244,7 +244,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **NFR-09** | Passwords stored using a current password-hashing standard; no plain-text storage anywhere. | Must | `apps/core/models.py` | — |
+| **NFR-09** | Passwords stored using a current password-hashing standard; no plain-text storage anywhere. | Must | `apps/core/models.py`<br>`apps/core/pins.py` | `apps/core/tests/test_pins.py` |
 | **NFR-10** | All traffic encrypted in transit. | Must | — | — |
 | **NFR-11** | Wage and personal data visible only to roles that require it. | Must | `apps/core/models.py` | `apps/sales/tests/test_mapping.py`<br>`apps/stock/tests/test_transfer_flow.py` |
 
@@ -304,4 +304,3 @@ make this table reassuring and wrong, which is worse than an empty one.
 | **FR-1308** | The assigned person is notified where they will actually see it, and can see what they have been asked to make. | Must | `apps/notify/models.py` | — |
 | **FR-1309** | An assignment is closed by recording the production batch, not by a separate tick. Two places to say the same thing means one of them is always wrong. | Should | — | — |
 | **FR-1310** | Par levels can differ by day of the week, because a Saturday needs more batter than a Tuesday. | Could | — | — |
-

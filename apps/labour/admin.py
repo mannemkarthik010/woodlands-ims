@@ -1,11 +1,20 @@
 from django.contrib import admin
 
-from apps.labour.models import BreakPolicy, Shift, ShiftEdit
+from apps.labour.models import Shift, ShiftEdit, ShiftTemplate
 
 
-@admin.register(BreakPolicy)
-class BreakPolicyAdmin(admin.ModelAdmin):
-    list_display = ("name", "start_time", "end_time", "is_active")
+@admin.register(ShiftTemplate)
+class ShiftTemplateAdmin(admin.ModelAdmin):
+    list_display = ("position", "period", "weekday", "starts_at", "ends_at")
+    list_filter = ("position", "period", "weekday")
+
+
+class ShiftTemplateInline(admin.TabularInline):
+    """Shown on each position, so a role's hours are set in one place."""
+
+    model = ShiftTemplate
+    extra = 0
+    fields = ("period", "weekday", "starts_at", "ends_at")
 
 
 class ShiftEditInline(admin.TabularInline):
@@ -19,24 +28,41 @@ class ShiftEditInline(admin.TabularInline):
         return False
 
 
+# Implements: FR-105, FR-113.
 @admin.register(Shift)
 class ShiftAdmin(admin.ModelAdmin):
+    """
+    Read-only on purpose. A correction made by editing a field here would
+    leave no trace, so corrections go through `services.correct_shift` --
+    from the owners' timesheet screen, which records who, when and why.
+    """
+
     list_display = (
         "employee",
-        "location",
+        "business_date",
+        "period",
         "clocked_in_at",
         "clocked_out_at",
+        "scheduled_start",
+        "scheduled_end",
         "hours_display",
-        "worked_through_break",
         "is_catering_event",
     )
-    list_filter = ("location", "worked_through_break", "is_catering_event")
+    list_filter = ("period", "location", "is_catering_event")
     search_fields = ("employee__username", "employee__display_name")
-    date_hierarchy = "clocked_in_at"
-    autocomplete_fields = ("employee",)
+    date_hierarchy = "business_date"
     inlines = [ShiftEditInline]
 
     @admin.display(description="Hours")
     def hours_display(self, obj):
         h = obj.hours_worked
-        return "—" if h is None else f"{h:.2f}"
+        return "open" if h is None else f"{h:.2f}"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

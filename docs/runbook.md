@@ -19,7 +19,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env                 # then fill in DJANGO_SECRET_KEY
 python manage.py migrate
-python manage.py seed                # units, categories, locations, break policy
+python manage.py seed                # units, categories, locations
 python manage.py createsuperuser
 python manage.py test apps           # everything must be green before you start
 python manage.py runserver

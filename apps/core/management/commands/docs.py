@@ -72,6 +72,10 @@ class Command(BaseCommand):
 
         stale = []
         for path, content in outputs.items():
+            # Exactly one newline at the end, which is what the end-of-file
+            # hook leaves behind. Anything else and the hook and `--check`
+            # disagree, so a freshly generated file fails CI once committed.
+            content = content.rstrip("\n") + "\n"
             current = path.read_text() if path.exists() else ""
             if current != content:
                 stale.append(path.name)
