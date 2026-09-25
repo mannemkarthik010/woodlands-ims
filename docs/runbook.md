@@ -166,7 +166,34 @@ them.
 
 ---
 
-## 4. Everyday commands
+## 4. Counting stock
+
+Inventory is in three layers. **Layer 1** is what is bought — groceries,
+vegetables, packaging. **Layer 2** is what the kitchen makes — batters, sambar,
+chutneys, gravies. **Layer 3** is the dishes on the menu; they are cooked to
+order and never counted, and what they used comes from the day's sales.
+
+**Count stock** shows three counts, each with only its own items:
+
+| Count | What is on it | Due |
+|---|---|---|
+| Daily | Layer 2 — what the kitchen makes | every day |
+| Weekly | Vegetables | 7 days after the last one |
+| Monthly | Other groceries and packaging, at the restaurant and at the storage unit | once a calendar month |
+
+Each item's **Count every** is set in Admin → Items (editable straight from the
+list, and filterable). A new item starts on the rule above.
+
+Count in whatever the kitchen sees: pick *bucket*, *bag*, *case* or the base unit
+beside the number, and the system converts. The measures come from the item's
+*measures* in the admin — an item with none can only be counted in its base
+unit, so give the prepared items their containers (a bucket of sambar is 32 lb).
+The expected quantity is never shown while counting; the difference appears on
+the review screen afterwards.
+
+---
+
+## 5. Everyday commands
 
 | Task | Command |
 |---|---|
@@ -184,7 +211,7 @@ build otherwise, which is the only reliable way documentation stays true.
 
 ---
 
-## 5. When something is wrong
+## 6. When something is wrong
 
 ### Stock on hand looks wrong
 
@@ -261,7 +288,7 @@ Read the error rather than deleting anything.
 
 ---
 
-## 6. The database
+## 7. The database
 
 Development uses SQLite: a single file, `db.sqlite3`, in the project root. It is
 git-ignored, so it is **not** recoverable from the repository.
@@ -300,7 +327,7 @@ python manage.py changepassword <username>
 
 ---
 
-## 7. Branching and release
+## 8. Branching and release
 
 - `main` is always green. Work happens on `feat/…` or `fix/…` branches.
 - A pull request runs lint, format check, Django system check, the missing
@@ -319,7 +346,7 @@ python manage.py changepassword <username>
 
 ---
 
-## 8. Deployment
+## 9. Deployment
 
 Deliberately not configured yet. Hosting carries a monthly cost and the choice
 is the client's to make, informed, in advance. Nothing has been committed on
@@ -339,7 +366,7 @@ throwaway database.
 
 ---
 
-## 9. Getting data out
+## 10. Getting data out
 
 The client can take their data at any time, without asking anybody (FR-1207):
 

@@ -11,6 +11,7 @@ urlpatterns = [
     path("transfer/<int:pk>/remove/<int:line_pk>/", views.transfer_remove_line, name="transfer_remove_line"),
     path("transfer/<int:pk>/post/", views.transfer_post, name="transfer_post"),
     path("transfer/<int:pk>/done/", views.transfer_done, name="transfer_done"),
+    path("count/", views.count_home, name="count_home"),
     path("count/new/", views.count_new, name="count_new"),
     path("count/<int:pk>/", views.count_sheet, name="count_sheet"),
     path("count/<int:pk>/line/<int:line_pk>/", views.count_save_line, name="count_save_line"),

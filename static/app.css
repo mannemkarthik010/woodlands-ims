@@ -489,3 +489,15 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
   border: 2px solid var(--rule); border-radius: var(--radius); background: #fff; }
 .days__shift--cancelled { color: var(--grey); }
 .days__shift--cancelled .count { text-decoration: none; }
+
+/* ---- Counting by layer ---------------------------------------------- */
+.counts { display: grid; gap: 12px; margin-bottom: 18px; }
+.countcard { border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px 16px; background: #fff; }
+.countcard--due { border-color: var(--brand); }
+.countcard__head { display: flex; justify-content: space-between; align-items: center; }
+.countcard__title { font-size: 19px; font-weight: 700; }
+.countcard__what { margin: 2px 0 4px; }
+.countcard .btn--wide { margin-top: 10px; }
+.hit__measure { flex: 0 0 auto; min-height: 48px; max-width: 132px; font: inherit; font-size: 15px;
+  border: 2px solid var(--rule); border-radius: 8px; background: #fff; padding: 0 6px; }
+.hit__name small { display: block; }

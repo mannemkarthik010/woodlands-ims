@@ -158,6 +158,7 @@ A job in the kitchen or on the floor -- dosa station, prep, server, dishwasher. 
 | `is_allergen_relevant` | Boolean |  |  |
 | `allergen_notes` | Char(240) |  |  |
 | `current_unit_cost` | Decimal(12,4) | yes | Weighted average, per base unit. |
+| `count_every` | Char(8) |  | Which count this item is on. Left empty, it follows the kitchen's rule for its kind. _DAILY, WEEKLY, MONTHLY, NEVER_ |
 | `is_active` | Boolean |  |  |
 | `notes` | Text |  |  |
 
@@ -364,6 +365,8 @@ A physical count. Counting everything daily is how inventory systems die, so cou
 | `expected_quantity` | Decimal(14,4) |  |  |
 | `counted_quantity` | Decimal(14,4) | yes |  |
 | `note` | Char(160) |  |  |
+| `entered_quantity` | Decimal(14,4) | yes |  |
+| `entered_measure` | ForeignKey → ItemMeasure | yes |  |
 
 ### StockMovement
 

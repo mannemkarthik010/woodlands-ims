@@ -45,13 +45,24 @@ class ParLevelInline(admin.TabularInline):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "kind", "base_unit", "category", "current_unit_cost", "is_active")
-    list_filter = ("kind", "category", "is_active", "is_allergen_relevant")
+    list_display = (
+        "name",
+        "code",
+        "kind",
+        "count_every",
+        "base_unit",
+        "category",
+        "current_unit_cost",
+        "is_active",
+    )
+    # Owners move an item between the daily, weekly and monthly counts from the list itself.
+    list_editable = ("count_every",)
+    list_filter = ("kind", "count_every", "category", "is_active", "is_allergen_relevant")
     search_fields = ("name", "code", "aliases__alias")
     autocomplete_fields = ("category", "base_unit")
     inlines = [ItemAliasInline, ItemMeasureInline, ParLevelInline]
     fieldsets = (
-        (None, {"fields": ("code", "name", "kind", "category", "base_unit", "is_stocked")}),
+        (None, {"fields": ("code", "name", "kind", "category", "base_unit", "is_stocked", "count_every")}),
         ("Handling", {"fields": ("shelf_life_days", "is_allergen_relevant", "allergen_notes")}),
         ("Cost", {"fields": ("current_unit_cost",)}),
         ("Admin", {"fields": ("is_active", "notes")}),

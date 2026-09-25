@@ -65,6 +65,42 @@ class ItemKind(models.TextChoices):
 
 
 # Implements: FR-201.
+class CountEvery(models.TextChoices):
+    """
+    How often somebody counts an item. The kitchen's rule: what is made in
+    the kitchen goes off in days and is counted daily; vegetables weekly;
+    dry groceries and packaging last a month and are counted monthly.
+    Counting everything every day is how inventory systems stop being used.
+    """
+
+    DAILY = "DAILY", "Daily"
+    WEEKLY = "WEEKLY", "Weekly"
+    MONTHLY = "MONTHLY", "Monthly"
+    NEVER = "NEVER", "Not counted"
+
+
+# The three layers of the kitchen. Layer 3 is never counted: a dish is cooked
+# to order, and what it used is worked out from the day's sales.
+LAYERS = {
+    ItemKind.RAW: (1, "Groceries & packaging"),
+    ItemKind.PACKAGING: (1, "Groceries & packaging"),
+    ItemKind.CONSUMABLE: (1, "Groceries & packaging"),
+    ItemKind.PREPARED: (2, "Prepared in the kitchen"),
+    ItemKind.DISH: (3, "Dishes"),
+}
+
+
+def default_count_every(kind: str, category_name: str = "") -> str:
+    """The starting rule for a new item. Owners change any item they like."""
+    if kind == ItemKind.DISH:
+        return CountEvery.NEVER
+    if kind == ItemKind.PREPARED:
+        return CountEvery.DAILY
+    if any(word in category_name.lower() for word in ("vegetable", "produce", "fresh")):
+        return CountEvery.WEEKLY
+    return CountEvery.MONTHLY
+
+
 class ItemCategory(TimeStamped):
     name = models.CharField(max_length=80, unique=True)
     sort_order = models.PositiveSmallIntegerField(default=0)
@@ -105,6 +141,13 @@ class Item(TimeStamped):
         null=True, blank=True, help_text="Weighted average, per base unit.", **MONEY
     )
 
+    count_every = models.CharField(
+        max_length=8,
+        choices=CountEvery.choices,
+        blank=True,
+        help_text="Which count this item is on. Left empty, it follows the kitchen's rule for its kind.",
+    )
+
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
 
@@ -114,6 +157,19 @@ class Item(TimeStamped):
 
     def __str__(self) -> str:
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.count_every:
+            self.count_every = default_count_every(self.kind, self.category.name if self.category_id else "")
+        super().save(*args, **kwargs)
+
+    @property
+    def layer(self) -> int:
+        return LAYERS.get(self.kind, (1, ""))[0]
+
+    @property
+    def layer_name(self) -> str:
+        return LAYERS.get(self.kind, (1, ""))[1]
 
     def clean(self):
         if self.kind == ItemKind.DISH and self.is_stocked:

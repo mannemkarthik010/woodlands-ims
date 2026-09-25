@@ -10,7 +10,7 @@ Write `FR-403` in a docstring, a comment or a test name and it appears here.
 Nothing is inferred from a function looking roughly relevant — that would
 make this table reassuring and wrong, which is worse than an empty one.
 
-**85 of 158** requirements referenced in code · **50** covered by a test.
+**85 of 158** requirements referenced in code · **51** covered by a test.
 
 ## M1 — Time and attendance
 
@@ -38,7 +38,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 | **FR-201** | Every stock item has a unique code, a name, an optional local-language name, and a category. | Must | `apps/catalog/models.py` | `apps/catalog/tests/test_imports.py`<br>`apps/sales/tests/test_mapping.py` |
 | **FR-202** | An item may have several names in use — supplier's name, chef's name, menu name — all searchable. | Should | `apps/catalog/models.py`<br>`apps/catalog/services.py`<br>`apps/sales/views.py`<br>`apps/stock/views.py` | `apps/catalog/tests/test_imports.py`<br>`apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_mapping.py`<br>`apps/stock/tests/test_transfer_flow.py` |
 | **FR-203** | Each item has a base unit in which stock is held (for example: pound, gram, litre, each). | Must | `apps/catalog/models.py`<br>`apps/sales/views.py` | `apps/catalog/tests/test_imports.py`<br>`apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_mapping.py` |
-| **FR-204** | Each item may have any number of purchase units with a stated conversion to the base unit (for example: 1 sack = 25 lb; 1 case = 24 tins; 1 tin = 400 g). | Must | `apps/catalog/models.py` | `apps/catalog/tests/test_imports.py` |
+| **FR-204** | Each item may have any number of purchase units with a stated conversion to the base unit (for example: 1 sack = 25 lb; 1 case = 24 tins; 1 tin = 400 g). | Must | `apps/catalog/models.py`<br>`apps/stock/services.py` | `apps/catalog/tests/test_imports.py`<br>`apps/stock/tests/test_count_layers.py` |
 | **FR-205** | Conversions that are not fixed — "one bunch of curry leaves" — are supported with an agreed nominal weight, and flagged as approximate. | Should | `apps/catalog/management/commands/import_measures.py`<br>`apps/catalog/models.py` | `apps/catalog/tests/test_imports.py`<br>`apps/knowledge/tests/test_format.py`<br>`apps/knowledge/tests/test_gaps.py` |
 | **FR-206** | Each item carries a shelf life or a best-before behaviour appropriate to its type. | Should | `apps/catalog/models.py` | — |
 | **FR-207** | Each item carries a current cost per base unit, updated from goods receipts. | Must | `apps/catalog/models.py` | — |
@@ -122,9 +122,9 @@ make this table reassuring and wrong, which is worse than an empty one.
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **FR-701** | A count sheet can be generated for a location, a category, or a defined subset of items. | Must | `apps/stock/models.py`<br>`apps/stock/services.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_count_flow.py` |
-| **FR-702** | Counts are entered on a phone or tablet while walking the shelves. | Must | `apps/stock/views.py` | `apps/stock/tests/test_count_flow.py` |
-| **FR-703** | Count sheets follow the physical order of the shelves, configurable by the client. | Should | `apps/core/models.py`<br>`apps/stock/services.py`<br>`apps/stock/views.py` | — |
+| **FR-701** | A count sheet can be generated for a location, a category, or a defined subset of items. | Must | `apps/stock/models.py`<br>`apps/stock/services.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_count_flow.py`<br>`apps/stock/tests/test_count_layers.py` |
+| **FR-702** | Counts are entered on a phone or tablet while walking the shelves. | Must | `apps/stock/services.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_count_flow.py`<br>`apps/stock/tests/test_count_layers.py` |
+| **FR-703** | Count sheets follow the physical order of the shelves, configurable by the client. | Should | `apps/core/models.py`<br>`apps/stock/services.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_count_layers.py` |
 | **FR-704** | The system shows the difference between counted and expected quantity, in units and in dollars. | Must | `apps/stock/models.py`<br>`apps/stock/services.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_count_flow.py` |
 | **FR-705** | Large discrepancies are highlighted for review before the count is committed. | Should | `apps/stock/views.py` | `apps/stock/tests/test_count_flow.py` |
 | **FR-706** | Committing a count adjusts stock, and the adjustment is recorded with a reason. | Must | `apps/stock/models.py`<br>`apps/stock/services.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_count_flow.py` |

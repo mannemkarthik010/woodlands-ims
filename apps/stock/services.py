@@ -293,15 +293,22 @@ def build_count_sheet(count, *, items=None) -> int:
     shelves, not against what it drifted to while the sheet sat half-finished
     in a pocket.
     """
-    from apps.catalog.models import Item
-    from apps.stock.models import StockCountLine
+    from apps.catalog.models import CountEvery, Item
+    from apps.stock.models import StockCount, StockCountLine
 
     if items is None:
-        items = (
-            Item.objects.filter(is_active=True, is_stocked=True)
-            .select_related("base_unit", "category")
-            .order_by("category__sort_order", "name")
-        )
+        # Each count holds only its own items: the daily count is what the
+        # kitchen makes, not every sack in the building. An ad hoc count
+        # takes everything that is counted at all.
+        items = Item.objects.filter(is_active=True, is_stocked=True).exclude(count_every=CountEvery.NEVER)
+        on_this_count = {
+            StockCount.Cadence.DAILY: CountEvery.DAILY,
+            StockCount.Cadence.WEEKLY: CountEvery.WEEKLY,
+            StockCount.Cadence.MONTHLY: CountEvery.MONTHLY,
+        }.get(count.cadence)
+        if on_this_count:
+            items = items.filter(count_every=on_this_count)
+        items = items.select_related("base_unit", "category").order_by("category__sort_order", "name")
 
     balances = {b.item_id: b.quantity for b in StockBalance.objects.filter(location=count.location)}
 
@@ -316,3 +323,26 @@ def build_count_sheet(count, *, items=None) -> int:
         ]
     )
     return count.lines.count()
+
+
+# Implements: FR-702, FR-204.
+def record_counted(line, *, quantity: Decimal | None, measure=None) -> None:
+    """
+    One line of a count, as the person typed it: a number and what they
+    counted in -- buckets, bags, cases, or the base unit. The line keeps both
+    what was typed and what it comes to, so "3 buckets" is never lost inside
+    "96 lb". None clears the line back to not counted.
+    """
+    if measure is not None and measure.item_id != line.item_id:
+        raise StockError("That measure belongs to a different item.")
+    if quantity is not None and quantity < 0:
+        raise StockError("A count cannot be negative.")
+    line.entered_quantity = quantity
+    line.entered_measure = measure if quantity is not None else None
+    if quantity is None:
+        line.counted_quantity = None
+    elif measure is None:
+        line.counted_quantity = quantity
+    else:
+        line.counted_quantity = (quantity * measure.quantity_in_base_units).quantize(Decimal("0.0001"))
+    line.save(update_fields=["entered_quantity", "entered_measure", "counted_quantity"])

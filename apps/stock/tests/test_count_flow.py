@@ -41,8 +41,12 @@ class CountTests(TestCase):
             )
 
     def _sheet(self):
+        # Dal and rice are dry groceries, so they are on the monthly count.
         count = StockCount.objects.create(
-            location=self.store, counted_at="2026-09-16T22:00:00Z", created_by=self.user
+            location=self.store,
+            cadence=StockCount.Cadence.MONTHLY,
+            counted_at="2026-09-16T22:00:00Z",
+            created_by=self.user,
         )
         build_count_sheet(count)
         return count

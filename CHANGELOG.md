@@ -5,6 +5,16 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Inventory in three layers: groceries and packaging (layer 1), what the kitchen makes —
+  batters, sambar, chutneys (layer 2), and dishes (layer 3, never counted: they come from sales)
+- Every item says which count it is on: prepared items daily, vegetables weekly, other
+  groceries and packaging monthly, dishes never. Existing items were set by that rule; owners
+  change any item from the item list
+- Count stock shows the daily, weekly and monthly counts, each due or done, with who counted
+  last and a Continue for one left half-way; each count lists only its own items
+- Counting in the kitchen's own measures — buckets, bags, cases — converted to stock, with what
+  was typed kept beside it. The count stays blind: the measure used last time is offered, the
+  number never is
 - Owners fix the record without the admin: set the end of an unfinished shift straight from
   To pay, correct any unpaid shift, add a shift somebody could not record (or one more than
   two weeks back), and cancel a shift entered by mistake — every change with a reason, kept

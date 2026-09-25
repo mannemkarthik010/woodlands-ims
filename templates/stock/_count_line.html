@@ -1,20 +1,33 @@
 {% comment %}
   Expected quantity is deliberately absent. Showing it turns counting into
   confirming, and a sheet that agrees with itself tells you nothing.
+  The measure is offered (bucket, bag, case…); the number never is.
 {% endcomment %}
 <form class="hit {% if saved %}hit--saved{% endif %} {% if bad %}hit--bad{% endif %}"
       hx-post="{% url 'count_save_line' line.count_id line.pk %}"
-      hx-trigger="change from:find input"
+      hx-trigger="change from:find input, change from:find select"
       hx-target="closest li"
       hx-swap="innerHTML">
   {% csrf_token %}
-  <span class="hit__name">{{ line.item.name }}</span>
+  <span class="hit__name">{{ line.item.name }}
+    {% if saved and line.entered_measure %}<small class="muted">= {{ line.counted_quantity|floatformat:"-2" }} {{ line.item.base_unit.code }}</small>{% endif %}
+    {% if bad %}<small class="field__error">Please type a number.</small>{% endif %}
+  </span>
   <input class="hit__qty" type="text" name="counted"
          inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*"
-         value="{{ line.counted_quantity|default_if_none:'' }}"
+         value="{{ line.entered_quantity|default_if_none:''|floatformat:'-2' }}"
          placeholder="—"
-         aria-label="Counted quantity of {{ line.item.name }} in {{ line.item.base_unit.code }}">
-  <span class="hit__unit">{{ line.item.base_unit.code }}</span>
+         aria-label="How many of {{ line.item.name }}">
+  {% if line.measures %}
+    <select class="hit__measure" name="measure" aria-label="Counted in">
+      {% for m in line.measures %}
+        <option value="{{ m.pk }}" {% if m.pk == line.default_measure_id %}selected{% endif %}>{{ m.name }}</option>
+      {% endfor %}
+      <option value="" {% if not line.default_measure_id %}selected{% endif %}>{{ line.item.base_unit.code }}</option>
+    </select>
+  {% else %}
+    <span class="hit__unit">{{ line.item.base_unit.code }}</span>
+  {% endif %}
 </form>
 {% if remaining is not None %}
   <span hx-swap-oob="innerHTML:#progress">{{ remaining }} left</span>

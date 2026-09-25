@@ -263,6 +263,14 @@ class StockCountLine(models.Model):
     counted_quantity = models.DecimalField(null=True, blank=True, **QTY)
     note = models.CharField(max_length=160, blank=True)
 
+    # What the person actually typed -- "3 buckets", "12 bags" -- kept beside
+    # the converted figure, so a count can be checked against what was seen.
+    # No measure means they counted in the item's base unit.
+    entered_quantity = models.DecimalField(null=True, blank=True, **QTY)
+    entered_measure = models.ForeignKey(
+        "catalog.ItemMeasure", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+
     def __str__(self) -> str:
         return f"{self.item.name}: counted {self.counted_quantity}"
 

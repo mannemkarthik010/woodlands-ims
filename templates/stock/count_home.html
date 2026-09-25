@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Count stock{% endblock %}
+{% block content %}
+<h1>Count stock</h1>
+<p class="muted">Each count has only its own items. Count what is on the shelf; blank means not counted.</p>
+
+<div class="counts">
+  {% for c in cards %}
+    <section class="countcard{% if c.due %} countcard--due{% endif %}">
+      <div class="countcard__head">
+        <span class="countcard__title">{{ c.label }}</span>
+        {% if c.draft %}<span class="flag">started</span>
+        {% elif c.due %}<span class="flag flag--bad">due</span>
+        {% else %}<span class="flag flag--paid">done</span>{% endif %}
+      </div>
+      <div class="countcard__what">{{ c.what }}{% if c.location.kind != "RESTAURANT" %} · <strong>{{ c.location.name }}</strong>{% endif %}</div>
+      <div class="muted small">{{ c.items }} item{{ c.items|pluralize }} ·
+        {% if c.last %}last counted {{ c.last.counted_at|date:"D j M" }}{% if c.last.created_by %} by {{ c.last.created_by }}{% endif %}{% else %}never counted{% endif %}</div>
+      {% if c.draft %}
+        <a class="btn btn--primary btn--wide" href="{% url 'count_sheet' c.draft.pk %}">Continue</a>
+      {% elif c.items %}
+        <form method="post" action="{% url 'count_new' %}">
+          {% csrf_token %}
+          <input type="hidden" name="cadence" value="{{ c.cadence }}">
+          <input type="hidden" name="location" value="{{ c.location.pk }}">
+          <button class="btn {% if c.due %}btn--primary{% else %}btn--ghost{% endif %} btn--wide" type="submit">Start {{ c.label|lower }} count</button>
+        </form>
+      {% else %}
+        <p class="muted small">Nothing is on this count yet.</p>
+      {% endif %}
+    </section>
+  {% endfor %}
+</div>
+
+<a class="muted small" href="{% url 'count_new' %}">Another count (everything, or an opening balance)…</a>
+{% endblock %}
