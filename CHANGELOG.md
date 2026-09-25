@@ -5,6 +5,13 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Owners fix the record without the admin: set the end of an unfinished shift straight from
+  To pay, correct any unpaid shift, add a shift somebody could not record (or one more than
+  two weeks back), and cancel a shift entered by mistake — every change with a reason, kept
+- Owner corrections and entries follow the same rules as the tablet: no overlaps, nothing in
+  the future, nothing over 16 hours; paid shifts stay locked
+- A cancelled shift is never deleted: it stops counting everywhere and is shown as cancelled
+  on the person's page and on the worker's own week
 - Paying out on the owners' own cycle: choose a day, every unpaid hour up to it is listed per
   person from the first day not yet paid, tick who is paid, check, mark as paid
 - Unpaid is kept per shift, so a shift written in late for a period already paid is picked up

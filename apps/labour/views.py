@@ -16,6 +16,7 @@ with the empty ones marked and one tap away from being filled in.
 
 import csv
 import time as clock
+from contextlib import suppress
 from datetime import date, timedelta
 from functools import wraps
 
@@ -36,16 +37,20 @@ from django.views.decorators.http import require_POST
 from apps.core.models import Location, Position, Role, User
 from apps.core.people import AlreadyListed, LooksLike, PersonError, add_person
 from apps.core.pins import LOCKOUT, PinError, check_pin, is_locked, validate_pin
-from apps.labour.models import PayRun, PayRunLine, Shift
+from apps.labour.models import PayRun, PayRunLine, Period, Shift
 from apps.labour.pay import default_up_to, pay, undo_payment, unpaid
 from apps.labour.reports import PERIODS, hours, hours_report, people_to_review, period_dates, person_hours
 from apps.labour.services import (
     ENTRY_WINDOW_DAYS,
     ClockError,
+    cancel_shift,
     confirm_person,
+    correct_shift,
     merge_person,
+    owner_add_shift,
     recent_days,
     record_shift,
+    span,
 )
 
 SESSION_KEY = "hours_worker"
@@ -419,10 +424,25 @@ def person_report(request, pk):
                 for s in row.shifts
             ],
         )
+    cancelled = (
+        Shift.all_objects.filter(
+            employee=person, business_date__range=(start, end), cancelled_at__isnull=False
+        )
+        .select_related("cancelled_by")
+        .order_by("clocked_in_at")
+    )
     return render(
         request,
         "labour/person_report.html",
-        {"row": row, "person": person, "start": start, "end": end, "query": request.GET.urlencode()},
+        {
+            "row": row,
+            "person": person,
+            "start": start,
+            "end": end,
+            "query": request.GET.urlencode(),
+            "here": request.get_full_path(),
+            "cancelled": cancelled,
+        },
     )
 
 
@@ -491,6 +511,8 @@ def pay_screen(request):
         "staff": _people(),
         "query": f"up_to={up_to.isoformat()}",
         "tab": "pay",
+        "needs_fixing": [s for r in preview.rows for s in r.shifts if s.is_open],
+        "here": request.get_full_path(),
     }
 
     if request.method != "POST":
@@ -605,3 +627,134 @@ def pay_statement(request, pk, person_pk):
         .order_by("clocked_in_at")
     )
     return render(request, "labour/pay_statement.html", {"run": run, "line": line, "shifts": shifts})
+
+
+# --- The owners correcting the record ---------------------------------------
+
+
+class OwnerShiftForm(forms.Form):
+    """What an owner can set on a shift. The reason is not optional."""
+
+    day = forms.DateField(label="Date", widget=forms.DateInput(attrs={"type": "date"}))
+    start = forms.TimeField(label="Started", widget=forms.TimeInput(attrs={"type": "time"}))
+    end = forms.TimeField(label="Left", widget=forms.TimeInput(attrs={"type": "time"}))
+    period = forms.ChoiceField(label="Shift", choices=Period.choices, required=False)
+    catering = forms.BooleanField(label="Catering job", required=False)
+    reason = forms.CharField(
+        label="Why? (kept with the record)",
+        max_length=240,
+        widget=forms.TextInput(attrs={"placeholder": 'e.g. "Forgot to record leaving; left at 3"'}),
+    )
+
+    def __init__(self, *args, adding=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["day"].widget.attrs["max"] = timezone.localdate().isoformat()
+        if adding:
+            # A new shift's morning or evening comes from the schedule, as on the tablet.
+            del self.fields["period"]
+
+
+def _next_or(request, default: str) -> str:
+    target = request.POST.get("next") or request.GET.get("next") or ""
+    if url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}):
+        return target
+    return default
+
+
+def _person_page(person: User, day: date) -> str:
+    """The person's page for the week around a day -- where a fixed shift is seen in context."""
+    start, end = day - timedelta(days=day.weekday()), day - timedelta(days=day.weekday()) + timedelta(days=6)
+    return f"{reverse('hours_person', args=[person.pk])}?period=custom&from={start}&to={end}"
+
+
+# Implements: FR-105, FR-107.
+@owner_required
+def shift_fix(request, pk):
+    """
+    One shift, as recorded and as corrected, with a form to correct it again
+    or cancel it. A paid or cancelled shift is shown read-only, with why.
+    """
+    shift = get_object_or_404(
+        Shift.all_objects.select_related("employee", "pay_run", "created_by", "cancelled_by"), pk=pk
+    )
+    back = _next_or(request, _person_page(shift.employee, shift.business_date))
+    start_local = timezone.localtime(shift.clocked_in_at)
+    initial = {
+        "day": shift.business_date,
+        "start": start_local.time().replace(second=0, microsecond=0),
+        "end": timezone.localtime(shift.clocked_out_at).time().replace(second=0, microsecond=0)
+        if shift.clocked_out_at
+        else None,
+        "period": shift.period,
+        "catering": shift.is_catering_event,
+    }
+    form = OwnerShiftForm(request.POST or None, initial=initial)
+    context = {"shift": shift, "form": form, "next": back, "edits": shift.edits.select_related("created_by")}
+
+    if request.method == "POST" and form.is_valid():
+        data = form.cleaned_data
+        started, ended = span(data["day"], data["start"], data["end"])
+        try:
+            correct_shift(
+                shift,
+                by=request.user,
+                reason=data["reason"],
+                clocked_in_at=started,
+                clocked_out_at=ended,
+                period=data["period"] or shift.period,
+                is_catering_event=data["catering"],
+            )
+        except ClockError as e:
+            context["error"] = str(e)
+        else:
+            messages.success(request, f"{shift.employee}'s shift on {data['day']:%a %-d %b} corrected.")
+            return redirect(back)
+    return render(request, "labour/shift_fix.html", context)
+
+
+# Implements: FR-105, FR-113.
+@owner_required
+@require_POST
+def shift_cancel(request, pk):
+    shift = get_object_or_404(Shift.all_objects.select_related("employee"), pk=pk)
+    back = _next_or(request, _person_page(shift.employee, shift.business_date))
+    try:
+        cancel_shift(shift, by=request.user, reason=request.POST.get("reason", ""))
+    except ClockError as e:
+        messages.error(request, str(e))
+        return redirect(f"{reverse('hours_shift', args=[pk])}?next={back}")
+    messages.success(request, f"{shift.employee}'s shift on {shift.business_date:%a %-d %b} cancelled.")
+    return redirect(back)
+
+
+# Implements: FR-105.
+@owner_required
+def shift_add(request, pk):
+    person = get_object_or_404(_people(), pk=pk)
+    location = Location.objects.filter(kind=Location.Kind.RESTAURANT, is_active=True).first()
+    if location is None:
+        return render(request, "stock/no_locations.html", status=400)
+    initial = {}
+    with suppress(ValueError):
+        initial["day"] = date.fromisoformat(request.GET.get("date", ""))
+    form = OwnerShiftForm(request.POST or None, initial=initial, adding=True)
+    context = {"person": person, "form": form, "next": _next_or(request, "")}
+    if request.method == "POST" and form.is_valid():
+        data = form.cleaned_data
+        try:
+            shift = owner_add_shift(
+                person,
+                day=data["day"],
+                start=data["start"],
+                end=data["end"],
+                location=location,
+                by=request.user,
+                reason=data["reason"],
+                is_catering_event=data["catering"],
+            )
+        except ClockError as e:
+            context["error"] = str(e)
+        else:
+            messages.success(request, f"Shift added for {person} on {data['day']:%a %-d %b}.")
+            return redirect(_next_or(request, _person_page(person, shift.business_date)))
+    return render(request, "labour/shift_add.html", context)

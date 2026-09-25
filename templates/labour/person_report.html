@@ -26,7 +26,7 @@
 {% if row.shifts %}
   <div class="table-wrap">
     <table class="hours">
-      <thead><tr><th>Date</th><th>Shift</th><th>Started</th><th>Left</th><th class="hours__total">Hours</th><th>Notes</th></tr></thead>
+      <thead><tr><th>Date</th><th>Shift</th><th>Started</th><th>Left</th><th class="hours__total">Hours</th><th>Notes</th><th class="no-print"></th></tr></thead>
       <tbody>
         {% for s in row.shifts %}
           <tr{% if s.is_open %} class="hours__open"{% endif %}>
@@ -39,8 +39,10 @@
               {% if s.is_catering_event %}<span class="flag">catering</span>{% endif %}
               {% if s.pay_run_id %}<span class="flag flag--paid">paid {{ s.pay_run.paid_on|date:"j M" }}</span>{% else %}<span class="flag">unpaid</span>{% endif %}
               {% if s.days_late_entered >= 2 %}<span class="flag">written {{ s.days_late_entered }} days later</span>{% endif %}
-              {% for e in s.edit_list %}<div class="edit">Corrected {{ e.field_name|cut:"_at"|cut:"clocked_" }}: {{ e.old_value|default:"—" }} → {{ e.new_value }} — {{ e.reason }}</div>{% endfor %}
+              {% if s.source == "OWNER" %}<span class="flag">added by an owner</span>{% endif %}
+              {% for e in s.edit_list %}<div class="edit">{{ e.field_name|field_label }}: {{ e.old_value|default:"—" }} → {{ e.new_value }} — {{ e.reason }}</div>{% endfor %}
             </td>
+            <td class="no-print">{% if not s.pay_run_id %}<a href="{% url 'hours_shift' s.pk %}?next={{ here|urlencode }}">{% if s.is_open %}Set end time{% else %}Fix{% endif %}</a>{% endif %}</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -50,10 +52,23 @@
   <p class="muted">No hours recorded in this period.</p>
 {% endif %}
 
+{% if cancelled %}
+  <section class="no-print">
+    <h2 class="h2">Cancelled — not counted</h2>
+    <ul class="cancelled">
+      {% for s in cancelled %}
+        <li>{{ s.business_date|date:"D j M" }} · {{ s.clocked_in_at|time:"g:i A" }} – {% if s.clocked_out_at %}{{ s.clocked_out_at|time:"g:i A" }}{% else %}not finished{% endif %}
+          <small>cancelled by {{ s.cancelled_by }} on {{ s.cancelled_at|date:"j M" }}: “{{ s.cancel_reason }}”</small></li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+
 <p class="muted statement__foot">Printed {% now "j M Y, g:i A" %}. Hours only; any questions, please speak to an owner.</p>
 
 <div class="actions no-print">
   <button class="btn btn--primary" type="button" onclick="window.print()">Print or save as PDF</button>
+  <a class="btn btn--ghost" href="{% url 'hours_shift_add' person.pk %}?next={{ here|urlencode }}">Add a shift</a>
   <a class="btn btn--ghost" href="?{{ query }}&amp;format=csv">Download (CSV)</a>
 </div>
 {% endblock %}

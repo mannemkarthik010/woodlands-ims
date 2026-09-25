@@ -42,6 +42,7 @@ class Source(models.TextChoices):
 
     CLOCK = "CLOCK", "Clocked in and out"
     ENTERED = "ENTERED", "Entered by the worker"
+    OWNER = "OWNER", "Entered by an owner"
 
 
 class Weekday(models.IntegerChoices):
@@ -98,6 +99,18 @@ class ShiftTemplate(TimeStamped):
         return f"{self.position} · {self.get_period_display()} · {day} {self.starts_at:%H:%M}–{self.ends_at:%H:%M}"
 
 
+class CurrentShifts(models.Manager):
+    """
+    Shifts that count. A cancelled shift is left out of every total, every
+    overlap check and every payment by being left out here -- so no query
+    anywhere can forget to exclude it. `Shift.all_objects` sees everything,
+    for the history.
+    """
+
+    def get_queryset(self):
+        return super().get_queryset().filter(cancelled_at__isnull=True)
+
+
 # Implements: FR-101, FR-102, FR-106, FR-108, D-04.
 class Shift(TimeStamped):
     employee = models.ForeignKey("core.User", on_delete=models.PROTECT, related_name="shifts")
@@ -136,8 +149,23 @@ class Shift(TimeStamped):
         "PayRun", null=True, blank=True, on_delete=models.PROTECT, related_name="shifts"
     )
 
+    # A shift entered by mistake is cancelled, never deleted: it stops
+    # counting, and the record of it -- and why -- stays.
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancelled_by = models.ForeignKey(
+        "core.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    cancel_reason = models.CharField(max_length=240, blank=True)
+
+    objects = CurrentShifts()
+    all_objects = models.Manager()
+
     class Meta:
         ordering = ["-clocked_in_at"]
+        # The admin, related lookups and anything else that asks for "the"
+        # manager see every shift; the app's own queries use `objects`.
+        base_manager_name = "all_objects"
+        default_manager_name = "all_objects"
         indexes = [models.Index(fields=["employee", "business_date"])]
         constraints = [
             models.CheckConstraint(
@@ -152,6 +180,10 @@ class Shift(TimeStamped):
     # Implements: FR-113.
     def delete(self, *args, **kwargs):
         raise PermissionError("A clock record is never deleted. Correct it instead; the correction is kept.")
+
+    @property
+    def is_cancelled(self) -> bool:
+        return self.cancelled_at is not None
 
     @property
     def is_open(self) -> bool:

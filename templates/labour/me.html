@@ -34,11 +34,12 @@
         {% if not d.is_empty %}<span class="days__total">{{ d.minutes|hm }}</span>{% endif %}
       </div>
       {% for s in d.shifts %}
-        <div class="days__shift">
+        <div class="days__shift{% if s.is_cancelled %} days__shift--cancelled{% endif %}">
           {{ s.get_period_display }} · {{ s.clocked_in_at|time:"g:i A" }} –
           {% if s.clocked_out_at %}{{ s.clocked_out_at|time:"g:i A" }}{% else %}<em>not finished — tell an owner</em>{% endif %}
           {% if s.is_catering_event %}<span class="count">catering</span>{% endif %}
           {% if s.pay_run_id %}<span class="count">paid</span>{% endif %}
+          {% if s.is_cancelled %}<span class="count">cancelled by an owner — not counted</span>{% endif %}
         </div>
       {% empty %}
         <div class="days__shift muted">Nothing recorded</div>

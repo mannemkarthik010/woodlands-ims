@@ -15,6 +15,9 @@ urlpatterns = [
     path("hours/payments/<int:pk>/<int:person_pk>/", views.pay_statement, name="hours_pay_statement"),
     path("hours/report/", views.report, name="hours_report"),
     path("hours/report/<int:pk>/", views.person_report, name="hours_person"),
+    path("hours/shifts/<int:pk>/", views.shift_fix, name="hours_shift"),
+    path("hours/shifts/<int:pk>/cancel/", views.shift_cancel, name="hours_shift_cancel"),
+    path("hours/people/<int:pk>/add-shift/", views.shift_add, name="hours_shift_add"),
     path("hours/people/<int:pk>/confirm/", views.confirm, name="hours_confirm"),
     path("hours/people/<int:pk>/merge/", views.merge, name="hours_merge"),
 ]

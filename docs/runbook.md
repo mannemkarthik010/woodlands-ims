@@ -128,6 +128,25 @@ summary, confirm. Next time the screen starts from what is left.
 - Each payment has a **Statement** per person to print or save as a PDF and hand
   over, and a CSV of the whole payment.
 
+### Fixing a shift
+
+Owners correct the record from **Staff hours & pay**:
+
+- **No end time.** To pay lists every unfinished shift under *Needs fixing before
+  paying* with a **Fix** button. Set when the person left; the shift then counts.
+- **Anything else wrong.** Open a person (click their name) and press **Fix** on
+  the shift: date, start, end, morning or evening, catering. A reason is always
+  asked for and kept, with the old value, under the shift's *History*.
+- **A shift nobody recorded,** or one more than two weeks back: **Add a shift** on
+  the person's page. It is marked *added by an owner* with the reason.
+- **A shift that should not exist** (entered twice, a day not worked): **Fix →
+  Cancel this shift**. It stops counting everywhere, still shows on the person's
+  page and the worker's tablet as cancelled, and is never deleted.
+
+Owner changes follow the same rules as the tablet — no overlaps, nothing in the
+future, no shift over 16 hours — and a paid shift cannot be changed until its
+payment is undone.
+
 ### Hours for any period
 
 **Any period** adds every shift in a range into one total per

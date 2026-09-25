@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load hours %}
+{% block title %}Shift — {{ shift.employee }}{% endblock %}
+{% block wrap_class %}wrap--form{% endblock %}
+{% block content %}
+<a class="back" href="{{ next }}">← Back</a>
+<h1>{{ shift.employee }} · {{ shift.business_date|date:"l j F" }}</h1>
+
+<div class="summary">
+  <div class="summary__times">{{ shift.clocked_in_at|time:"g:i A" }} – {% if shift.clocked_out_at %}{{ shift.clocked_out_at|time:"g:i A" }}{% if shift.clocked_out_at|date:"Ymd" != shift.clocked_in_at|date:"Ymd" %} <small>(next day)</small>{% endif %}{% else %}<strong>no end time</strong>{% endif %}</div>
+  {% if shift.worked_minutes is not None %}<div class="summary__hours">{{ shift.worked_minutes|hm }}</div>{% endif %}
+  <div class="muted">{{ shift.get_period_display }} shift{% if shift.is_catering_event %} · catering{% endif %} · {% if shift.source == "CLOCK" %}clocked in on the tablet{% elif shift.source == "OWNER" %}added by {{ shift.created_by }}{% else %}entered by {{ shift.created_by|default:shift.employee }}{% endif %} on {{ shift.created_at|date:"j M, g:i A" }}</div>
+  {% if shift.note %}<div class="muted">“{{ shift.note }}”</div>{% endif %}
+</div>
+
+{% if shift.is_cancelled %}
+  <p class="alert">Cancelled by {{ shift.cancelled_by }} on {{ shift.cancelled_at|date:"j M Y, g:i A" }}: “{{ shift.cancel_reason }}”. It is not counted anywhere.</p>
+{% elif shift.pay_run %}
+  <p class="alert">Paid — {{ shift.pay_run }}. Paid hours are locked. To change this shift, <a href="{% url 'hours_payment' shift.pay_run.pk %}">undo that payment</a> first.</p>
+{% else %}
+  <h2 class="h2">Correct it</h2>
+  <form method="post" class="stack">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <label class="field"><span class="field__label">{{ form.day.label }}</span>{{ form.day }}</label>
+    <div class="field-row">
+      <label class="field"><span class="field__label">{{ form.start.label }}</span>{{ form.start }}</label>
+      <label class="field"><span class="field__label">{{ form.end.label }}{% if shift.is_open %} — when did they leave?{% endif %}</span>{{ form.end }}</label>
+    </div>
+    <label class="field"><span class="field__label">{{ form.period.label }}</span>{{ form.period }}</label>
+    <label class="check">{{ form.catering }} <span>{{ form.catering.label }}</span></label>
+    <label class="field"><span class="field__label">{{ form.reason.label }}</span>{{ form.reason }}
+      {% for e in form.reason.errors %}<span class="field__error">{{ e }}</span>{% endfor %}</label>
+    {% for e in form.non_field_errors %}<span class="field__error">{{ e }}</span>{% endfor %}
+    <button class="btn btn--primary btn--big" type="submit">Save correction</button>
+  </form>
+
+  <details class="undo">
+    <summary>Cancel this shift</summary>
+    <p class="muted">Only if it should never have been recorded — entered twice, or for a day not worked. It stops counting everywhere and stays in the history with your reason.</p>
+    <form method="post" action="{% url 'hours_shift_cancel' shift.pk %}" class="stack">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <label class="field"><span class="field__label">Why?</span><input type="text" name="reason" maxlength="240" required></label>
+      <button class="btn btn--ghost" type="submit">Cancel shift</button>
+    </form>
+  </details>
+{% endif %}
+
+{% if edits %}
+  <h2 class="h2">History</h2>
+  <ul class="cancelled">
+    {% for e in edits %}
+      <li>{{ e.created_at|date:"j M, g:i A" }} · {{ e.created_by }} · {{ e.field_name|field_label }}: {{ e.old_value|default:"—" }} → {{ e.new_value }}<small>“{{ e.reason }}”</small></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}

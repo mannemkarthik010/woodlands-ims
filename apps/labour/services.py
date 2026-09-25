@@ -206,7 +206,7 @@ def correct_shift(shift: Shift, *, by: User, reason: str, **changes) -> Shift:
     CORRECTABLE. A field set to the value it already has is not an edit and
     writes nothing.
     """
-    if by.role != Role.OWNER:
+    if by.role != Role.OWNER and not by.is_superuser:
         raise NotAllowed("Only an owner can correct a clock record.")
     reason = (reason or "").strip()
     if not reason:
@@ -215,7 +215,9 @@ def correct_shift(shift: Shift, *, by: User, reason: str, **changes) -> Shift:
     if unknown:
         raise ClockError(f"Cannot correct {', '.join(sorted(unknown))}.")
 
-    shift = Shift.objects.select_for_update().select_related("pay_run").get(pk=shift.pk)
+    shift = Shift.all_objects.select_for_update().select_related("pay_run").get(pk=shift.pk)
+    if shift.is_cancelled:
+        raise ClockError("This shift was cancelled. Add a new one instead.")
     if shift.pay_run_id:
         raise ClockError(
             f"This shift is already paid ({shift.pay_run}). Undo that payment first, then correct it."
@@ -224,6 +226,8 @@ def correct_shift(shift: Shift, *, by: User, reason: str, **changes) -> Shift:
     clocked_out = changes.get("clocked_out_at", shift.clocked_out_at)
     if clocked_out is not None and clocked_out <= clocked_in:
         raise ClockError("Clock-out cannot be before clock-in.")
+    if "clocked_in_at" in changes or "clocked_out_at" in changes:
+        _check_span(shift.employee, clocked_in, clocked_out, now=timezone.now(), exclude_pk=shift.pk)
     if "period" in changes and changes["period"] not in Period.values:
         raise ClockError("A shift is morning or evening.")
 
@@ -258,10 +262,55 @@ def hours_for_day(user: User, day: date) -> Decimal:
     return (Decimal(total) / Decimal(60)).quantize(Decimal("0.01"))
 
 
-def _overlapping(user: User, start: datetime, end: datetime):
-    return Shift.objects.filter(employee=user, clocked_in_at__lt=end).filter(
+def _overlapping(user: User, start: datetime, end: datetime, *, exclude_pk: int | None = None):
+    found = Shift.objects.filter(employee=user, clocked_in_at__lt=end).filter(
         Q(clocked_out_at__gt=start) | Q(clocked_out_at__isnull=True, clocked_in_at__gte=start)
     )
+    return found.exclude(pk=exclude_pk) if exclude_pk else found
+
+
+def span(day: date, start: time, end: time) -> tuple[datetime, datetime]:
+    """A date and two clock times as a start and an end. An end at or before the start is the next day."""
+    started = timezone.make_aware(datetime.combine(day, start))
+    ended = timezone.make_aware(datetime.combine(day, end))
+    if ended <= started:
+        ended = timezone.make_aware(datetime.combine(day + timedelta(days=1), end))
+    return started, ended
+
+
+def _check_span(
+    user: User,
+    started: datetime,
+    ended: datetime | None,
+    *,
+    now: datetime,
+    exclude_pk: int | None = None,
+    future_message: str = "The end time hasn't happened yet.",
+) -> None:
+    """
+    The rules every shift obeys, whoever writes it -- a worker on the tablet
+    or an owner correcting one: no more than MAX_SHIFT, nothing still to
+    come, and no overlap with another shift of theirs.
+    """
+    if started > now + FUTURE_GRACE:
+        raise ClockError("That start time hasn't happened yet.")
+    if ended is not None:
+        if ended - started > MAX_SHIFT:
+            hours = int((ended - started).total_seconds() // 3600)
+            raise ClockError(f"That is {hours} hours. Please check the start and end times.")
+        if ended > now + FUTURE_GRACE:
+            raise ClockError(future_message)
+    clash = _overlapping(
+        user, started, ended or started + timedelta(minutes=1), exclude_pk=exclude_pk
+    ).first()
+    if clash:
+        a = timezone.localtime(clash.clocked_in_at)
+        b = (
+            f"{timezone.localtime(clash.clocked_out_at):%-I:%M %p}"
+            if clash.clocked_out_at
+            else "not finished"
+        )
+        raise ClockError(f"This overlaps a shift already recorded: {a:%a %-d %b, %-I:%M %p} – {b}.")
 
 
 # Implements: FR-101, FR-108.
@@ -293,25 +342,14 @@ def record_shift(
     if (today - day).days >= ENTRY_WINDOW_DAYS:
         raise ClockError(f"That is more than {ENTRY_WINDOW_DAYS} days ago. Please ask an owner to add it.")
 
-    started = timezone.make_aware(datetime.combine(day, start))
-    ended = timezone.make_aware(datetime.combine(day, end))
-    if ended <= started:
-        ended = timezone.make_aware(datetime.combine(day + timedelta(days=1), end))
-    if ended - started > MAX_SHIFT:
-        hours = int((ended - started).total_seconds() // 3600)
-        raise ClockError(f"That is {hours} hours. Please check the start and end times.")
-    if ended > now + FUTURE_GRACE:
-        raise ClockError("The end time hasn't happened yet. Record the shift when you leave.")
-
-    clash = _overlapping(user, started, ended).first()
-    if clash:
-        a = timezone.localtime(clash.clocked_in_at)
-        b = (
-            f"{timezone.localtime(clash.clocked_out_at):%-I:%M %p}"
-            if clash.clocked_out_at
-            else "not finished"
-        )
-        raise ClockError(f"This overlaps a shift already recorded: {a:%a %-d %b, %-I:%M %p} – {b}.")
+    started, ended = span(day, start, end)
+    _check_span(
+        user,
+        started,
+        ended,
+        now=now,
+        future_message="The end time hasn't happened yet. Record the shift when you leave.",
+    )
 
     schedule = schedule_for(user, started)
     shift = Shift(
@@ -348,7 +386,8 @@ class Day:
 
     @property
     def is_empty(self) -> bool:
-        return not self.shifts
+        """Nothing that counts. A day whose only shift was cancelled is empty."""
+        return not any(not s.is_cancelled for s in self.shifts)
 
 
 # Implements: FR-109.
@@ -361,7 +400,9 @@ def recent_days(user: User, *, days: int = 7, today: date | None = None) -> list
     today = today or timezone.localdate()
     first = today - timedelta(days=days - 1)
     by_day: dict[date, list[Shift]] = {}
-    for shift in Shift.objects.filter(employee=user, business_date__range=(first, today)).order_by(
+    # Cancelled shifts are shown, marked, so the worker can see an owner
+    # took one out -- and why they should not simply write it in again.
+    for shift in Shift.all_objects.filter(employee=user, business_date__range=(first, today)).order_by(
         "clocked_in_at"
     ):
         by_day.setdefault(shift.business_date, []).append(shift)
@@ -370,7 +411,7 @@ def recent_days(user: User, *, days: int = 7, today: date | None = None) -> list
     for i in range(days):
         d = today - timedelta(days=i)
         shifts = by_day.get(d, [])
-        minutes = sum(s.worked_minutes or 0 for s in shifts)
+        minutes = sum(s.worked_minutes or 0 for s in shifts if not s.is_cancelled)
         out.append(
             Day(
                 day=d,
@@ -415,7 +456,7 @@ def merge_person(duplicate: User, *, into: User, by: User) -> int:
     if not into.can_use_pin or not duplicate.can_use_pin:
         raise NotAllowed("Owners are not on the clock.")
 
-    shifts = list(Shift.objects.select_for_update().filter(employee=duplicate).order_by("clocked_in_at"))
+    shifts = list(Shift.all_objects.select_for_update().filter(employee=duplicate).order_by("clocked_in_at"))
     if any(s.pay_run_id for s in shifts):
         raise ClockError(
             f"Some of {duplicate}'s hours are already paid. Undo that payment first, then merge, "
@@ -440,10 +481,84 @@ def merge_person(duplicate: User, *, into: User, by: User) -> int:
             reason=reason[:240],
             created_by=by,
         )
-    Shift.objects.filter(pk__in=[s.pk for s in shifts]).update(employee=into, updated_at=timezone.now())
+    Shift.all_objects.filter(pk__in=[s.pk for s in shifts]).update(employee=into, updated_at=timezone.now())
 
     duplicate.is_active_staff = False
     duplicate.needs_review = False
     duplicate.pin = ""
     duplicate.save(update_fields=["is_active_staff", "needs_review", "pin"])
     return len(shifts)
+
+
+# Implements: FR-105.
+@transaction.atomic
+def owner_add_shift(
+    person: User,
+    *,
+    day: date,
+    start: time,
+    end: time,
+    location: Location,
+    by: User,
+    reason: str,
+    is_catering_event: bool = False,
+) -> Shift:
+    """
+    An owner writes in a shift for somebody: more than two weeks back, or
+    somebody who could not use the tablet. The same rules as any other
+    shift, without the two-week window, and marked as the owner's entry with
+    the reason kept on it.
+    """
+    _must_be_owner(by)
+    reason = (reason or "").strip()
+    if not reason:
+        raise ClockError("Please say why you are adding this shift. It is kept with the record.")
+    if not person.can_use_pin:
+        raise NotAllowed("Owners are not on the clock.")
+    now = timezone.now()
+    started, ended = span(day, start, end)
+    User.objects.select_for_update().get(pk=person.pk)
+    _check_span(person, started, ended, now=now)
+    schedule = schedule_for(person, started)
+    return Shift.objects.create(
+        employee=person,
+        location=location,
+        business_date=day,
+        clocked_in_at=started,
+        clocked_out_at=ended,
+        period=schedule.period,
+        position_id=person.position_id,
+        scheduled_start=schedule.starts_at,
+        scheduled_end=schedule.ends_at,
+        is_catering_event=is_catering_event,
+        source=Source.OWNER,
+        note=reason[:240],
+        created_by=by,
+    )
+
+
+# Implements: FR-105, FR-113.
+@transaction.atomic
+def cancel_shift(shift: Shift, *, by: User, reason: str) -> Shift:
+    """
+    A shift that should never have been recorded -- entered twice, or for a
+    day not worked. It stops counting everywhere; the row, and a correction
+    saying who cancelled it and why, stay.
+    """
+    _must_be_owner(by)
+    reason = (reason or "").strip()
+    if not reason:
+        raise ClockError("Please say why this shift is being cancelled. It is kept with the record.")
+    shift = Shift.all_objects.select_for_update().select_related("pay_run").get(pk=shift.pk)
+    if shift.is_cancelled:
+        raise ClockError("This shift is already cancelled.")
+    if shift.pay_run_id:
+        raise ClockError(f"This shift is already paid ({shift.pay_run}). Undo that payment first.")
+    shift.cancelled_at = timezone.now()
+    shift.cancelled_by = by
+    shift.cancel_reason = reason[:240]
+    shift.save(update_fields=["cancelled_at", "cancelled_by", "cancel_reason", "updated_at"])
+    ShiftEdit.objects.create(
+        shift=shift, field_name="cancelled", old_value="", new_value="yes", reason=reason[:240], created_by=by
+    )
+    return shift

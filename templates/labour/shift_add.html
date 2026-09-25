@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Add a shift — {{ person }}{% endblock %}
+{% block wrap_class %}wrap--form{% endblock %}
+{% block content %}
+{% if next %}<a class="back" href="{{ next }}">← Back</a>{% endif %}
+<h1>Add a shift for {{ person }}</h1>
+<p class="muted">For a shift they could not record themselves, or one more than two weeks back. Morning or evening is worked out from their job's hours.</p>
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <label class="field"><span class="field__label">{{ form.day.label }}</span>{{ form.day }}
+    {% for e in form.day.errors %}<span class="field__error">{{ e }}</span>{% endfor %}</label>
+  <div class="field-row">
+    <label class="field"><span class="field__label">{{ form.start.label }}</span>{{ form.start }}</label>
+    <label class="field"><span class="field__label">{{ form.end.label }}</span>{{ form.end }}</label>
+  </div>
+  <label class="check">{{ form.catering }} <span>{{ form.catering.label }}</span></label>
+  <label class="field"><span class="field__label">{{ form.reason.label }}</span>{{ form.reason }}
+    {% for e in form.reason.errors %}<span class="field__error">{{ e }}</span>{% endfor %}</label>
+  <button class="btn btn--primary btn--big" type="submit">Add shift</button>
+</form>
+{% endblock %}

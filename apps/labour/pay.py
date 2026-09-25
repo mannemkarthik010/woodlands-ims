@@ -67,6 +67,11 @@ class UnpaidHours(PersonHours):
         days = [s.business_date for s in self.shifts if not s.is_open]
         return max(days) if days else None
 
+    @property
+    def earliest_day(self) -> date | None:
+        """First unpaid day including unfinished shifts -- where the person's page should start."""
+        return min((s.business_date for s in self.shifts), default=None)
+
 
 @dataclass
 class Unpaid:

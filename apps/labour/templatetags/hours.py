@@ -23,3 +23,19 @@ def decimal_hours(minutes) -> str:
     if minutes is None:
         return "—"
     return f"{hours(int(minutes)):.2f}"
+
+
+FIELD_LABELS = {
+    "clocked_in_at": "Start",
+    "clocked_out_at": "End time",
+    "period": "Shift",
+    "is_catering_event": "Catering",
+    "employee": "Person",
+    "cancelled": "Cancelled",
+}
+
+
+@register.filter
+def field_label(name: str) -> str:
+    """A correction's field as a person would say it: "End time", not "clocked_out_at"."""
+    return FIELD_LABELS.get(name, name.replace("_", " ").capitalize())

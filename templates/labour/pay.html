@@ -20,8 +20,16 @@
     Unpaid hours from <strong>{{ preview.first_day|date:"D j M" }}</strong> to <strong>{{ up_to|date:"D j M Y" }}</strong>
   </p>
 
-  {% if preview.open_shifts %}
-    <p class="alert">{{ preview.open_shifts }} shift{{ preview.open_shifts|pluralize }} with no end time {{ preview.open_shifts|pluralize:"is,are" }} not included. Fix {{ preview.open_shifts|pluralize:"it,them" }} and {{ preview.open_shifts|pluralize:"it,they" }} will show here to pay.</p>
+  {% if needs_fixing %}
+    <section class="fixlist">
+      <h2 class="h2">Needs fixing before paying — no end time, so not included</h2>
+      {% for s in needs_fixing %}
+        <div class="fixlist__row">
+          <span><strong>{{ s.employee }}</strong> · {{ s.business_date|date:"D j M" }} · {{ s.get_period_display }} · started {{ s.clocked_in_at|time:"g:i A" }}</span>
+          <a class="btn btn--add" href="{% url 'hours_shift' s.pk %}?next={{ here|urlencode }}">Fix</a>
+        </div>
+      {% endfor %}
+    </section>
   {% endif %}
 
   <form method="post">
@@ -44,7 +52,7 @@
                   <input type="checkbox" name="person" value="{{ r.person.pk }}" checked aria-label="Pay {{ r.person }}">
                 {% endif %}
               </td>
-              <td><strong>{{ r.person }}</strong>{% if r.person.position %}<small>{{ r.person.position }}</small>{% endif %}</td>
+              <td><a href="{% url 'hours_person' r.person.pk %}?period=custom&amp;from={{ r.earliest_day|date:'Y-m-d' }}&amp;to={{ up_to|date:'Y-m-d' }}"><strong>{{ r.person }}</strong></a>{% if r.person.position %}<small>{{ r.person.position }}</small>{% endif %}</td>
               <td>{% if r.last_paid_up_to %}{{ r.last_paid_up_to|date:"D j M" }}{% else %}<span class="muted">never</span>{% endif %}</td>
               <td>{{ r.first_day|date:"j M" }} – {{ r.last_day|date:"j M" }}<small>{{ r.days }} day{{ r.days|pluralize }}</small></td>
               <td>{{ r.morning|hm }}</td>
@@ -70,6 +78,17 @@
     </div>
   </form>
 {% else %}
+  {% if needs_fixing %}
+    <section class="fixlist">
+      <h2 class="h2">Needs fixing — no end time</h2>
+      {% for s in needs_fixing %}
+        <div class="fixlist__row">
+          <span><strong>{{ s.employee }}</strong> · {{ s.business_date|date:"D j M" }} · {{ s.get_period_display }} · started {{ s.clocked_in_at|time:"g:i A" }}</span>
+          <a class="btn btn--add" href="{% url 'hours_shift' s.pk %}?next={{ here|urlencode }}">Fix</a>
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
   <p class="banner">Nothing unpaid up to {{ up_to|date:"D j M Y" }}.{% if preview.open_shifts %} {{ preview.open_shifts }} unfinished shift{{ preview.open_shifts|pluralize }} still need{{ preview.open_shifts|pluralize:"s," }} an end time.{% endif %}</p>
 {% endif %}
 {% endblock %}

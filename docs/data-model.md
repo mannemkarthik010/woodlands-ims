@@ -638,8 +638,11 @@ What one person was paid for in one payment, fixed at the moment it was paid. Th
 | `clock_in_photo` | File(100) | yes |  |
 | `is_catering_event` | Boolean |  |  |
 | `note` | Char(240) |  |  |
-| `source` | Char(8) |  | _CLOCK, ENTERED_ |
+| `source` | Char(8) |  | _CLOCK, ENTERED, OWNER_ |
 | `pay_run` | ForeignKey → PayRun | yes |  |
+| `cancelled_at` | DateTime | yes |  |
+| `cancelled_by` | ForeignKey → User | yes |  |
+| `cancel_reason` | Char(240) |  |  |
 
 ### ShiftEdit
 

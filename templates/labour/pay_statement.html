@@ -34,7 +34,7 @@
             <td class="hours__total">{{ s.worked_minutes|hm }}</td>
             <td class="hours__flags">
               {% if s.is_catering_event %}<span class="flag">catering</span>{% endif %}
-              {% for e in s.edit_list %}<div class="edit">Corrected: {{ e.old_value|default:"—" }} → {{ e.new_value }} — {{ e.reason }}</div>{% endfor %}
+              {% for e in s.edit_list %}<div class="edit">{{ e.field_name|field_label }}: {{ e.old_value|default:"—" }} → {{ e.new_value }} — {{ e.reason }}</div>{% endfor %}
             </td>
           </tr>
         {% endfor %}
