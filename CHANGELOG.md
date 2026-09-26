@@ -5,6 +5,9 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- "What we count, and how often" (`tools/count_list_form.py`): the sheet to fill in at the
+  restaurant — every item by layer, how often it is made or bought and counted, containers,
+  and blank pages for vegetables and packaging
 - Inventory in three layers: groceries and packaging (layer 1), what the kitchen makes —
   batters, sambar, chutneys (layer 2), and dishes (layer 3, never counted: they come from sales)
 - Every item says which count it is on: prepared items daily, vegetables weekly, other
@@ -114,5 +117,11 @@ Notable changes per release. Newest first.
   separate shifts and hours are the plain span of each (ADR 0008 supersedes FR-103/FR-104)
 
 ### Fixed
+- A person who added themselves on the tablet could seem missing from the name list: the
+  browser was showing a kept copy of the page. Every hours page is now never stored, which
+  also stops Back showing the last worker's week to the next person
+- Count stock offered "Continue" on sheets left unfinished days ago, built before counts had
+  their own items — so daily, weekly and monthly all showed the same old list. Only a sheet
+  from this day, week or month is continued; starting afresh retires the old one, kept as void
 - Multi-line `{# … #}` template comments were being shown to the user rather than
   treated as comments — visible on the counting screen

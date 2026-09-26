@@ -346,3 +346,28 @@ def record_counted(line, *, quantity: Decimal | None, measure=None) -> None:
     else:
         line.counted_quantity = (quantity * measure.quantity_in_base_units).quantize(Decimal("0.0001"))
     line.save(update_fields=["entered_quantity", "entered_measure", "counted_quantity"])
+
+
+# Implements: FR-701.
+@transaction.atomic
+def start_count(*, location: Location, cadence: str, user: User | None = None):
+    """
+    A new count sheet for one place and one rhythm. An earlier sheet of the
+    same kind left unfinished is retired, not continued: it was made from
+    that day's list and that day's stock, and a daily count from last week
+    is not today's daily count. It is kept, marked void, saying what replaced it.
+    """
+    from apps.stock.models import DocumentStatus, StockCount
+
+    count = StockCount.objects.create(
+        location=location, cadence=cadence, counted_at=timezone.now(), created_by=user
+    )
+    build_count_sheet(count)
+    if cadence != StockCount.Cadence.ADHOC:
+        for old in StockCount.objects.filter(
+            location=location, cadence=cadence, status=DocumentStatus.DRAFT
+        ).exclude(pk=count.pk):
+            old.status = DocumentStatus.VOIDED
+            old.note = (old.note + "\n" if old.note else "") + f"Not finished; replaced by count {count.pk}."
+            old.save(update_fields=["status", "note"])
+    return count

@@ -37,11 +37,11 @@ from apps.core.models import Location
 from apps.stock.models import DocumentStatus, StockCount, StockCountLine, Transfer, TransferLine
 from apps.stock.services import (
     StockError,
-    build_count_sheet,
     on_hand,
     post_count,
     post_transfer,
     record_counted,
+    start_count,
 )
 
 
@@ -274,6 +274,12 @@ def count_home(request):
     for cadence, every, label, what, location in plan:
         of_this = StockCount.objects.filter(cadence=cadence, location=location).select_related("created_by")
         last = of_this.filter(status=DocumentStatus.POSTED).order_by("-counted_at").first()
+        # Only a sheet from this day, week or month is carried on. An older
+        # one was made from an older list and older stock; starting afresh
+        # retires it (services.start_count).
+        draft = of_this.filter(status=DocumentStatus.DRAFT).order_by("-counted_at").first()
+        if draft and _due(cadence, draft, today):
+            draft = None
         cards.append(
             CountCard(
                 cadence=cadence,
@@ -282,7 +288,7 @@ def count_home(request):
                 location=location,
                 items=counted.filter(count_every=every).count(),
                 last=last,
-                draft=of_this.filter(status=DocumentStatus.DRAFT).order_by("-counted_at").first(),
+                draft=draft,
                 due=_due(cadence, last, today),
             )
         )
@@ -296,13 +302,9 @@ def count_new(request):
     if request.method == "POST":
         location = get_object_or_404(Location, pk=request.POST.get("location"))
         cadence = request.POST.get("cadence") or StockCount.Cadence.WEEKLY
-        count = StockCount.objects.create(
-            location=location,
-            cadence=cadence,
-            counted_at=timezone.now(),
-            created_by=request.user,
-        )
-        build_count_sheet(count)
+        if cadence not in StockCount.Cadence.values:
+            cadence = StockCount.Cadence.ADHOC
+        count = start_count(location=location, cadence=cadence, user=request.user)
         return redirect("count_sheet", pk=count.pk)
 
     return render(

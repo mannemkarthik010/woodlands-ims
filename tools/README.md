@@ -19,3 +19,17 @@ photographing it.
 
 The content comes from `manage.py gaps`, so the sheet shrinks by itself as
 answers are recorded. Re-run both and the questions already answered are gone.
+
+## count_list_form.py
+
+Builds "What we count, and how often" — the sheet to take to the restaurant and
+fill in by hand with the owners and the chef. Every item the system knows,
+grouped by layer (made in the kitchen, groceries), with tick-box columns for
+how often it is made or bought and how often it is counted; how each grocery
+is bought is printed in where the system knows it, to be confirmed. Blank
+pages for vegetables and packaging, which the system has none of yet.
+
+Generated from the live item list and printed to PDF by Chrome, so it needs no
+PDF library:
+
+    PYTHONPATH=. python tools/count_list_form.py "Claude outputs/Woodlands-what-we-count.pdf"

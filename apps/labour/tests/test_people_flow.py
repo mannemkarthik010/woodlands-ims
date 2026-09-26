@@ -36,6 +36,16 @@ class AddMeFlowTests(TestCase):
         # And from now on they are on the list.
         self.assertContains(self.client.get(reverse("hours_start")), "Meera Nair")
 
+    def test_a_new_person_is_in_the_list_straight_away_and_no_page_is_kept_by_the_browser(self):
+        self.add("Meera", "Nair")
+        self.client.post(reverse("hours_done"))
+        page = self.client.get(reverse("hours_start"))
+        meera = User.objects.get(last_name="Nair")
+        self.assertContains(page, f'<option value="{meera.pk}"')
+        # Back on a shared tablet must not show an old list, or the last person's week.
+        for name in ("hours_start", "hours_me", "hours_new"):
+            self.assertIn("no-store", self.client.get(reverse(name))["Cache-Control"])
+
     def test_somebody_already_listed_is_sent_to_their_own_name(self):
         response = self.add("kumar", "RAVI")
         self.assertContains(response, "Ravi Kumar is already on the list.")

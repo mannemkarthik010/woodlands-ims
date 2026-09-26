@@ -190,3 +190,38 @@ class CountHomeTests(LayerTestCase):
         self.assertRedirects(response, reverse("count_sheet", args=[count.pk]))
         self.assertEqual((count.cadence, count.status), (StockCount.Cadence.DAILY, DocumentStatus.DRAFT))
         self.assertEqual(self.names(count), ["Dosa batter", "Sambar"])
+
+
+class StaleDraftTests(LayerTestCase):
+    """
+    A daily sheet left unfinished last week is not today's daily count: it
+    was made from last week's list. Offering "Continue" on it is how three
+    different counts all came to show the same old items.
+    """
+
+    def cards(self):
+        return {c.label: c for c in self.client.get(reverse("count_home")).context["cards"]}
+
+    def test_an_old_unfinished_sheet_is_not_offered_and_starting_afresh_retires_it(self):
+        old = self.sheet(StockCount.Cadence.DAILY)
+        StockCount.objects.filter(pk=old.pk).update(counted_at=timezone.now() - timedelta(days=9))
+        card = self.cards()["Daily"]
+        self.assertIsNone(card.draft)
+        self.assertTrue(card.due)
+
+        self.client.post(
+            reverse("count_new"), {"cadence": StockCount.Cadence.DAILY, "location": self.restaurant.pk}
+        )
+        old.refresh_from_db()
+        self.assertEqual(old.status, DocumentStatus.VOIDED)
+        new = StockCount.objects.get(status=DocumentStatus.DRAFT)
+        self.assertIn(f"replaced by count {new.pk}", old.note)
+        self.assertEqual(self.names(new), ["Dosa batter", "Sambar"])
+
+    def test_today_s_unfinished_sheet_is_continued(self):
+        today = self.sheet(StockCount.Cadence.DAILY)
+        self.assertEqual(self.cards()["Daily"].draft, today)
+
+    def test_an_unknown_kind_of_count_becomes_ad_hoc(self):
+        self.client.post(reverse("count_new"), {"cadence": "HOURLY", "location": self.restaurant.pk})
+        self.assertEqual(StockCount.objects.get().cadence, StockCount.Cadence.ADHOC)
