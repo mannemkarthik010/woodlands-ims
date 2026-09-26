@@ -1,0 +1,42 @@
+{% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
+{% if moved %}<p class="banner" role="status">{{ moved }} is now on the {{ moved.get_count_every_display|lower }} list.</p>{% endif %}
+{% if stopped_now %}<p class="banner" role="status">{{ stopped_now }} is no longer used. It is under “No longer used” below if you need it back.</p>{% endif %}
+
+{% for section in sections %}
+  <section class="countlist">
+    <h2 class="countlist__title">{{ section.label }} <span class="count">{{ section.items|length }}</span></h2>
+    <p class="muted small">{{ section.hint }}</p>
+    {% for item in section.items %}
+      <div class="countlist__row" data-name="{{ item.name|lower }}">
+        <div class="countlist__name">
+          <strong>{{ item.name }}</strong>
+          <small class="muted">{{ item.layer_name }} · {{ item.base_unit.code }}{% for m in item.measures.all %}{% if m.is_active %} · {{ m.name }} = {{ m.quantity_in_base_units|floatformat:"-3" }} {{ item.base_unit.code }}{% endif %}{% endfor %}</small>
+        </div>
+        <select class="countlist__move" name="count_every" aria-label="List for {{ item.name }}"
+                hx-post="{% url 'count_list_move' item.pk %}" hx-trigger="change" hx-target="#lists" hx-swap="innerHTML">
+          {% for value, label in choices %}<option value="{{ value }}" {% if value == item.count_every %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <button class="btn btn--ghost countlist__stop" type="button"
+                hx-post="{% url 'item_stop' item.pk %}" hx-target="#lists" hx-swap="innerHTML"
+                hx-confirm="Stop using {{ item.name }}? It comes off every list; its history is kept.">Stop using</button>
+      </div>
+    {% endfor %}
+    <p class="muted small countlist__none" {% if section.items %}hidden{% endif %}>Nothing here.</p>
+  </section>
+{% endfor %}
+
+{% if stopped %}
+  <details class="countlist countlist--stopped">
+    <summary><strong>No longer used</strong> <span class="count">{{ stopped|length }}</span></summary>
+    {% for item in stopped %}
+      <div class="countlist__row" data-name="{{ item.name|lower }}">
+        <div class="countlist__name"><strong>{{ item.name }}</strong><small class="muted">{{ item.layer_name }}</small></div>
+        <form method="post" action="{% url 'item_bring_back' item.pk %}">
+          {% csrf_token %}<button class="btn btn--ghost" type="submit">Bring back</button>
+        </form>
+      </div>
+    {% endfor %}
+    <p class="countlist__none" hidden></p>
+  </details>
+{% endif %}
+{% csrf_token %}

@@ -16,9 +16,11 @@ say why.
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 
 from django.db import transaction
+from django.utils.text import slugify
 
 from apps.catalog.models import Item, ItemAlias, ItemKind, Unit
 
@@ -146,3 +148,125 @@ def in_base_units(item: Item, quantity: Decimal, measure=None) -> Decimal:
     if measure.item_id != item.pk:
         raise ValueError(f"{measure.name} is a measure of another item, not {item}.")
     return (quantity * measure.quantity_in_base_units).quantize(Decimal("0.0001"))
+
+
+# --- Owners managing what is counted -----------------------------------------
+
+# What an owner can add, in the words they would use, and what it becomes.
+# A vegetable is a grocery in the "Fresh produce" category, which is what puts
+# it on the weekly count by default (models.default_count_every).
+ADDABLE = {
+    "PREPARED": ("Made in the kitchen", ItemKind.PREPARED, "Bases and gravies (in-house)", "prep"),
+    "RAW": ("Grocery", ItemKind.RAW, "", "raw"),
+    "VEGETABLE": ("Vegetable or herb", ItemKind.RAW, "Fresh produce", "veg"),
+    "PACKAGING": ("Packaging or disposable", ItemKind.PACKAGING, "Packaging", "pack"),
+}
+
+
+class ItemError(Exception):
+    """Raised with a sentence that can be shown to the owner as it is."""
+
+    def __init__(self, message: str, *, existing: Item | None = None):
+        super().__init__(message)
+        self.existing = existing
+
+
+def _same_name(name: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", name.casefold()).split())
+
+
+def find_by_name(name: str) -> Item | None:
+    """An item already called this, ignoring capitals, spacing and punctuation -- active or not."""
+    key = _same_name(name)
+    if not key:
+        return None
+    # A few hundred items: comparing them all is instant, and it catches
+    # "Toor  dal" and "toor-dal" that a database lookup would not.
+    # Sample data (seed_demo, codes starting DEMO-) never counts: a demo
+    # "Onions" must not stop the restaurant adding its real onions.
+    real = Item.objects.exclude(code__startswith="DEMO-")
+    return next((item for item in real if _same_name(item.name) == key), None)
+
+
+# Implements: FR-201, FR-204.
+@transaction.atomic
+def add_item(
+    *,
+    name: str,
+    what: str,
+    base_unit: Unit,
+    count_every: str,
+    pack_name: str = "",
+    pack_quantity: Decimal | None = None,
+    user=None,
+) -> Item:
+    """
+    A new thing to count, from the owner: what it is, the unit it is kept
+    in, which list it goes on, and -- if they know it -- how it comes or what
+    it is kept in ("case" of 40 lb, "bucket" of 32 lb), so it can be counted
+    in cases or buckets from the first day.
+    """
+    from apps.catalog.models import CountEvery, ItemCategory, ItemMeasure, MeasureKind
+
+    name = " ".join((name or "").split())
+    if not name:
+        raise ItemError("Please give the item a name.")
+    if what not in ADDABLE:
+        raise ItemError("Please choose what kind of item it is.")
+    if count_every not in CountEvery.values:
+        raise ItemError("Please choose which list it goes on.")
+    existing = find_by_name(name)
+    if existing:
+        state = "" if existing.is_active else " but is no longer used — bring it back instead"
+        raise ItemError(f"{existing.name} is already on the system{state}.", existing=existing)
+    pack_name = " ".join((pack_name or "").split())
+    if bool(pack_name) != (pack_quantity is not None):
+        raise ItemError("For how it comes, give both the name (e.g. case) and how much one holds.")
+    if pack_quantity is not None and pack_quantity <= 0:
+        raise ItemError("How much one holds must be more than zero.")
+
+    label, kind, category_name, prefix = ADDABLE[what]
+    category = ItemCategory.objects.get_or_create(name=category_name)[0] if category_name else None
+    stem = f"{prefix}-{slugify(name)}"[:44] or prefix
+    code, n = stem, 2
+    while Item.objects.filter(code=code).exists():
+        code, n = f"{stem}-{n}", n + 1
+    item = Item.objects.create(
+        code=code,
+        name=name,
+        kind=kind,
+        category=category,
+        base_unit=base_unit,
+        count_every=count_every,
+        created_by=user,
+    )
+    ItemAlias.objects.get_or_create(item=item, alias=name, defaults={"source": "owner"})
+    if pack_name:
+        ItemMeasure.objects.create(
+            item=item,
+            name=pack_name,
+            kind=MeasureKind.KITCHEN if kind == ItemKind.PREPARED else MeasureKind.PURCHASE,
+            quantity_in_base_units=pack_quantity,
+            created_by=user,
+        )
+    return item
+
+
+# Implements: FR-701.
+def move_to_list(item: Item, count_every: str) -> Item:
+    from apps.catalog.models import CountEvery
+
+    if count_every not in CountEvery.values:
+        raise ItemError("That is not one of the lists.")
+    if item.kind == ItemKind.DISH:
+        raise ItemError("Dishes are not counted; what they use comes from sales.")
+    item.count_every = count_every
+    item.save(update_fields=["count_every", "updated_at"])
+    return item
+
+
+def bring_back(item: Item) -> Item:
+    """An item stopped earlier, in use again -- on the list it was on before."""
+    item.is_active = True
+    item.save(update_fields=["is_active", "updated_at"])
+    return item

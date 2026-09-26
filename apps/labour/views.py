@@ -18,13 +18,11 @@ import csv
 import time as clock
 from contextlib import suppress
 from datetime import date, timedelta
-from functools import wraps
 
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
-from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Prefetch, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -36,6 +34,7 @@ from django.views.decorators.http import require_POST
 
 from apps.core.models import Location, Position, Role, User
 from apps.core.people import AlreadyListed, LooksLike, PersonError, add_person
+from apps.core.permissions import owner_required
 from apps.core.pins import LOCKOUT, PinError, check_pin, is_locked, validate_pin
 from apps.labour.models import PayRun, PayRunLine, Period, Shift
 from apps.labour.pay import default_up_to, pay, undo_payment, unpaid
@@ -303,19 +302,6 @@ def done(request):
 
 
 # --- The owners' side --------------------------------------------------------
-
-
-def owner_required(view):
-    """Signed in, and an owner. Everybody else gets a plain refusal, not the page."""
-
-    @login_required
-    @wraps(view)
-    def wrapped(request, *args, **kwargs):
-        if request.user.role != Role.OWNER and not request.user.is_superuser:
-            raise PermissionDenied
-        return view(request, *args, **kwargs)
-
-    return wrapped
 
 
 def _period(request) -> tuple[date, date, str]:

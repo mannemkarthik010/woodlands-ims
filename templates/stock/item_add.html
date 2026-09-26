@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Add an item{% endblock %}
+{% block wrap_class %}wrap--form{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'count_lists' %}">← Count lists</a>
+<h1>Add an item</h1>
+
+{% if existing %}
+  {% if not existing.is_active %}
+    <form method="post" action="{% url 'item_bring_back' existing.pk %}">
+      {% csrf_token %}<button class="btn btn--primary btn--wide" type="submit">Bring back {{ existing.name }}</button>
+    </form>
+  {% endif %}
+{% endif %}
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <label class="field"><span class="field__label">Name — as the kitchen calls it</span>{{ form.name }}
+    {% for e in form.name.errors %}<span class="field__error">{{ e }}</span>{% endfor %}</label>
+
+  <fieldset class="choice">
+    <legend>What is it?</legend>
+    <div class="choice__grid">{% for radio in form.what %}<label class="choice__opt">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>{% endfor %}</div>
+  </fieldset>
+
+  <fieldset class="choice">
+    <legend>Which list?</legend>
+    <div class="choice__grid">{% for radio in form.count_every %}<label class="choice__opt">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>{% endfor %}</div>
+  </fieldset>
+
+  <label class="field"><span class="field__label">Kept track of in (the smallest unit — lb, each, gal…)</span>{{ form.base_unit }}</label>
+
+  <div class="field-row">
+    <label class="field"><span class="field__label">{{ form.pack_name.label }}</span>{{ form.pack_name }}</label>
+    <label class="field"><span class="field__label">{{ form.pack_quantity.label }} (in the unit above)</span>{{ form.pack_quantity }}
+      {% for e in form.pack_quantity.errors %}<span class="field__error">{{ e }}</span>{% endfor %}</label>
+  </div>
+  <p class="muted small">e.g. <em>case</em> · 40 — or for something made here, <em>bucket</em> · 32. Then it can be counted and received in cases or buckets. More can be added later.</p>
+
+  <button class="btn btn--primary btn--big" type="submit">Add</button>
+  <button class="btn btn--ghost btn--wide" type="submit" name="again" value="1">Add, and add another like it</button>
+</form>
+{% endblock %}

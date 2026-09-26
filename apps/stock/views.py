@@ -26,6 +26,8 @@ Everything below follows from that:
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
+from django import forms
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponseBadRequest
@@ -34,8 +36,10 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from apps.catalog.models import CountEvery, Item, ItemMeasure
+from apps.catalog.models import CountEvery, Item, ItemKind, ItemMeasure, Unit
+from apps.catalog.services import ADDABLE, ItemError, add_item, bring_back, move_to_list, retire_item
 from apps.core.models import Location, Supplier
+from apps.core.permissions import is_owner, owner_required
 from apps.stock.models import DocumentStatus, GoodsReceipt, StockCount, StockCountLine, Transfer, TransferLine
 from apps.stock.services import (
     RECEIVABLE_KINDS,
@@ -322,7 +326,7 @@ def count_home(request):
                 due=_due(cadence, last, today),
             )
         )
-    return render(request, "stock/count_home.html", {"cards": cards})
+    return render(request, "stock/count_home.html", {"cards": cards, "can_manage": is_owner(request.user)})
 
 
 # Implements: FR-701.
@@ -557,3 +561,107 @@ def receipt_done(request, pk):
         for line in receipt.lines.select_related("item", "item__base_unit", "purchase_unit")
     ]
     return render(request, "stock/receipt_done.html", {"receipt": receipt, "rows": rows})
+
+
+# --- Owners: what is on each count ------------------------------------------
+
+
+def _lists_context():
+    items = (
+        Item.objects.filter(is_stocked=True)
+        .exclude(kind=ItemKind.DISH)
+        .select_related("base_unit")
+        .prefetch_related("measures")
+        .order_by("kind", "name")
+    )
+    active = [i for i in items if i.is_active]
+    sections = []
+    for value, label, hint in (
+        (CountEvery.DAILY, "Daily", "Counted every day"),
+        (CountEvery.WEEKLY, "Weekly", "Counted once a week"),
+        (CountEvery.MONTHLY, "Monthly", "Counted once a month, at the restaurant and the storage unit"),
+        (CountEvery.NEVER, "Not counted", "Kept on the system, but on no count"),
+    ):
+        on = sorted((i for i in active if i.count_every == value), key=lambda i: (i.layer, i.name.casefold()))
+        sections.append({"value": value, "label": label, "hint": hint, "items": on})
+    stopped = [i for i in items if not i.is_active and not i.code.startswith("DEMO-")]
+    return {"sections": sections, "stopped": stopped, "choices": CountEvery.choices}
+
+
+# Implements: FR-701.
+@owner_required
+def count_lists(request):
+    """Which items are on the daily, weekly and monthly counts -- the owners decide, here."""
+    return render(request, "stock/count_lists.html", _lists_context())
+
+
+@owner_required
+@require_POST
+def count_list_move(request, pk):
+    item = get_object_or_404(Item, pk=pk, is_active=True)
+    context = {}
+    try:
+        move_to_list(item, request.POST.get("count_every", ""))
+        context["moved"] = item
+    except ItemError as e:
+        context["error"] = str(e)
+    return render(request, "stock/_count_lists.html", _lists_context() | context)
+
+
+@owner_required
+@require_POST
+def item_stop(request, pk):
+    item = get_object_or_404(Item, pk=pk, is_active=True)
+    retire_item(item, reason=f"Stopped from the count lists by {request.user}.")
+    return render(request, "stock/_count_lists.html", _lists_context() | {"stopped_now": item})
+
+
+@owner_required
+@require_POST
+def item_bring_back(request, pk):
+    item = get_object_or_404(Item, pk=pk, is_active=False)
+    bring_back(item)
+    messages.success(request, f"{item} is back, on the {item.get_count_every_display().lower()} list.")
+    return redirect("count_lists")
+
+
+class ItemForm(forms.Form):
+    name = forms.CharField(max_length=160)
+    what = forms.ChoiceField(
+        label="What is it?", choices=[(k, v[0]) for k, v in ADDABLE.items()], widget=forms.RadioSelect
+    )
+    base_unit = forms.ModelChoiceField(
+        label="Kept track of in", queryset=Unit.objects.order_by("kind", "code"), to_field_name="code"
+    )
+    count_every = forms.ChoiceField(label="Which list?", choices=CountEvery.choices, widget=forms.RadioSelect)
+    pack_name = forms.CharField(label="Comes in / kept in (optional)", max_length=60, required=False)
+    pack_quantity = forms.DecimalField(label="One holds", required=False, min_value=Decimal("0.0001"))
+
+
+# Implements: FR-201, FR-204.
+@owner_required
+def item_add(request):
+    initial = {"base_unit": "lb", "what": request.GET.get("what", "RAW")}
+    initial["count_every"] = {"PREPARED": "DAILY", "VEGETABLE": "WEEKLY"}.get(initial["what"], "MONTHLY")
+    form = ItemForm(request.POST or None, initial=initial)
+    context = {"form": form}
+    if request.method == "POST" and form.is_valid():
+        data = form.cleaned_data
+        try:
+            item = add_item(
+                name=data["name"],
+                what=data["what"],
+                base_unit=data["base_unit"],
+                count_every=data["count_every"],
+                pack_name=data["pack_name"],
+                pack_quantity=data["pack_quantity"],
+                user=request.user,
+            )
+        except ItemError as e:
+            context |= {"error": str(e), "existing": e.existing}
+        else:
+            messages.success(request, f"Added {item} to the {item.get_count_every_display().lower()} list.")
+            if request.POST.get("again"):
+                return redirect(f"{reverse('item_add')}?what={data['what']}")
+            return redirect("count_lists")
+    return render(request, "stock/item_add.html", context)

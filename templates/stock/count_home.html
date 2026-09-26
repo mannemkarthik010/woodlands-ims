@@ -32,5 +32,8 @@
   {% endfor %}
 </div>
 
-<a class="muted small" href="{% url 'count_new' %}">Another count (everything, or an opening balance)…</a>
+{% if can_manage %}
+  <a class="btn btn--ghost btn--wide" href="{% url 'count_lists' %}">Change what is on each list</a>
+{% endif %}
+<p><a class="muted small" href="{% url 'count_new' %}">Another count (everything, or an opening balance)…</a></p>
 {% endblock %}

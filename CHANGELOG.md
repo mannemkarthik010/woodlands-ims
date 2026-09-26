@@ -5,6 +5,11 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Count lists, for the owners: every item under Daily, Weekly, Monthly or Not counted,
+  moved between lists with one change; add an item (made in the kitchen, grocery, vegetable,
+  packaging) with its list, unit and how it comes or is kept, so it can be counted in cases or
+  buckets at once; stop using an item and bring it back. A name already on the system is
+  never added twice; sample (DEMO-) items never block a real one
 - Delivery received: groceries, vegetables and packaging counted off the truck in the packs
   they came in — "3 case" of toor dal goes into stock as 120 lb, with what was typed kept.
   Where it arrived (restaurant or storage unit) and the supplier, which is optional
@@ -125,6 +130,8 @@ Notable changes per release. Newest first.
   separate shifts and hours are the plain span of each (ADR 0008 supersedes FR-103/FR-104)
 
 ### Fixed
+- Choices inside a form (the count and item forms) were shown stacked and oversized because
+  the general form style reached them; they sit side by side again
 - A person who added themselves on the tablet could seem missing from the name list: the
   browser was showing a kept copy of the page. Every hours page is now never stored, which
   also stops Back showing the last worker's week to the next person

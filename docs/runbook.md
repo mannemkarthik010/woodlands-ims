@@ -181,8 +181,20 @@ order and never counted, and what they used comes from the day's sales.
 | Weekly | Vegetables | 7 days after the last one |
 | Monthly | Other groceries and packaging, at the restaurant and at the storage unit | once a calendar month |
 
-Each item's **Count every** is set in Admin → Items (editable straight from the
-list, and filterable). A new item starts on the rule above.
+**What is on each list is the owners' decision**, made on **Count stock → Change
+what is on each list** (owners only):
+
+- every item is shown under Daily, Weekly, Monthly or Not counted — change the
+  list beside it and it moves at once; the next count uses the new list;
+- **+ Add an item**: its name, what it is (made in the kitchen, grocery,
+  vegetable or herb, packaging), which list, the unit it is kept in, and — if
+  known — how it comes or what it is kept in (*case* of 40 lb, *bucket* of 32 lb),
+  so it can be counted and received in cases or buckets from the first day.
+  A name already on the system, in any spelling of capitals and spaces, is refused;
+- **Stop using** takes an item off every list and keeps its history; it can be
+  brought back from *No longer used*.
+
+This is where the answers from the restaurant visit are entered.
 
 Count in whatever the kitchen sees: pick *bucket*, *bag*, *case* or the base unit
 beside the number, and the system converts. The measures come from the item's

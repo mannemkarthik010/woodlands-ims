@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Count lists{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'count_home' %}">← Count stock</a>
+<h1>What is on each count</h1>
+<p class="muted">Change an item's list and it moves straight away. The daily, weekly and monthly counts use these lists from the next count on.</p>
+
+<div class="listbar">
+  <input class="listbar__search" type="search" placeholder="Find an item…" oninput="filterItems(this.value)" aria-label="Find an item">
+  <a class="btn btn--primary" href="{% url 'item_add' %}">+ Add an item</a>
+</div>
+
+<div id="lists">{% include "stock/_count_lists.html" %}</div>
+
+<script>
+  // Hide rows that do not match; a section with nothing left says so.
+  function filterItems(q) {
+    q = q.trim().toLowerCase();
+    document.querySelectorAll("#lists .countlist").forEach(function (section) {
+      var shown = 0;
+      section.querySelectorAll(".countlist__row").forEach(function (row) {
+        var hit = !q || row.dataset.name.indexOf(q) !== -1;
+        row.hidden = !hit;
+        if (hit) shown++;
+      });
+      section.querySelector(".countlist__none").hidden = shown > 0;
+    });
+  }
+  document.body.addEventListener("htmx:afterSwap", function () {
+    filterItems(document.querySelector(".listbar__search").value);
+  });
+</script>
+{% endblock %}
