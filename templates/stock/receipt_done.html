@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Delivery recorded{% endblock %}
+{% block content %}
+<p class="done">Delivery recorded</p>
+<p class="muted">{{ receipt.received_at|date:"D j M, g:i A" }} · {{ receipt.location.name }}{% if receipt.supplier %} · from {{ receipt.supplier }}{% endif %}</p>
+
+<ul class="lines">
+  {% for r in rows %}
+    <li class="lines__row">
+      <span class="lines__qty">+{{ r.line.purchase_quantity|floatformat:"-2" }} {% if r.line.purchase_unit %}{{ r.line.purchase_unit.name }}{% else %}{{ r.line.item.base_unit.code }}{% endif %}</span>
+      <span class="lines__name">{{ r.line.item.name }}
+        <small class="muted">now {{ r.now_here|floatformat:"-2" }} {{ r.line.item.base_unit.code }} here</small></span>
+    </li>
+  {% endfor %}
+</ul>
+
+<a class="btn btn--primary btn--big" href="{% url 'receipt_new' %}">Another delivery</a>
+<a class="btn btn--ghost btn--wide" href="{% url 'home' %}">Done</a>
+{% endblock %}

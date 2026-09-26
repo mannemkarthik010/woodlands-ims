@@ -135,7 +135,11 @@ class DocumentStatus(models.TextChoices):
 class GoodsReceipt(TimeStamped):
     """What physically arrived -- not what was ordered, not what was invoiced."""
 
-    supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT, related_name="receipts")
+    # Optional: whoever unpacks the delivery may not know who sent it, and a
+    # delivery recorded without a supplier beats one not recorded at all.
+    supplier = models.ForeignKey(
+        Supplier, null=True, blank=True, on_delete=models.PROTECT, related_name="receipts"
+    )
     location = models.ForeignKey(Location, on_delete=models.PROTECT, related_name="receipts")
     received_at = models.DateTimeField()
     supplier_reference = models.CharField(max_length=80, blank=True)
@@ -147,7 +151,7 @@ class GoodsReceipt(TimeStamped):
         ordering = ["-received_at"]
 
     def __str__(self) -> str:
-        return f"Receipt {self.pk} — {self.supplier}"
+        return f"Delivery {self.pk}" + (f" — {self.supplier}" if self.supplier_id else "")
 
 
 # Implements: FR-302, FR-306.

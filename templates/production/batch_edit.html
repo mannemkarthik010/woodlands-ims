@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Made — {{ batch.item }}{% endblock %}
+{% block content %}
+<h1>{{ batch.item }}</h1>
+<p class="muted small">{{ batch.batch_code }} · started {{ batch.started_at|date:"g:i A" }}</p>
+
+<form method="post" action="{% url 'batch_finish' batch.pk %}" class="stack made" id="finish">
+  {% csrf_token %}
+  <label class="field">
+    <span class="field__label">How much did you make?</span>
+    <span class="made__row">
+      <input class="hit__qty made__qty" type="text" name="made" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="0" required>
+      {% if measures %}
+        <select class="hit__measure" name="measure">
+          {% for m in measures %}<option value="{{ m.pk }}">{{ m.name }}</option>{% endfor %}
+          <option value="">{{ batch.item.base_unit.code }}</option>
+        </select>
+      {% else %}<span class="hit__unit">{{ batch.item.base_unit.code }}</span>{% endif %}
+    </span>
+  </label>
+</form>
+
+<h2 class="h2">What went in? <small class="muted">(if you know — you can skip this)</small></h2>
+<form class="search"
+      hx-get="{% url 'item_search' %}"
+      hx-trigger="input changed delay:200ms, search"
+      hx-target="#results"
+      autocomplete="off">
+  <input type="search" name="q" placeholder="Search an ingredient…" autocapitalize="none">
+  <input type="hidden" name="for" value="batch">
+  <input type="hidden" name="id" value="{{ batch.pk }}">
+</form>
+<div id="results"></div>
+<div id="lines">{% include "production/_inputs.html" %}</div>
+
+<button class="btn btn--primary btn--big" type="submit" form="finish">Save — {{ batch.item }} made</button>
+
+<form method="post" action="{% url 'batch_discard' batch.pk %}">
+  {% csrf_token %}
+  <button class="btn btn--ghost btn--wide" type="submit">Started by mistake — throw away</button>
+</form>
+{% endblock %}

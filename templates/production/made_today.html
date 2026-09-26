@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Made today{% endblock %}
+{% block content %}
+<h1>What did you make?</h1>
+
+{% if open %}
+  <h2 class="h2">Not finished</h2>
+  <ul class="list">
+    {% for b in open %}
+      <li><a href="{% url 'batch_edit' b.pk %}">{{ b.item }} <small>started {{ b.started_at|date:"D j M, g:i A" }} — tap to finish</small></a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<div class="names">
+  {% for item in items %}
+    <form method="post" action="{% url 'batch_start' %}">
+      {% csrf_token %}
+      <input type="hidden" name="item" value="{{ item.pk }}">
+      <button class="names__btn" type="submit">{{ item.name }}</button>
+    </form>
+  {% empty %}
+    <p class="muted">Nothing is listed as made in the kitchen yet.</p>
+  {% endfor %}
+</div>
+
+<h2 class="h2">Made today</h2>
+{% if made %}
+  <ul class="lines">
+    {% for b in made %}
+      <li class="lines__row">
+        <span class="lines__qty">{{ b.yield_entered_quantity|floatformat:"-2" }} {% if b.yield_entered_measure %}{{ b.yield_entered_measure.name }}{% else %}{{ b.item.base_unit.code }}{% endif %}</span>
+        <span class="lines__name">{{ b.item }} <small class="muted">{{ b.finished_at|time:"g:i A" }}{% if b.produced_by %} · {{ b.produced_by }}{% endif %} · {{ b.batch_code }}</small></span>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="muted">Nothing recorded yet today.</p>
+{% endif %}
+{% endblock %}

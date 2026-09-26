@@ -18,4 +18,10 @@ urlpatterns = [
     path("count/<int:pk>/review/", views.count_review, name="count_review"),
     path("count/<int:pk>/post/", views.count_post, name="count_post"),
     path("items/search/", views.item_search, name="item_search"),
+    path("delivery/", views.receipt_new, name="receipt_new"),
+    path("delivery/<int:pk>/", views.receipt_edit, name="receipt_edit"),
+    path("delivery/<int:pk>/add/", views.receipt_add_line, name="receipt_add_line"),
+    path("delivery/<int:pk>/remove/<int:line_pk>/", views.receipt_remove_line, name="receipt_remove_line"),
+    path("delivery/<int:pk>/post/", views.receipt_post, name="receipt_post"),
+    path("delivery/<int:pk>/done/", views.receipt_done, name="receipt_done"),
 ]

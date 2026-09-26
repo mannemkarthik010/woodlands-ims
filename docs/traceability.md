@@ -10,7 +10,7 @@ Write `FR-403` in a docstring, a comment or a test name and it appears here.
 Nothing is inferred from a function looking roughly relevant — that would
 make this table reassuring and wrong, which is worse than an empty one.
 
-**85 of 158** requirements referenced in code · **51** covered by a test.
+**85 of 158** requirements referenced in code · **55** covered by a test.
 
 ## M1 — Time and attendance
 
@@ -38,8 +38,8 @@ make this table reassuring and wrong, which is worse than an empty one.
 | **FR-201** | Every stock item has a unique code, a name, an optional local-language name, and a category. | Must | `apps/catalog/models.py` | `apps/catalog/tests/test_imports.py`<br>`apps/sales/tests/test_mapping.py` |
 | **FR-202** | An item may have several names in use — supplier's name, chef's name, menu name — all searchable. | Should | `apps/catalog/models.py`<br>`apps/catalog/services.py`<br>`apps/sales/views.py`<br>`apps/stock/views.py` | `apps/catalog/tests/test_imports.py`<br>`apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_mapping.py`<br>`apps/stock/tests/test_transfer_flow.py` |
 | **FR-203** | Each item has a base unit in which stock is held (for example: pound, gram, litre, each). | Must | `apps/catalog/models.py`<br>`apps/sales/views.py` | `apps/catalog/tests/test_imports.py`<br>`apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_mapping.py` |
-| **FR-204** | Each item may have any number of purchase units with a stated conversion to the base unit (for example: 1 sack = 25 lb; 1 case = 24 tins; 1 tin = 400 g). | Must | `apps/catalog/models.py`<br>`apps/stock/services.py` | `apps/catalog/tests/test_imports.py`<br>`apps/stock/tests/test_count_layers.py` |
-| **FR-205** | Conversions that are not fixed — "one bunch of curry leaves" — are supported with an agreed nominal weight, and flagged as approximate. | Should | `apps/catalog/management/commands/import_measures.py`<br>`apps/catalog/models.py` | `apps/catalog/tests/test_imports.py`<br>`apps/knowledge/tests/test_format.py`<br>`apps/knowledge/tests/test_gaps.py` |
+| **FR-204** | Each item may have any number of purchase units with a stated conversion to the base unit (for example: 1 sack = 25 lb; 1 case = 24 tins; 1 tin = 400 g). | Must | `apps/catalog/models.py`<br>`apps/catalog/services.py`<br>`apps/stock/services.py` | `apps/catalog/tests/test_imports.py`<br>`apps/stock/tests/test_count_layers.py` |
+| **FR-205** | Conversions that are not fixed — "one bunch of curry leaves" — are supported with an agreed nominal weight, and flagged as approximate. | Should | `apps/catalog/management/commands/import_measures.py`<br>`apps/catalog/models.py`<br>`apps/catalog/services.py` | `apps/catalog/tests/test_imports.py`<br>`apps/knowledge/tests/test_format.py`<br>`apps/knowledge/tests/test_gaps.py` |
 | **FR-206** | Each item carries a shelf life or a best-before behaviour appropriate to its type. | Should | `apps/catalog/models.py` | — |
 | **FR-207** | Each item carries a current cost per base unit, updated from goods receipts. | Must | `apps/catalog/models.py` | — |
 | **FR-208** | The system supports the cost basis chosen in D-15 (latest cost, weighted average, or FIFO). | Must | — | — |
@@ -53,11 +53,11 @@ make this table reassuring and wrong, which is worse than an empty one.
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
 | **FR-301** | Suppliers are recorded with contact details, delivery days and payment terms. | Should | `apps/core/models.py` | — |
-| **FR-302** | A goods receipt records what physically arrived: item, quantity, unit, price paid, date, supplier, and who received it. | Must | `apps/stock/models.py` | — |
-| **FR-303** | A goods receipt increases stock at the location where the goods arrived — normally the storage facility. | Must | `apps/stock/models.py` | — |
+| **FR-302** | A goods receipt records what physically arrived: item, quantity, unit, price paid, date, supplier, and who received it. | Must | `apps/stock/models.py`<br>`apps/stock/services.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_deliveries.py` |
+| **FR-303** | A goods receipt increases stock at the location where the goods arrived — normally the storage facility. | Must | `apps/stock/models.py`<br>`apps/stock/services.py`<br>`apps/stock/views.py` | — |
 | **FR-304** | The receiver can photograph the supplier invoice and attach it to the receipt. | Should | — | — |
 | **FR-305** | The system warns when the price paid differs materially from the last price paid for the same item. | Should | — | — |
-| **FR-306** | The system records short deliveries, damaged goods and rejected items separately from accepted stock. | Should | `apps/stock/models.py` | — |
+| **FR-306** | The system records short deliveries, damaged goods and rejected items separately from accepted stock. | Should | `apps/stock/models.py`<br>`apps/stock/services.py`<br>`apps/stock/views.py` | `apps/stock/tests/test_deliveries.py` |
 | **FR-307** | A purchase order can be raised in advance and a receipt matched against it. | Could | — | — |
 | **FR-308** | The system suggests what to buy, based on par levels, current stock and recent consumption. | Could | — | — |
 | **FR-309** | Purchase history per item and per supplier is reportable over any date range. | Should | — | — |
@@ -82,12 +82,12 @@ make this table reassuring and wrong, which is worse than an empty one.
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **FR-501** | A prepared component — dosa batter, idli batter, sambar, chutney, spice blend — exists as a stock item in its own right. | Must | `apps/sales/views.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_mapping.py` |
-| **FR-502** | Each prepared component has a production formula listing its raw materials and quantities. | Must | `apps/catalog/models.py`<br>`apps/production/models.py` | — |
-| **FR-503** | Recording a production batch decreases the raw materials and increases the prepared component, in one action. | Must | `apps/production/models.py` | — |
-| **FR-504** | Each production batch has its own batch or lot identifier. | Must | `apps/production/models.py` | — |
+| **FR-501** | A prepared component — dosa batter, idli batter, sambar, chutney, spice blend — exists as a stock item in its own right. | Must | `apps/production/services.py`<br>`apps/production/views.py`<br>`apps/sales/views.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/production/tests/test_made_today.py`<br>`apps/sales/tests/test_mapping.py` |
+| **FR-502** | Each prepared component has a production formula listing its raw materials and quantities. | Must | `apps/catalog/models.py`<br>`apps/production/models.py`<br>`apps/production/services.py`<br>`apps/production/views.py` | `apps/production/tests/test_made_today.py` |
+| **FR-503** | Recording a production batch decreases the raw materials and increases the prepared component, in one action. | Must | `apps/production/models.py`<br>`apps/production/services.py`<br>`apps/production/views.py` | `apps/production/tests/test_made_today.py` |
+| **FR-504** | Each production batch has its own batch or lot identifier. | Must | `apps/production/models.py`<br>`apps/production/services.py`<br>`apps/production/views.py` | — |
 | **FR-505** | The system records the expected yield and the actual yield of each batch, and reports the difference. | Must | `apps/production/models.py` | — |
-| **FR-506** | Each batch records the time production started. | Must | `apps/production/models.py` | — |
+| **FR-506** | Each batch records the time production started. | Must | `apps/production/models.py`<br>`apps/production/services.py` | — |
 | **FR-507** | For fermented items, each batch records the time fermentation was judged complete, either entered by staff or calculated from a configured duration. | Must | `apps/production/models.py` | — |
 | **FR-508** | A batch is not counted as available stock until fermentation is complete. Immature stock is visible but distinguished. | Must | `apps/production/models.py` | — |
 | **FR-509** | Each batch has an expiry, calculated from maturity plus a configured shelf life. | Must | `apps/production/models.py` | — |

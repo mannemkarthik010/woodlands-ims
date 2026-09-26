@@ -501,3 +501,14 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 .hit__measure { flex: 0 0 auto; min-height: 48px; max-width: 132px; font: inherit; font-size: 15px;
   border: 2px solid var(--rule); border-radius: 8px; background: #fff; padding: 0 6px; }
 .hit__name small { display: block; }
+
+/* ---- Deliveries and made today --------------------------------------- */
+.delivery { gap: 12px; }
+.delivery label { display: flex; flex-direction: column; font-size: 13px; color: var(--grey); gap: 3px; flex: 1 1 160px; }
+.delivery select { min-height: 44px; font: inherit; font-size: 16px; border: 2px solid var(--rule);
+  border-radius: 8px; background: #fff; padding: 0 8px; color: var(--ink); }
+.names form { display: contents; }
+.names button.names__btn { font: inherit; font-size: 18px; font-weight: 700; cursor: pointer; width: 100%; }
+.made__row { display: flex; gap: 8px; align-items: center; }
+.made__qty { flex: 0 0 110px; font-size: 22px; }
+.stack .made__row input.made__qty { min-height: 56px; }

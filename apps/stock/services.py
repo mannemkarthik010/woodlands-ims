@@ -333,6 +333,8 @@ def record_counted(line, *, quantity: Decimal | None, measure=None) -> None:
     what was typed and what it comes to, so "3 buckets" is never lost inside
     "96 lb". None clears the line back to not counted.
     """
+    from apps.catalog.services import in_base_units
+
     if measure is not None and measure.item_id != line.item_id:
         raise StockError("That measure belongs to a different item.")
     if quantity is not None and quantity < 0:
@@ -341,10 +343,8 @@ def record_counted(line, *, quantity: Decimal | None, measure=None) -> None:
     line.entered_measure = measure if quantity is not None else None
     if quantity is None:
         line.counted_quantity = None
-    elif measure is None:
-        line.counted_quantity = quantity
     else:
-        line.counted_quantity = (quantity * measure.quantity_in_base_units).quantize(Decimal("0.0001"))
+        line.counted_quantity = in_base_units(line.item, quantity, measure)
     line.save(update_fields=["entered_quantity", "entered_measure", "counted_quantity"])
 
 
@@ -371,3 +371,76 @@ def start_count(*, location: Location, cadence: str, user: User | None = None):
             old.note = (old.note + "\n" if old.note else "") + f"Not finished; replaced by count {count.pk}."
             old.save(update_fields=["status", "note"])
     return count
+
+
+# Layer 1: what can arrive in a delivery. Not what the kitchen makes, not dishes.
+RECEIVABLE_KINDS = ("RAW", "PACKAGING", "CONSUMABLE")
+
+
+# Implements: FR-302, FR-306.
+@transaction.atomic
+def add_receipt_line(receipt, *, item: Item, quantity: Decimal, measure=None):
+    """
+    One thing on a delivery, as it was counted off the truck: "3 cases".
+    The same item and pack again adds to the line already there.
+    """
+    from apps.catalog.services import in_base_units
+    from apps.stock.models import DocumentStatus, GoodsReceipt, GoodsReceiptLine
+
+    # Read from the database, locked: the copy in hand may be from before a
+    # second tap, or a second tablet, recorded it.
+    receipt = GoodsReceipt.objects.select_for_update().get(pk=receipt.pk)
+    if receipt.status != DocumentStatus.DRAFT:
+        raise StockError("This delivery has already been recorded.")
+    if item.kind not in RECEIVABLE_KINDS:
+        raise StockError(f"{item} is made in the kitchen, not delivered.")
+    if quantity is None or quantity <= 0:
+        raise StockError("Enter a quantity greater than zero.")
+    try:
+        base = in_base_units(item, quantity, measure)
+    except ValueError as e:
+        raise StockError(str(e)) from None
+    line = receipt.lines.filter(item=item, purchase_unit=measure).first()
+    if line:
+        line.purchase_quantity += quantity
+        line.quantity_in_base_units += base
+        line.save(update_fields=["purchase_quantity", "quantity_in_base_units"])
+        return line
+    return GoodsReceiptLine.objects.create(
+        receipt=receipt,
+        item=item,
+        purchase_unit=measure,
+        purchase_quantity=quantity,
+        quantity_in_base_units=base,
+    )
+
+
+# Implements: FR-302, FR-303.
+@transaction.atomic
+def post_receipt(receipt, *, user=None) -> list[StockMovement]:
+    """What arrived goes into stock where it arrived, one movement per line."""
+    from apps.stock.models import DocumentStatus, GoodsReceipt
+
+    receipt = GoodsReceipt.objects.select_for_update().get(pk=receipt.pk)
+    if receipt.status != DocumentStatus.DRAFT:
+        raise StockError("This delivery has already been recorded.")
+    lines = list(receipt.lines.select_related("item", "purchase_unit"))
+    if not lines:
+        raise StockError("Add at least one item first.")
+    movements = [
+        post_movement(
+            item=line.item,
+            location=receipt.location,
+            quantity=line.quantity_in_base_units - line.quantity_rejected,
+            movement_type=MovementType.RECEIPT,
+            occurred_at=receipt.received_at,
+            source=receipt,
+            user=user,
+            note=f"{line.purchase_quantity.normalize():f} {line.purchase_unit.name if line.purchase_unit else line.item.base_unit.code}",
+        )
+        for line in lines
+        if line.quantity_in_base_units - line.quantity_rejected > 0
+    ]
+    receipt.status = DocumentStatus.POSTED
+    receipt.save(update_fields=["status"])
+    return movements

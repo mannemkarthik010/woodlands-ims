@@ -15,6 +15,16 @@
   </a>
 {% endif %}
 
+<a class="tile" href="{% url 'made_today' %}">
+  <span class="tile__title">Made today</span>
+  <span class="tile__sub">Batter ground, sambar made — how much, and what went in</span>
+</a>
+
+<a class="tile" href="{% url 'receipt_new' %}">
+  <span class="tile__title">Delivery received</span>
+  <span class="tile__sub">Groceries, vegetables and packaging arriving, in cases and bags</span>
+</a>
+
 <a class="tile" href="{% url 'transfer_new' %}">
   <span class="tile__title">Storage run</span>
   <span class="tile__sub">Record stock coming from Devonshire Street</span>

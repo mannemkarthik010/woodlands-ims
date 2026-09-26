@@ -5,6 +5,14 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Delivery received: groceries, vegetables and packaging counted off the truck in the packs
+  they came in — "3 case" of toor dal goes into stock as 120 lb, with what was typed kept.
+  Where it arrived (restaurant or storage unit) and the supplier, which is optional
+- Made today: tap what was made, say how much in the kitchen's containers ("2 bucket"), add
+  what went in if known ("3 scoop toor dal"), save. The made item goes up, what went in comes
+  down, each batch gets a code. Nothing is written to stock until it is saved
+- One item search for the storage run, deliveries and made-today, each finding only what it
+  should: a delivery never offers sambar, a batch never offers itself
 - "What we count, and how often" (`tools/count_list_form.py`): the sheet to fill in at the
   restaurant — every item by layer, how often it is made or bought and counted, containers,
   and blank pages for vegetables and packaging

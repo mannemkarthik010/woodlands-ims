@@ -4,7 +4,7 @@
 
 {% for item in items %}
   <form class="hit"
-        hx-post="{% url 'transfer_add_line' transfer_pk %}"
+        hx-post="{{ add_url }}"
         hx-target="#lines"
         hx-swap="innerHTML"
         hx-on::after-request="this.reset(); this.querySelector('input[name=quantity]').blur()">
@@ -13,8 +13,15 @@
     <span class="hit__name">{{ item.name }}</span>
     <input class="hit__qty" type="text" name="quantity"
            inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*"
-           placeholder="0" aria-label="Quantity in {{ item.base_unit.code }}">
-    <span class="hit__unit">{{ item.base_unit.code }}</span>
+           placeholder="0" aria-label="How many {{ item.name }}">
+    {% if with_measures and item.measure_choices %}
+      <select class="hit__measure" name="measure" aria-label="Counted in">
+        {% for m in item.measure_choices %}<option value="{{ m.pk }}">{{ m.name }}</option>{% endfor %}
+        <option value="">{{ item.base_unit.code }}</option>
+      </select>
+    {% else %}
+      <span class="hit__unit">{{ item.base_unit.code }}</span>
+    {% endif %}
     <button class="btn btn--add" type="submit" aria-label="Add {{ item.name }}">Add</button>
   </form>
 {% endfor %}

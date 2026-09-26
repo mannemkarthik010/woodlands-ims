@@ -1,0 +1,26 @@
+{% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
+
+{% if lines %}
+  <h2 class="h2">On this delivery <span class="count">{{ line_count }}</span></h2>
+  <ul class="lines">
+    {% for line in lines %}
+      <li class="lines__row">
+        <span class="lines__qty">{{ line.purchase_quantity|floatformat:"-2" }} {% if line.purchase_unit %}{{ line.purchase_unit.name }}{% else %}{{ line.item.base_unit.code }}{% endif %}</span>
+        <span class="lines__name">{{ line.item.name }}
+          {% if line.purchase_unit %}<small class="muted">= {{ line.quantity_in_base_units|floatformat:"-2" }} {{ line.item.base_unit.code }}</small>{% endif %}</span>
+        <button class="btn btn--remove"
+                hx-post="{% url 'receipt_remove_line' line.receipt_id line.pk %}"
+                hx-target="#lines"
+                hx-swap="innerHTML"
+                aria-label="Remove {{ line.item.name }}">×</button>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <form method="post" action="{% url 'receipt_post' receipt.pk %}">
+    {% csrf_token %}
+    <button class="btn btn--primary btn--big" type="submit">Record {{ line_count }} item{{ line_count|pluralize }} received</button>
+  </form>
+{% else %}
+  <p class="muted">Search above and add each thing as it comes off the truck.</p>
+{% endif %}

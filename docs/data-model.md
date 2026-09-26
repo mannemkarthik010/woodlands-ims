@@ -303,7 +303,7 @@ What physically arrived -- not what was ordered, not what was invoiced.
 | `created_at` | DateTime |  |  |
 | `updated_at` | DateTime |  |  |
 | `created_by` | ForeignKey → User | yes |  |
-| `supplier` | ForeignKey → Supplier |  |  |
+| `supplier` | ForeignKey → Supplier | yes |  |
 | `location` | ForeignKey → Location |  |  |
 | `received_at` | DateTime |  |  |
 | `supplier_reference` | Char(80) |  |  |
@@ -499,6 +499,8 @@ One grind divided into more than one product -- a single batter split between do
 | `matured_at` | DateTime | yes |  |
 | `expires_at` | DateTime | yes |  |
 | `ambient_temp_f` | Decimal(5,1) | yes | Recorded so fermentation time can be tuned across the seasons. |
+| `yield_entered_quantity` | Decimal(14,4) | yes |  |
+| `yield_entered_measure` | ForeignKey → ItemMeasure | yes |  |
 | `produced_by` | ForeignKey → User | yes |  |
 | `note` | Text |  |  |
 
@@ -514,6 +516,8 @@ What actually went into the batch. Deliberately separate from the recipe. If the
 | `quantity` | Decimal(14,4) |  |  |
 | `from_batch` | ForeignKey → ProductionBatch | yes |  |
 | `note` | Char(160) |  |  |
+| `entered_quantity` | Decimal(14,4) | yes |  |
+| `entered_measure` | ForeignKey → ItemMeasure | yes |  |
 
 ## `sales`
 

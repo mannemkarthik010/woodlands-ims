@@ -193,6 +193,22 @@ the review screen afterwards.
 
 ---
 
+### Stock coming in, and what the kitchen makes
+
+- **Delivery received** — search each thing as it comes off the truck and give the
+  number in the pack it came in (case, bag, box). Only groceries, vegetables and
+  packaging can be delivered. Choose where it arrived and, if known, the supplier
+  (suppliers are added in Admin → Suppliers). **Record** puts it into stock.
+- **Made today** — tap what was made, say how much in its container ("2 bucket"),
+  and add what went in if the cook knows it. **Save** adds the made item and takes
+  what went in out of stock. A batch started by mistake can be thrown away; nothing
+  was written to stock until it was saved.
+
+Stock can go below zero until opening balances are entered — the ledger records
+what happened, and a count afterwards puts it right.
+
+---
+
 ## 5. Everyday commands
 
 | Task | Command |

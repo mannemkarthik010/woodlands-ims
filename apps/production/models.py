@@ -81,6 +81,13 @@ class ProductionBatch(TimeStamped):
         help_text="Recorded so fermentation time can be tuned across the seasons.",
     )
 
+    # What the cook said they made -- "2 buckets" -- beside actual_yield in
+    # base units, so the record reads the way the kitchen speaks.
+    yield_entered_quantity = models.DecimalField(null=True, blank=True, **QTY)
+    yield_entered_measure = models.ForeignKey(
+        "catalog.ItemMeasure", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+
     produced_by = models.ForeignKey(
         "core.User", null=True, blank=True, on_delete=models.PROTECT, related_name="batches_made"
     )
@@ -132,6 +139,12 @@ class ProductionInput(models.Model):
         ProductionBatch, null=True, blank=True, on_delete=models.PROTECT, related_name="consumed_by"
     )
     note = models.CharField(max_length=160, blank=True)
+
+    # As entered: "3 scoop", "1 bag". `quantity` is the same in base units.
+    entered_quantity = models.DecimalField(null=True, blank=True, **QTY)
+    entered_measure = models.ForeignKey(
+        "catalog.ItemMeasure", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
 
     def __str__(self) -> str:
         return f"{self.quantity} {self.item.base_unit} {self.item.name}"

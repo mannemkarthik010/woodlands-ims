@@ -1,0 +1,16 @@
+{% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
+{% if inputs %}
+  <ul class="lines">
+    {% for line in inputs %}
+      <li class="lines__row">
+        <span class="lines__qty">{{ line.entered_quantity|floatformat:"-2" }} {% if line.entered_measure %}{{ line.entered_measure.name }}{% else %}{{ line.item.base_unit.code }}{% endif %}</span>
+        <span class="lines__name">{{ line.item.name }}
+          {% if line.entered_measure %}<small class="muted">= {{ line.quantity|floatformat:"-3" }} {{ line.item.base_unit.code }}</small>{% endif %}</span>
+        <button class="btn btn--remove"
+                hx-post="{% url 'batch_remove_input' line.batch_id line.pk %}"
+                hx-target="#lines" hx-swap="innerHTML"
+                aria-label="Remove {{ line.item.name }}">×</button>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}

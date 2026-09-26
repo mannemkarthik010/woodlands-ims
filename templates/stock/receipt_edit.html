@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Delivery received{% endblock %}
+{% block content %}
+<h1>Delivery received</h1>
+
+<form method="post" class="route delivery">
+  {% csrf_token %}
+  <label>Arrived at
+    <select name="location" onchange="this.form.submit()">
+      {% for loc in locations %}<option value="{{ loc.pk }}" {% if loc.pk == receipt.location_id %}selected{% endif %}>{{ loc.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>From
+    <select name="supplier" onchange="this.form.submit()">
+      <option value="">Not sure</option>
+      {% for s in suppliers %}<option value="{{ s.pk }}" {% if s.pk == receipt.supplier_id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <noscript><button class="btn btn--ghost" type="submit">Save</button></noscript>
+</form>
+
+<p class="muted small">Count it off the truck in the packs it came in — cases, bags, boxes.</p>
+
+<form class="search"
+      hx-get="{% url 'item_search' %}"
+      hx-trigger="input changed delay:200ms, search"
+      hx-target="#results"
+      autocomplete="off">
+  <input type="search" name="q" placeholder="Search what arrived…" autocapitalize="none" autofocus>
+  <input type="hidden" name="for" value="receipt">
+  <input type="hidden" name="id" value="{{ receipt.pk }}">
+</form>
+
+<div id="results"></div>
+
+<div id="lines">
+  {% include "stock/_receipt_lines.html" %}
+</div>
+{% endblock %}

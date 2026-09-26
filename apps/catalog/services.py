@@ -16,6 +16,8 @@ say why.
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.db import transaction
 
 from apps.catalog.models import Item, ItemAlias, ItemKind, Unit
@@ -129,3 +131,18 @@ def retire_item(item: Item, *, reason: str = "") -> None:
     if reason:
         item.notes = (item.notes + "\n" + reason).strip()
     item.save(update_fields=["is_active", "notes", "updated_at"])
+
+
+# Implements: FR-204, FR-205.
+def in_base_units(item: Item, quantity: Decimal, measure=None) -> Decimal:
+    """
+    "3 buckets" of sambar, "2 cases" of toor dal, as the item's base unit.
+    No measure means the quantity is already in the base unit. A measure
+    belonging to another item is refused: a bucket of sambar is not a bucket
+    of rasam, which is the whole reason measures belong to items.
+    """
+    if measure is None:
+        return quantity
+    if measure.item_id != item.pk:
+        raise ValueError(f"{measure.name} is a measure of another item, not {item}.")
+    return (quantity * measure.quantity_in_base_units).quantize(Decimal("0.0001"))

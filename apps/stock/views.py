@@ -28,17 +28,22 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.catalog.models import CountEvery, Item, ItemMeasure
-from apps.core.models import Location
-from apps.stock.models import DocumentStatus, StockCount, StockCountLine, Transfer, TransferLine
+from apps.core.models import Location, Supplier
+from apps.stock.models import DocumentStatus, GoodsReceipt, StockCount, StockCountLine, Transfer, TransferLine
 from apps.stock.services import (
+    RECEIVABLE_KINDS,
     StockError,
+    add_receipt_line,
     on_hand,
     post_count,
+    post_receipt,
     post_transfer,
     record_counted,
     start_count,
@@ -104,7 +109,13 @@ def item_search(request):
     the same thing is called three different names by three different people.
     """
     q = (request.GET.get("q") or "").strip()
-    transfer_pk = request.GET.get("transfer")
+    # What the search is for decides what can be found and where "Add" goes:
+    # a delivery only brings layer 1, a batch takes groceries and bases.
+    purpose = request.GET.get("for") or "transfer"
+    doc = request.GET.get("id") or request.GET.get("transfer") or ""
+    if not doc.isdigit() or purpose not in SEARCHES:
+        return HttpResponseBadRequest("Unknown search.")
+    kinds, add_name, with_measures = SEARCHES[purpose]
 
     items = Item.objects.none()
     if len(q) >= 2:
@@ -112,14 +123,33 @@ def item_search(request):
             Item.objects.filter(is_active=True, is_stocked=True)
             .filter(Q(name__icontains=q) | Q(code__icontains=q) | Q(aliases__alias__icontains=q))
             .select_related("base_unit")
-            .distinct()[:12]
+            .distinct()
         )
+        if kinds:
+            items = items.filter(kind__in=kinds)
+        items = list(items[:12])
+        if with_measures:
+            by_item: dict[int, list] = {}
+            for m in ItemMeasure.objects.filter(item__in=items, is_active=True).order_by(
+                "-quantity_in_base_units"
+            ):
+                by_item.setdefault(m.item_id, []).append(m)
+            for item in items:
+                item.measure_choices = by_item.get(item.pk, [])
 
     return render(
         request,
         "stock/_item_results.html",
-        {"items": items, "q": q, "transfer_pk": transfer_pk},
+        {"items": items, "q": q, "add_url": reverse(add_name, args=[doc]), "with_measures": with_measures},
     )
+
+
+# purpose: (kinds that can be found, where Add posts, offer measures)
+SEARCHES = {
+    "transfer": ((), "transfer_add_line", False),
+    "receipt": (RECEIVABLE_KINDS, "receipt_add_line", True),
+    "batch": (("RAW", "PREPARED", "CONSUMABLE"), "batch_add_input", True),
+}
 
 
 # Implements: FR-403, FR-405, NFR-06.
@@ -424,3 +454,106 @@ def count_post(request, pk):
     except StockError:
         return redirect("count_review", pk=count.pk)
     return redirect("count_review", pk=count.pk)
+
+
+# --- Deliveries (layer 1 in) -------------------------------------------------
+#
+# What physically arrived, counted off the truck in the packs it came in.
+# Same shape as the storage run: start, add lines as they are unpacked, record.
+
+
+def _measure_for(item: Item, raw: str):
+    return ItemMeasure.objects.filter(pk=raw, item=item, is_active=True).first() if raw.isdigit() else None
+
+
+def _receipt_context(receipt):
+    lines = receipt.lines.select_related("item", "item__base_unit", "purchase_unit")
+    return {
+        "receipt": receipt,
+        "lines": lines,
+        "line_count": lines.count(),
+        "suppliers": Supplier.objects.filter(is_active=True),
+        "locations": Location.objects.filter(
+            is_active=True, kind__in=[Location.Kind.RESTAURANT, Location.Kind.STORAGE]
+        ),
+    }
+
+
+# Implements: FR-302.
+@login_required
+def receipt_new(request):
+    restaurant = Location.objects.filter(kind=Location.Kind.RESTAURANT, is_active=True).first()
+    if restaurant is None:
+        return render(request, "stock/no_locations.html", status=400)
+    receipt = GoodsReceipt.objects.create(
+        location=restaurant, received_at=timezone.now(), created_by=request.user
+    )
+    return redirect("receipt_edit", pk=receipt.pk)
+
+
+# Implements: FR-302, FR-306.
+@login_required
+def receipt_edit(request, pk):
+    receipt = get_object_or_404(GoodsReceipt.objects.select_related("location", "supplier"), pk=pk)
+    if receipt.status != DocumentStatus.DRAFT:
+        return redirect("receipt_done", pk=receipt.pk)
+    if request.method == "POST":
+        location = Location.objects.filter(pk=request.POST.get("location") or 0, is_active=True).first()
+        supplier = Supplier.objects.filter(pk=request.POST.get("supplier") or 0).first()
+        receipt.location = location or receipt.location
+        receipt.supplier = supplier
+        receipt.supplier_reference = (request.POST.get("reference") or "")[:80]
+        receipt.save(update_fields=["location", "supplier", "supplier_reference"])
+        return redirect("receipt_edit", pk=receipt.pk)
+    return render(request, "stock/receipt_edit.html", _receipt_context(receipt))
+
+
+@login_required
+@require_POST
+def receipt_add_line(request, pk):
+    receipt = get_object_or_404(GoodsReceipt, pk=pk, status=DocumentStatus.DRAFT)
+    item = get_object_or_404(Item, pk=request.POST.get("item"), is_active=True)
+    try:
+        quantity = Decimal((request.POST.get("quantity") or "").strip().replace(",", "."))
+        add_receipt_line(
+            receipt, item=item, quantity=quantity, measure=_measure_for(item, request.POST.get("measure", ""))
+        )
+    except (InvalidOperation, ValueError):
+        return render(
+            request,
+            "stock/_receipt_lines.html",
+            _receipt_context(receipt) | {"error": "Enter a quantity greater than zero."},
+        )
+    except StockError as e:
+        return render(request, "stock/_receipt_lines.html", _receipt_context(receipt) | {"error": str(e)})
+    return render(request, "stock/_receipt_lines.html", _receipt_context(receipt))
+
+
+@login_required
+@require_POST
+def receipt_remove_line(request, pk, line_pk):
+    receipt = get_object_or_404(GoodsReceipt, pk=pk, status=DocumentStatus.DRAFT)
+    receipt.lines.filter(pk=line_pk).delete()
+    return render(request, "stock/_receipt_lines.html", _receipt_context(receipt))
+
+
+# Implements: FR-302, FR-303.
+@login_required
+@require_POST
+def receipt_post(request, pk):
+    receipt = get_object_or_404(GoodsReceipt, pk=pk)
+    try:
+        post_receipt(receipt, user=request.user)
+    except StockError as e:
+        return render(request, "stock/receipt_edit.html", _receipt_context(receipt) | {"error": str(e)})
+    return redirect("receipt_done", pk=receipt.pk)
+
+
+@login_required
+def receipt_done(request, pk):
+    receipt = get_object_or_404(GoodsReceipt.objects.select_related("location", "supplier"), pk=pk)
+    rows = [
+        {"line": line, "now_here": on_hand(line.item, receipt.location)}
+        for line in receipt.lines.select_related("item", "item__base_unit", "purchase_unit")
+    ]
+    return render(request, "stock/receipt_done.html", {"receipt": receipt, "rows": rows})
