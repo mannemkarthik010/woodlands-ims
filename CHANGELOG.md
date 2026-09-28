@@ -5,6 +5,9 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Twice-a-month pay, as the owners run it: To pay opens on the pay period just ended (1st–15th
+  or 16th–month end), with one tap for that and for everything up to today; "Last pay period"
+  and "This pay period" head the period choices, and Any period opens on the last one
 - Ready to go online on any container host: a Dockerfile (gunicorn, migrations on start,
   non-root), the database from `DATABASE_URL`, CSS served compressed by WhiteNoise, HTTPS-only
   cookies, redirect and HSTS behind `DJANGO_HTTPS=1`, and `/healthz` for the host's health check.

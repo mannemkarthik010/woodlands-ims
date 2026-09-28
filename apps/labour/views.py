@@ -307,19 +307,19 @@ def done(request):
 def _period(request) -> tuple[date, date, str]:
     """The dates asked for: a named period, or a from/to range. Last week by default."""
     today = timezone.localdate()
-    name = request.GET.get("period", "last_week")
+    name = request.GET.get("period", "last_half")
     if name == "custom":
         try:
             start = date.fromisoformat(request.GET["from"])
             end = date.fromisoformat(request.GET["to"])
         except (KeyError, ValueError):
-            name = "last_week"
+            name = "last_half"
         else:
             if start > end:
                 start, end = end, start
             return start, end, name
     if name not in PERIODS:
-        name = "last_week"
+        name = "last_half"
     start, end = period_dates(name, today)
     return start, end, name
 
@@ -497,6 +497,10 @@ def pay_screen(request):
         "staff": _people(),
         "query": f"up_to={up_to.isoformat()}",
         "tab": "pay",
+        "quick": [
+            (default_up_to(), "End of last pay period"),
+            (timezone.localdate(), "Everything up to today"),
+        ],
         "needs_fixing": [s for r in preview.rows for s in r.shifts if s.is_open],
         "here": request.get_full_path(),
     }

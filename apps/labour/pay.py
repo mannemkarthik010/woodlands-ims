@@ -31,7 +31,7 @@ from django.utils import timezone
 
 from apps.core.models import Role, User
 from apps.labour.models import PayRun, PayRunLine, Shift
-from apps.labour.reports import PersonHours, aggregate
+from apps.labour.reports import PersonHours, aggregate, last_finished_half
 from apps.labour.services import ClockError, NotAllowed
 
 
@@ -122,7 +122,12 @@ def unpaid(up_to: date) -> Unpaid:
 
 
 def default_up_to(today: date | None = None) -> date:
-    return today or timezone.localdate()
+    """
+    The owners pay twice a month, so To pay opens on the pay period that has
+    just ended: up to the 15th from the 16th on, up to the month's last day
+    from the 1st to the 15th. Any other day is one change of the date away.
+    """
+    return last_finished_half(today or timezone.localdate())[1]
 
 
 # Implements: FR-106, FR-113.

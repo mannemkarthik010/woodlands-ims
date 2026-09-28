@@ -211,7 +211,8 @@ class PayScreenTests(PayTestCase):
 
         # Next time, the screen starts from what is left.
         self.assertContains(
-            self.client.get(reverse("hours_pay")), "Unpaid hours from <strong>Wed 16 Sep</strong>"
+            self.client.get(reverse("hours_pay"), {"up_to": "2026-09-30"}),
+            "Unpaid hours from <strong>Wed 16 Sep</strong>",
         )
 
     def test_the_statement_and_the_spreadsheet_for_a_payment(self):
@@ -238,3 +239,29 @@ class PayScreenTests(PayTestCase):
         run.refresh_from_db()
         self.assertTrue(run.is_void)
         self.assertContains(self.client.get(reverse("hours_payments")), "undone")
+
+
+class TwiceAMonthTests(TestCase):
+    """The owners pay twice a month: the 1st to the 15th, the 16th to the end."""
+
+    def test_the_pay_periods(self):
+        from apps.labour.reports import half_month, last_finished_half, period_dates
+
+        self.assertEqual(half_month(sep(15)), (sep(1), sep(15)))
+        self.assertEqual(half_month(sep(16)), (sep(16), sep(30)))
+        self.assertEqual(half_month(date(2026, 10, 31)), (date(2026, 10, 16), date(2026, 10, 31)))
+        self.assertEqual(half_month(date(2027, 2, 20)), (date(2027, 2, 16), date(2027, 2, 28)))
+        self.assertEqual(half_month(date(2028, 2, 20)), (date(2028, 2, 16), date(2028, 2, 29)))  # leap year
+        # The last period that has fully ended.
+        self.assertEqual(last_finished_half(sep(16)), (sep(1), sep(15)))
+        self.assertEqual(last_finished_half(sep(30)), (sep(1), sep(15)))
+        self.assertEqual(last_finished_half(date(2026, 10, 1)), (sep(16), sep(30)))
+        self.assertEqual(last_finished_half(date(2026, 1, 10)), (date(2025, 12, 16), date(2025, 12, 31)))
+        self.assertEqual(period_dates("this_half", sep(20)), (sep(16), sep(20)))
+
+    def test_to_pay_opens_on_the_pay_period_just_ended(self):
+        from apps.labour.pay import default_up_to
+
+        self.assertEqual(default_up_to(date(2026, 10, 1)), sep(30))
+        self.assertEqual(default_up_to(date(2026, 10, 16)), date(2026, 10, 15))
+        self.assertEqual(default_up_to(date(2026, 10, 15)), sep(30))

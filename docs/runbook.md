@@ -112,9 +112,12 @@ added this way appears at the top of **Staff hours** for an owner to look at:
 
 ### Paying out
 
-The owners run their own pay cycle. **Staff hours & pay → To pay** shows every
-unpaid hour up to a day they choose, one line per person, starting from the
-first day not yet paid. Tick who is being paid, **Mark as paid…**, check the
+The owners pay **twice a month**: the 1st to the 15th, and the 16th to the end
+of the month. **Staff hours & pay → To pay** opens on the pay period that has
+just ended (up to the 15th from the 16th on; up to the month's last day from the
+1st to the 15th), with one-tap buttons for that and for everything up to today,
+and the date can still be set to any day. It shows every unpaid hour up to that
+day, one line per person, starting from the first day not yet paid. Tick who is being paid, **Mark as paid…**, check the
 summary, confirm. Next time the screen starts from what is left.
 
 - "Unpaid" is kept per shift, not by date. A shift written in late for a
@@ -158,7 +161,8 @@ shown in red, so it is fixed before payday rather than paid as nothing.
 Open a person for their statement: every shift, with anything written late or
 corrected marked. **Print or save as PDF** gives the page to hand to them;
 **Download (CSV)** gives the same in a spreadsheet. The week starts on Monday
-(`LABOUR_WEEK_STARTS` in settings, 0 = Monday).
+(`LABOUR_WEEK_STARTS` in settings, 0 = Monday). *Last pay period* and *This pay
+period* are the half-months, and **Any period** opens on the last pay period.
 
 To try it with sample people: `python manage.py seed_demo` adds three demo
 staff (PIN 2580) and a `demo-tablet` sign-in. `seed_demo --clear` deactivates

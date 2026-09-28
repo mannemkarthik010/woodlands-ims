@@ -12,6 +12,11 @@
   </label>
   <noscript><button class="btn btn--ghost" type="submit">Show</button></noscript>
 </form>
+<div class="filters payto__quick">
+  {% for day, label in quick %}
+    <a class="chip{% if day == up_to %} chip--on{% endif %}" href="?up_to={{ day|date:'Y-m-d' }}">{{ label }} · {{ day|date:"D j M" }}</a>
+  {% endfor %}
+</div>
 
 {% include "labour/_review.html" %}
 

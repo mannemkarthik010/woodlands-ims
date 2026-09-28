@@ -30,7 +30,11 @@ WEEK_STARTS = getattr(settings, "LABOUR_WEEK_STARTS", 0)
 # to the owners, since memory after that is less reliable than on the day.
 LATE_ENTRY_DAYS = 2
 
+# The owners pay twice a month: the 1st to the 15th, and the 16th to the end
+# of the month. The pay periods come first; weeks and months stay for looking.
 PERIODS = {
+    "last_half": "Last pay period",
+    "this_half": "This pay period",
     "this_week": "This week",
     "last_week": "Last week",
     "last_2_weeks": "Last 2 weeks",
@@ -39,8 +43,26 @@ PERIODS = {
 }
 
 
+def half_month(day: date) -> tuple[date, date]:
+    """The pay period a day falls in: the 1st to the 15th, or the 16th to the month's end."""
+    if day.day <= 15:
+        return day.replace(day=1), day.replace(day=15)
+    next_month = (day.replace(day=28) + timedelta(days=4)).replace(day=1)
+    return day.replace(day=16), next_month - timedelta(days=1)
+
+
+def last_finished_half(today: date) -> tuple[date, date]:
+    """The most recent pay period that has fully ended before today."""
+    start, _ = half_month(today)
+    return half_month(start - timedelta(days=1))
+
+
 def period_dates(name: str, today: date) -> tuple[date, date]:
     """First and last day, inclusive, of a named period ending at or before today."""
+    if name == "last_half":
+        return last_finished_half(today)
+    if name == "this_half":
+        return half_month(today)[0], today
     week_start = today - timedelta(days=(today.weekday() - WEEK_STARTS) % 7)
     if name == "this_week":
         return week_start, today

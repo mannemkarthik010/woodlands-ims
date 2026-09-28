@@ -203,7 +203,7 @@ class ScreenTests(OwnerFixTestCase):
 
     def test_to_pay_lists_unfinished_shifts_with_a_fix_button_and_the_fix_counts_them(self):
         open_shift = clock_in(self.ravi, location=self.restaurant, at=at(28, 10, 0))
-        page = self.client.get(reverse("hours_pay"))
+        page = self.client.get(reverse("hours_pay"), {"up_to": "2026-09-30"})
         self.assertContains(page, "Needs fixing")
         self.assertContains(page, reverse("hours_shift", args=[open_shift.pk]))
 
