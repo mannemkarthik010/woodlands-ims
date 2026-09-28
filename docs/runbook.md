@@ -376,21 +376,72 @@ python manage.py changepassword <username>
 
 ## 9. Deployment
 
-Deliberately not configured yet. Hosting carries a monthly cost and the choice
-is the client's to make, informed, in advance. Nothing has been committed on
-their behalf.
+**Not live yet.** Hosting costs the restaurant money every month, so it waits for
+the owners' yes. Everything the code can do in advance is done, so that going
+live is an hour, not a day.
 
-What is already true, so that the decision is not blocked by engineering:
+### What is ready
 
-- Settings read from the environment; no secret is in the repository.
-- `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` are env-driven.
-- `requirements-prod.txt` adds only what a server needs (`psycopg`, `gunicorn`).
-- The permissive host and CSRF settings used for phone testing apply **only**
-  when `DJANGO_DEBUG=1`.
+- **One container** (`Dockerfile`) that any container host runs as-is — Render,
+  Railway, Fly, DigitalOcean App Platform. It installs the server requirements,
+  compresses the CSS at build time, runs as an ordinary user, applies database
+  migrations on every start, and serves with gunicorn. `.dockerignore` keeps the
+  database, `.env`, client data and outputs out of the image.
+- **The database** comes from `DATABASE_URL` (the host's PostgreSQL). Without it,
+  the local SQLite file is used, as on the laptop.
+- **CSS** is served by the app itself (WhiteNoise), compressed.
+- **HTTPS only** when `DJANGO_HTTPS=1` (the image sets it): redirect to HTTPS,
+  secure cookies, HSTS for 30 days. `manage.py check --deploy` passes clean; the
+  two silenced checks (HSTS subdomains and preload) are deliberately off on a
+  host's shared address — see settings.
+- **`/healthz`** answers `ok` when the app can reach its database, `503` when it
+  cannot. Point the host's health check at it. No login, no data.
 
-Before the first deploy: secret key generated fresh on the server, `DEBUG=0`,
-HTTPS, daily backup configured, and a restore performed at least once into a
-throwaway database.
+Tested on this machine: gunicorn with `DEBUG=0` and a `DATABASE_URL` serves the
+pages, the compressed CSS and the health check. **The image itself has not been
+built yet** (Docker was not running) — build it once before the first deploy:
+
+```bash
+docker build -t woodlands-ims .
+```
+
+### Going live, in order
+
+1. The owners agree the host and the monthly cost.
+2. Create the app from this repository's `Dockerfile`, with a PostgreSQL
+   database. Set on the host:
+   - `DJANGO_SECRET_KEY` — generated fresh, on the host, never reused:
+     `python -c "import secrets;print(secrets.token_urlsafe(50))"`
+   - `DATABASE_URL` — the host gives this with the database
+   - `DJANGO_ALLOWED_HOSTS` — the address, e.g. `woodlands.onrender.com`
+   - `DJANGO_CSRF_TRUSTED_ORIGINS` — the same with `https://`
+   - `SITE_URL` — the same with `https://`, used in owners' password links
+3. Turn on the host's **daily database backup**, and restore one into a throwaway
+   database once, to know it works.
+4. From the host's shell: `python manage.py seed`, then one owner link each —
+   see below.
+5. Open the address on the kitchen tablet, sign in as the tablet account, leave
+   it signed in.
+
+Uploaded photos (invoices, clock-in pictures) are not used yet. When they are,
+they need the host's persistent disk or object storage — a container's own disk
+is wiped on every deploy.
+
+### Owner accounts — each owner chooses their own password
+
+Nobody types a password for anybody else, and none is ever sent in Slack or
+email.
+
+```bash
+python manage.py invite_owner pj --name "PJ"
+```
+
+This makes the owner's account and prints a one-time link. Send it to that owner
+**privately** (a direct message): whoever opens it chooses the password. It works
+once, for three days, and signs them in. Run it again for the same owner to get a
+fresh link — for a lost password too. Owners get the *Owners* group: in the admin
+they can manage staff and PINs, jobs and shift times, items, measures and
+suppliers — never delete, and never edit the stock ledger.
 
 ---
 

@@ -81,6 +81,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serves the CSS from the app itself, compressed, so the server needs no
+    # separate web server in front of it for files.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -112,12 +115,19 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+# On a server, DATABASE_URL points at PostgreSQL (the host provides it, e.g.
+# postgres://user:password@host:5432/woodlands). Locally, the SQLite file.
+if os.environ.get("DATABASE_URL"):
+    import dj_database_url
+
+    DATABASES = {"default": dj_database_url.config(conn_max_age=600, conn_health_checks=True)}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
 
 
 # Password validation
@@ -156,6 +166,12 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# Where `collectstatic` gathers everything for the server. Not in git.
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -206,6 +222,39 @@ KNOWLEDGE_CONSENT = env_bool("KNOWLEDGE_CONSENT", default=False)
 KNOWLEDGE_API_KEY = os.environ.get("KNOWLEDGE_API_KEY", "")
 KNOWLEDGE_MODEL = os.environ.get("KNOWLEDGE_MODEL", "claude-sonnet-4-5")
 
+
+# ---------------------------------------------------------------------------
+# On a server: HTTPS only
+# ---------------------------------------------------------------------------
+#
+# DJANGO_HTTPS=1 on any server (the container image sets it). It is a switch
+# of its own rather than "whenever DEBUG is off" so the test suite and CI --
+# which run without DEBUG -- are not redirected to an https:// they cannot
+# reach. `manage.py check --deploy` with DJANGO_HTTPS=1 passes clean.
+HTTPS = env_bool("DJANGO_HTTPS", default=False)
+if HTTPS:
+    # The host terminates TLS and forwards plain HTTP with this header.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    # The platform's health check comes from inside, over plain HTTP.
+    SECURE_REDIRECT_EXEMPT = [r"^healthz$"]
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Browsers remember "HTTPS only" for this long. 30 days to start; raise
+    # to a year once the address is settled.
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS", 60 * 60 * 24 * 30))
+    # Deliberately off, and silenced so the checklist stays clean: on a
+    # host's shared address (woodlands.onrender.com and the like) the other
+    # subdomains are not ours, and a preload listing takes months to undo.
+    # Revisit only with the restaurant's own domain.
+    SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
+
+# A "set your password" link for a new owner works once and for this long.
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3
+
+# The address links are built on when they are printed rather than clicked,
+# e.g. https://woodlands.example.com. Only used by `manage.py invite_owner`.
+SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000").rstrip("/")
 
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"

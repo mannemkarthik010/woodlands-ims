@@ -207,7 +207,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
 | **NFR-01** | Any screen a member of staff uses during service loads in under two seconds on the restaurant's own connection. | Must | — | — |
-| **NFR-02** | Recording a transfer, a waste event or a clock-in completes in under thirty seconds end to end. | Must | `apps/stock/views.py` | — |
+| **NFR-02** | Recording a transfer, a waste event or a clock-in completes in under thirty seconds end to end. | Must | `apps/core/views.py`<br>`apps/stock/views.py` | — |
 
 ## NFR — Availability
 

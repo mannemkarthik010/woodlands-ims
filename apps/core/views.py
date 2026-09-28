@@ -33,3 +33,21 @@ def home(request):
         "stock/home.html",
         {"open_transfers": open_transfers, "mapping_remaining": mapping_remaining},
     )
+
+
+# Implements: NFR-02.
+def healthz(request):
+    """
+    For the host's health check: the app is up AND can reach its database.
+    Plain text, no login, no personal data. A 503 tells the host to restart
+    or not send traffic yet.
+    """
+    from django.db import connection
+    from django.http import HttpResponse
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+    except Exception:  # noqa: BLE001 -- any failure means "not healthy", which is the answer
+        return HttpResponse("database unreachable", status=503, content_type="text/plain")
+    return HttpResponse("ok", content_type="text/plain")

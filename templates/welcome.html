@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Choose your password{% endblock %}
+{% block wrap_class %}wrap--form{% endblock %}
+{% block content %}
+{% if validlink %}
+  <h1>Welcome — choose your password</h1>
+  <p class="muted">This is for your own sign-in to the Woodlands system. Only you will know it.</p>
+  <form method="post" class="stack">
+    {% csrf_token %}
+    <label class="field"><span class="field__label">Password</span>{{ form.new_password1 }}
+      {% for e in form.new_password1.errors %}<span class="field__error">{{ e }}</span>{% endfor %}</label>
+    <p class="muted small">At least 8 characters, not only numbers, and not a common password.</p>
+    <label class="field"><span class="field__label">The same again</span>{{ form.new_password2 }}
+      {% for e in form.new_password2.errors %}<span class="field__error">{{ e }}</span>{% endfor %}</label>
+    <button class="btn btn--primary btn--big" type="submit">Save and sign in</button>
+  </form>
+{% else %}
+  <h1>This link has already been used or has expired</h1>
+  <p>Links work once, for three days. Please ask Karthik for a new one.</p>
+  <a class="btn btn--ghost btn--wide" href="{% url 'login' %}">Go to sign in</a>
+{% endif %}
+{% endblock %}

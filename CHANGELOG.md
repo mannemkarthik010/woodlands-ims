@@ -5,6 +5,14 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Ready to go online on any container host: a Dockerfile (gunicorn, migrations on start,
+  non-root), the database from `DATABASE_URL`, CSS served compressed by WhiteNoise, HTTPS-only
+  cookies, redirect and HSTS behind `DJANGO_HTTPS=1`, and `/healthz` for the host's health check.
+  `check --deploy` passes clean
+- Owners choose their own password: `manage.py invite_owner` makes the account and prints a
+  one-time link (three days) that sets the password and signs them in. No password is ever
+  typed by anybody else or sent in a message. Owners get an "Owners" admin group — staff, jobs,
+  items, measures, suppliers; never delete, never the ledger
 - Count lists, for the owners: every item under Daily, Weekly, Monthly or Not counted,
   moved between lists with one change; add an item (made in the kitchen, grocery, vegetable,
   packaging) with its list, unit and how it comes or is kept, so it can be counted in cases or
@@ -126,6 +134,9 @@ Notable changes per release. Newest first.
   near-identical existing items offered as a question (ADR 0005)
 
 ### Changed
+- Library floors raised to the versions Dependabot proposed (Django 5.2.17, Pillow 12.3,
+  python-dotenv 1.2.3, psycopg 3.3.5, dj-database-url 3.1.2), and the CI actions to
+  checkout v7 / setup-python v7. WhiteNoise moves into the base requirements
 - The 3–5pm closure is no longer deducted as a standard break. Morning and evening are
   separate shifts and hours are the plain span of each (ADR 0008 supersedes FR-103/FR-104)
 
