@@ -5,6 +5,12 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Daily sales from Shift4: upload the day's "Sales Summary by Item" CSV and say which day it
+  is; the file's own total is checked, the same file is refused, a second file for a day asks
+  before replacing and undoes the first. Every line is matched to its menu button; recording
+  takes out what each sale uses and is traceable to its file. Missing days show (ADR 0009)
+- A menu button sold with no size (Dosa Batter, Rasam…) takes nothing out of stock until an
+  owner says how many ounces one sale is, on the day's page — no more silent one-pound guesses
 - Twice-a-month pay, as the owners run it: To pay opens on the pay period just ended (1st–15th
   or 16th–month end), with one tap for that and for everything up to today; "Last pay period"
   and "This pay period" head the period choices, and Any period opens on the last one

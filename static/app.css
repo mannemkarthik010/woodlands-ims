@@ -533,3 +533,5 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 .stack label.choice__opt { flex-direction: row; align-items: center; gap: 10px; font-size: 16px; color: var(--ink); margin: 0; }
 .choice__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .payto__quick { margin: 10px 0 4px; }
+.portion { display: inline-flex; align-items: center; gap: 6px; }
+.portion input { width: 80px; min-height: 40px; font: inherit; padding: 0 8px; border: 2px solid var(--rule); border-radius: 8px; }

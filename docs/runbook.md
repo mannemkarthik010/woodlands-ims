@@ -225,6 +225,26 @@ what happened, and a count afterwards puts it right.
 
 ---
 
+### Daily sales (owners)
+
+**Daily sales** takes Shift4's report for one day:
+
+1. In Shift4 Customer Hub: **Reports → Sales Summary by Item**, one day, **Export
+   → CSV**. (Better still, subscribe it to arrive daily as CSV.)
+2. **Daily sales → Read the file**: choose the day it is for — the file does not
+   say — and the CSV. The same file twice is refused; a second file for a day
+   asks before replacing, and replacing puts back what the first took out.
+3. On the day's page: any menu button not yet matched to a dish (match it on
+   **Menu mapping** — nothing is recorded until every line is); any button sold
+   with no size, asking **how many ounces one sale is**; what recording will
+   take out of stock; and which dishes have no recipe yet.
+4. **Record these sales.** Each movement is dated the business day and says which
+   file it came from.
+
+The list shows the last three weeks; a day with no file says so.
+
+---
+
 ## 5. Everyday commands
 
 | Task | Command |

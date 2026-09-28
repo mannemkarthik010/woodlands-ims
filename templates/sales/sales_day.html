@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Sales {{ day.business_date|date:"j M" }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<a class="back" href="{% url 'sales_home' %}">← Daily sales</a>
+<h1>Sales — {{ day.business_date|date:"l j F Y" }}</h1>
+<p class="muted">{{ day.source_filename }} · read {{ day.imported_at|date:"j M, g:i A" }}{% if posted %} · <b>recorded {{ day.posted_at|date:"j M, g:i A" }}</b>{% endif %}</p>
+
+<div class="totals">
+  <div><span>Items sold</span><strong>{{ preview.total_quantity|floatformat:"-2" }}</strong></div>
+  <div><span>Menu lines</span><strong>{{ day.rows_read }}</strong></div>
+  <div><span>Net sales (from Shift4)</span><strong>${{ preview.total_net|floatformat:2 }}</strong></div>
+</div>
+
+{% if preview.unmatched %}
+  <section class="fixlist">
+    <h2 class="h2">Not matched to a dish yet — nothing is recorded until they are</h2>
+    {% for line in preview.unmatched %}
+      <div class="fixlist__row"><span><b>{{ line.pos_item.pos_name }}</b> · {{ line.quantity_sold|floatformat:"-2" }} sold</span></div>
+    {% endfor %}
+    <p><a class="btn btn--add" href="{% url 'mapping_queue' %}">Match them on the menu mapping screen</a></p>
+  </section>
+{% endif %}
+
+{% if preview.needs_portion %}
+  <section class="fixlist">
+    <h2 class="h2">How much is one sale? — these take nothing out of stock until you say</h2>
+    <p class="muted small">Sold without a size on the button, so the system will not guess. A batter tub is usually 32 oz; a bowl of rasam is whatever the kitchen serves.</p>
+    {% for line in preview.needs_portion %}
+      <form method="post" action="{% url 'sales_portion' day.pk line.pos_item_id %}" class="fixlist__row">
+        {% csrf_token %}
+        <span><b>{{ line.pos_item.pos_name }}</b> · {{ line.quantity_sold|floatformat:"-2" }} sold · one sale is</span>
+        <span class="portion"><input type="text" name="ounces" inputmode="decimal" placeholder="oz" aria-label="Ounces in one sale of {{ line.pos_item.pos_name }}"> oz
+          <button class="btn btn--add" type="submit">Save</button></span>
+      </form>
+    {% endfor %}
+  </section>
+{% endif %}
+
+<h2 class="h2">{% if posted %}Taken out of stock{% else %}Recording this takes out of stock{% endif %}</h2>
+{% if preview.takes_out %}
+  <ul class="lines">
+    {% for item, qty in preview.takes_out.items %}
+      <li class="lines__row"><span class="lines__qty">−{{ qty|floatformat:"-2" }} {{ item.base_unit.code }}</span><span class="lines__name">{{ item.name }}</span></li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="muted">Nothing yet — see below.</p>
+{% endif %}
+
+{% if preview.no_recipe %}
+  <details class="undo">
+    <summary>{{ preview.no_recipe|length }} dishes sold have no recipe yet, so they take nothing out of stock</summary>
+    <p class="muted small">Once the chef's portions are in (“1 masala dosa = … oz batter + …”), these will take out their batter, sambar and chutneys too. The sales are kept either way.</p>
+    <ul class="cancelled">
+      {% for dish, qty in preview.no_recipe %}<li>{{ dish }} — {{ qty|floatformat:"-2" }} sold</li>{% endfor %}
+    </ul>
+  </details>
+{% endif %}
+
+{% if not posted %}
+  <form method="post" class="actions">
+    {% csrf_token %}
+    <button class="btn btn--primary btn--big" type="submit" {% if preview.unmatched %}disabled{% endif %}>Record these sales</button>
+  </form>
+{% endif %}
+{% endblock %}

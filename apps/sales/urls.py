@@ -3,6 +3,9 @@ from django.urls import path
 from apps.sales import views
 
 urlpatterns = [
+    path("sales/", views.sales_home, name="sales_home"),
+    path("sales/<int:pk>/", views.sales_day, name="sales_day"),
+    path("sales/<int:pk>/portion/<int:pos_pk>/", views.sales_portion, name="sales_portion"),
     path("mapping/", views.mapping_queue, name="mapping_queue"),
     path("mapping/search/", views.mapping_search, name="mapping_search"),
     path("mapping/review/", views.mapping_review, name="mapping_review"),

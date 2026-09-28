@@ -75,6 +75,12 @@ class PosItem(TimeStamped):
         help_text="In the target item's base unit. 1 for dishes; set for sized portions.",
         **QTY,
     )
+    # Whether quantity_per_sale is known rather than defaulted. A dish is one
+    # dish, and a tub labelled "Sambar 16 oz" says its size -- both are known.
+    # "Dosa Batter" with no size on the button is not: left at the default of
+    # 1 it would take one pound out for a two-pound tub, quietly. Until
+    # somebody says what one sale is, a sale of it takes nothing out.
+    portion_confirmed = models.BooleanField(default=False)
 
     # The food this line appears to be, with promotions and tub sizes stripped:
     # "$10 Masala Dosa" and "DosaNights-Masala Dosa" both reduce to "masala
@@ -102,6 +108,13 @@ class PosItem(TimeStamped):
     @property
     def needs_attention(self) -> bool:
         return self.item_id is None and not self.ignore
+
+    @property
+    def needs_portion(self) -> bool:
+        """Mapped to something held in stock by weight or volume, with its size per sale not yet known."""
+        from apps.catalog.models import ItemKind
+
+        return self.item_id is not None and self.item.kind != ItemKind.DISH and not self.portion_confirmed
 
     @property
     def detected_size(self):

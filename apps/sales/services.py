@@ -225,11 +225,24 @@ def map_group(key: str, *, item: Item, user=None, quantities: dict[int, Decimal]
     quantities = quantities or {}
     now = timezone.now()
     for pos in lines:
+        ounces = quantities.get(pos.pk)
         pos.item = item
-        pos.quantity_per_sale = quantity_for(pos.pos_name, item, ounces=quantities.get(pos.pk))
+        pos.quantity_per_sale = quantity_for(pos.pos_name, item, ounces=ounces)
+        pos.portion_confirmed = (
+            item.kind == ItemKind.DISH or (ounces or size_in_name(pos.pos_name)) is not None
+        )
         pos.mapped_by = user
         pos.mapped_at = now
-        pos.save(update_fields=["item", "quantity_per_sale", "mapped_by", "mapped_at", "updated_at"])
+        pos.save(
+            update_fields=[
+                "item",
+                "quantity_per_sale",
+                "portion_confirmed",
+                "mapped_by",
+                "mapped_at",
+                "updated_at",
+            ]
+        )
     return len(lines)
 
 
@@ -485,3 +498,18 @@ def review() -> list[Flag]:
 
     order = {"sized": 0, "duplicate": 1, "quantity": 2, "sized-drink": 3, "orphan": 4}
     return sorted(flags, key=lambda f: (order.get(f.kind, 9), f.headline))
+
+
+# Implements: FR-604.
+def set_portion(pos: PosItem, *, ounces: Decimal, user=None) -> PosItem:
+    """What one sale of a button is, in ounces as somebody would say it; converted once, here."""
+    if pos.item_id is None:
+        raise MappingError("Match it to an item first.")
+    if ounces is None or ounces <= 0:
+        raise MappingError("Enter how many ounces one sale is.")
+    pos.quantity_per_sale = quantity_for(pos.pos_name, pos.item, ounces=ounces)
+    pos.portion_confirmed = True
+    pos.mapped_by = user
+    pos.mapped_at = timezone.now()
+    pos.save(update_fields=["quantity_per_sale", "portion_confirmed", "mapped_by", "mapped_at", "updated_at"])
+    return pos

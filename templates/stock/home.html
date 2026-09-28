@@ -9,6 +9,11 @@
 </a>
 
 {% if user.role == "OWNER" or user.is_superuser %}
+  <a class="tile" href="{% url 'sales_home' %}">
+    <span class="tile__title">Daily sales</span>
+    <span class="tile__sub">Upload yesterday's Shift4 sales file, and see which days are missing</span>
+  </a>
+
   <a class="tile" href="{% url 'hours_pay' %}">
     <span class="tile__title">Staff hours &amp; pay</span>
     <span class="tile__sub">Unpaid hours for everyone, mark a pay cycle as paid, statements to hand over</span>

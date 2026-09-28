@@ -28,6 +28,7 @@ The design is about how few decisions there are, not how fast each one is:
 Nothing here maps anything by itself. See docs/architecture.md §3.3.
 """
 
+from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
@@ -35,12 +36,15 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.catalog import services as catalog
 from apps.catalog.models import Item, ItemKind, Unit
-from apps.sales import services
-from apps.sales.models import PosItem
+from apps.core.models import Location
+from apps.core.permissions import owner_required
+from apps.sales import daily, services
+from apps.sales.models import PosItem, SalesImport, SalesImportStatus
 
 
 def _card(request, key: str, *, message: str = "", error: str = ""):
@@ -251,3 +255,94 @@ def item_retire(request):
     catalog.retire_item(item, reason="Retired from the mapping review.")
     messages.success(request, f"{item.name} retired. Nothing is deleted; it stops appearing.")
     return redirect("mapping_review")
+
+
+# --- A day's sales, from the Shift4 file to stock ----------------------------
+
+
+def _restaurant():
+    return Location.objects.filter(kind=Location.Kind.RESTAURANT, is_active=True).first()
+
+
+# Implements: FR-610, FR-611.
+@owner_required
+def sales_home(request):
+    """Upload yesterday's Shift4 file; see which days have one and which are missing."""
+    location = _restaurant()
+    if location is None:
+        return render(request, "stock/no_locations.html", status=400)
+    yesterday = timezone.localdate() - timedelta(days=1)
+    context = {"days": daily.days(location), "default_date": yesterday}
+
+    if request.method == "POST":
+        upload = request.FILES.get("file")
+        try:
+            business_date = date.fromisoformat(request.POST.get("business_date", ""))
+        except ValueError:
+            business_date = None
+        context["chosen_date"] = business_date or yesterday
+        if upload is None:
+            context["error"] = "Choose the CSV file exported from Shift4."
+        elif business_date is None:
+            context["error"] = "Choose which day the file is for."
+        elif upload.size > 2 * 1024 * 1024:
+            context["error"] = "That file is too big to be a day's sales summary."
+        else:
+            try:
+                sales_import = daily.import_day(
+                    upload.read(),
+                    filename=upload.name,
+                    business_date=business_date,
+                    location=location,
+                    user=request.user,
+                    replace=request.POST.get("replace") == "1",
+                )
+            except daily.DayAlreadyImported as e:
+                context |= {"error": str(e), "existing": e.existing}
+            except daily.SalesError as e:
+                context["error"] = str(e)
+            else:
+                return redirect("sales_day", pk=sales_import.pk)
+    return render(request, "sales/sales_home.html", context)
+
+
+# Implements: FR-602, FR-610.
+@owner_required
+def sales_day(request, pk):
+    sales_import = get_object_or_404(SalesImport.objects.select_related("location"), pk=pk)
+    if request.method == "POST":
+        try:
+            daily.post_day(sales_import, user=request.user)
+        except daily.SalesError as e:
+            messages.error(request, str(e))
+        else:
+            messages.success(request, f"Sales for {sales_import.business_date:%a %-d %b} recorded.")
+        return redirect("sales_day", pk=sales_import.pk)
+    if sales_import.status == SalesImportStatus.IMPORTED:
+        daily.refresh_matching(sales_import)
+    return render(
+        request,
+        "sales/sales_day.html",
+        {
+            "day": sales_import,
+            "preview": daily.preview(sales_import),
+            "posted": sales_import.status == SalesImportStatus.POSTED,
+        },
+    )
+
+
+@owner_required
+@require_POST
+def sales_portion(request, pk, pos_pk):
+    """One sale of a button, in ounces -- asked on the day it is first needed."""
+    pos = get_object_or_404(PosItem.objects.select_related("item"), pk=pos_pk)
+    try:
+        ounces = Decimal((request.POST.get("ounces") or "").strip())
+        services.set_portion(pos, ounces=ounces, user=request.user)
+    except (InvalidOperation, services.MappingError) as e:
+        messages.error(
+            request, str(e) if isinstance(e, services.MappingError) else "Enter a number of ounces."
+        )
+    else:
+        messages.success(request, f"One sale of {pos.pos_name} is now {ounces.normalize():f} oz.")
+    return redirect("sales_day", pk=pk)
