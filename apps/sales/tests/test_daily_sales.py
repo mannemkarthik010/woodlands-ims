@@ -230,6 +230,12 @@ class ScreenTests(SalesTestCase):
         self.upload(report(("Masala Dosa", "Dosa", 1, 11)), replace="1")
         self.assertEqual(SalesImport.objects.exclude(status=SalesImportStatus.SUPERSEDED).get().rows_read, 1)
 
+    def test_a_monday_with_no_file_is_closed_not_missing(self):
+        page = self.client.get(reverse("sales_home")).content.decode()
+        # Three weeks always hold three Mondays and some open days.
+        self.assertEqual(page.count("Closed"), 3)
+        self.assertIn("no sales file", page)
+
     def test_a_bad_file_is_explained(self):
         response = self.upload(b"Department,Item Name\n")
         self.assertContains(response, "Sales Summary by Item")

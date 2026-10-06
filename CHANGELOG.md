@@ -5,6 +5,8 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- The restaurant's week, as the owners gave it: closed Mondays, Tuesday–Thursday dinner, Friday–
+  Sunday lunch and dinner. The sales page shows a Monday as Closed rather than a missing file
 - What the kitchen told us on the 2 October visit, loaded: `manage.py import_visit` reads the
   typed-up visit form (every figure tagged with its box, C1, K03, O22.1) and sets one plate of
   each dosa, rava dosa, idly and vada dish (batter, filling, sambar and chutneys, in ounces as the

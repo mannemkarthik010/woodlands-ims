@@ -462,12 +462,16 @@ is wiped on every deploy.
 Nobody types a password for anybody else, and none is ever sent in Slack or
 email.
 
+The owners asked for three logins (6 October 2026), with the links sent by Slack:
+
 ```bash
-python manage.py invite_owner pj --name "PJ"
+python manage.py invite_owner jaspinder --name "Jaspinder"
+python manage.py invite_owner pawan --name "Pawan"
+python manage.py invite_owner harash --name "Harash"
 ```
 
-This makes the owner's account and prints a one-time link. Send it to that owner
-**privately** (a direct message): whoever opens it chooses the password. It works
+Each makes the owner's account and prints a one-time link. Send it to that owner
+**privately** — a Slack direct message to them, never the channel: whoever opens it chooses the password. It works
 once, for three days, and signs them in. Run it again for the same owner to get a
 fresh link — for a lost password too. Owners get the *Owners* group: in the admin
 they can manage staff and PINs, jobs and shift times, items, measures and

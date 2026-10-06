@@ -43,6 +43,7 @@ from apps.catalog import services as catalog
 from apps.catalog.models import Item, ItemKind, Unit
 from apps.core.models import Location
 from apps.core.permissions import owner_required
+from apps.core.week import is_open
 from apps.sales import daily, services
 from apps.sales.models import PosItem, SalesImport, SalesImportStatus
 
@@ -272,7 +273,9 @@ def sales_home(request):
     if location is None:
         return render(request, "stock/no_locations.html", status=400)
     yesterday = timezone.localdate() - timedelta(days=1)
-    context = {"days": daily.days(location), "default_date": yesterday}
+    # A Monday with no file is a closed day, not a missing one.
+    days = [(day, s, not is_open(day)) for day, s in daily.days(location)]
+    context = {"days": days, "default_date": yesterday}
 
     if request.method == "POST":
         upload = request.FILES.get("file")

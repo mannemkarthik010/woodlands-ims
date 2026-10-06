@@ -18,14 +18,14 @@
 
 <h2 class="h2">The last three weeks</h2>
 <ul class="lines">
-  {% for day, s in days %}
+  {% for day, s, closed in days %}
     <li class="lines__row">
       <span class="lines__qty">{{ day|date:"D j M" }}</span>
       <span class="lines__name">
         {% if s %}<a href="{% url 'sales_day' s.pk %}">{{ s.items_sold|floatformat:"-2" }} items sold</a> <small class="muted">{{ s.rows_read }} menu lines</small>
           {% if s.status == "POSTED" %}<span class="flag flag--paid">recorded</span>{% else %}<span class="flag">read, not recorded</span>{% endif %}
           {% if s.rows_unmapped %}<span class="flag flag--bad">{{ s.rows_unmapped }} unmatched</span>{% endif %}
-        {% else %}<span class="muted">no sales file</span>{% endif %}
+        {% elif closed %}<span class="muted">Closed</span>{% else %}<span class="muted">no sales file</span>{% endif %}
       </span>
     </li>
   {% endfor %}
