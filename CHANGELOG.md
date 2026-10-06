@@ -5,6 +5,10 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- The AI runs on the restaurant's own Google Cloud (Vertex AI), the owners' choice: every AI
+  step goes through `apps/core/ai.py`, where `AI_PROVIDER=vertex` reaches Claude in their
+  project, billed there, and `anthropic` reaches it directly. Same model, same consent gate;
+  without either, every screen still works without AI
 - Today's thali: the curries change every day, so an owner types what is in it the way they
   would say it ("dal fry, aloo gobi, veg kurma"); each phrase is matched to the kitchen's own
   list — by Claude when the owners have agreed (it may only choose from the list), by name

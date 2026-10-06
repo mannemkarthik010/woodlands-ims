@@ -463,9 +463,40 @@ ever stops suiting.
 
 Set in the Vercel project's Environment Variables: `DJANGO_SECRET_KEY`,
 `DATABASE_URL`, `DJANGO_HTTPS=1`, `DJANGO_ALLOWED_HOSTS`,
-`DJANGO_CSRF_TRUSTED_ORIGINS`, `SITE_URL`, and for the recipe assistant
+`DJANGO_CSRF_TRUSTED_ORIGINS`, `SITE_URL`, and for the AI (next section)
 `KNOWLEDGE_ENGINE=claude`, `KNOWLEDGE_CONSENT=1` (the owners agreed on
-6 October 2026) and `KNOWLEDGE_API_KEY` — the restaurant's own Anthropic key.
+6 October 2026), `AI_PROVIDER=vertex`, `GCP_PROJECT_ID`, `GCP_REGION=global`
+and `GCP_SERVICE_ACCOUNT_JSON`.
+
+### The AI, on the restaurant's Google Cloud (the owners' choice)
+
+Every AI step in the project — the recipe assistant's wording, matching the
+thali — goes through `apps/core/ai.py`, which reaches Claude on **Vertex AI**
+in the restaurant's own Google Cloud project, billed to its Google Cloud
+account (credits included). `AI_PROVIDER=anthropic` with `KNOWLEDGE_API_KEY`
+reaches the same model directly instead; nothing else changes. Without either,
+or without consent, every screen still works without AI.
+
+Once, in the Google Cloud console, signed in as the restaurant:
+
+1. Create (or choose) a project, e.g. `woodlands-ims`, with billing on.
+2. Enable the **Vertex AI API** (APIs & Services → Library).
+3. In **Vertex AI → Model Garden**, open **Claude Opus 5.5** and enable it
+   (accept Anthropic's terms there). Until this is done every call is refused.
+4. **IAM → Service accounts → Create**: `woodlands-ims-ai`, role
+   **Vertex AI User** — that role only.
+5. On that account, **Keys → Add key → JSON**. Paste the whole file into
+   Vercel as `GCP_SERVICE_ACCOUNT_JSON`, then delete the downloaded file.
+   Never put it in git, Slack or email.
+6. In Vercel set `AI_PROVIDER=vertex`, `GCP_PROJECT_ID=<the project id>`,
+   `GCP_REGION=global`.
+7. Optional, recommended: **Billing → Budgets & alerts**, a monthly budget
+   (e.g. $20) with an email alert.
+
+Later, the key file can be replaced by Workload Identity Federation (Vercel's
+OIDC token trusted by Google Cloud), which needs no stored key at all.
+
+On a laptop: `gcloud auth application-default login` instead of the key.
 
 ### Yesterday's sales, by email (no upload needed)
 

@@ -8,7 +8,7 @@ phrase to something it knows, the owner confirms, and that day's thali sales
 take those things out of stock.
 
 Matching uses Claude when the owners have agreed to an outside service
-(the same KNOWLEDGE_CONSENT and key as the recipe assistant), because the
+(apps.core.ai: the same consent and provider as the recipe assistant), because the
 kitchen's words for a dish rarely match the menu's spelling: "dal" for Dhal
 Fry, "veg kurma" for Vegetable Kurma. Claude may only choose from the
 system's own list, never invent an item. Without consent or a key, or if the
@@ -26,10 +26,10 @@ from datetime import date
 from decimal import Decimal
 from difflib import SequenceMatcher
 
-from django.conf import settings
 from django.db import transaction
 
 from apps.catalog.models import Item, ItemKind
+from apps.core import ai
 from apps.sales.models import ThaliDay, ThaliLine
 from apps.sales.services import quantity_for
 
@@ -103,13 +103,7 @@ def match_by_name(said: list[str], items) -> list[Suggestion]:
     return out
 
 
-def _can_ask_claude() -> bool:
-    return bool(settings.KNOWLEDGE_CONSENT and settings.KNOWLEDGE_API_KEY)
-
-
 def match_with_claude(said: list[str], items) -> list[Suggestion]:
-    import anthropic
-
     names = [i.name for i in items]
     by_name = {i.name: i for i in items}
     schema = {
@@ -132,13 +126,9 @@ def match_with_claude(said: list[str], items) -> list[Suggestion]:
         "required": ["matches"],
         "additionalProperties": False,
     }
-    client = anthropic.Anthropic(api_key=settings.KNOWLEDGE_API_KEY, timeout=30.0)
-    response = client.beta.messages.create(
-        model=settings.KNOWLEDGE_MODEL,
+    response = ai.create(
         max_tokens=4000,
         output_config={"effort": "low", "format": {"type": "json_schema", "schema": schema}},
-        betas=["server-side-fallback-2026-07-01"],
-        fallbacks="default",
         system=(
             "You match what a South Indian restaurant's owner says was in today's thali to the "
             "restaurant's own list of dishes. Choose only from the list. Kitchen shorthand is "
@@ -156,10 +146,7 @@ def match_with_claude(said: list[str], items) -> list[Suggestion]:
             }
         ],
     )
-    if response.stop_reason == "refusal":
-        raise RuntimeError("The model declined.")
-    text = next(b.text for b in response.content if b.type == "text")
-    found = {m["said"].casefold(): m["item"] for m in json.loads(text)["matches"]}
+    found = {m["said"].casefold(): m["item"] for m in json.loads(ai.text_of(response))["matches"]}
     return [Suggestion(phrase, by_name.get(found.get(phrase.casefold(), ""))) for phrase in said]
 
 
@@ -169,7 +156,7 @@ def suggest(text: str) -> tuple[list[Suggestion], str]:
     if not said:
         raise ThaliError("Type what is in today's thali, separated by commas.")
     items = candidates()
-    if _can_ask_claude():
+    if ai.available():
         try:
             return match_with_claude(said, items), "claude"
         except Exception:  # network, key, refusal: the owner still gets suggestions

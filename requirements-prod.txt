@@ -3,4 +3,4 @@
 psycopg[binary]>=3.3.5   # PostgreSQL driver; SQLite is used locally
 dj-database-url>=3.1.2
 gunicorn>=21.2
-anthropic>=1.11,<2        # recipe assistant wording; only used with KNOWLEDGE_CONSENT=1
+anthropic[vertex]>=1.11,<2        # recipe assistant wording; only used with KNOWLEDGE_CONSENT=1

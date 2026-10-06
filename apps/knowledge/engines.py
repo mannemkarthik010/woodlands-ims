@@ -116,18 +116,13 @@ class Claude:
     sends_externally = True
 
     def answer(self, question: str, hits, servings: int | None = None) -> str:
-        try:
-            import anthropic
-        except ImportError:  # pragma: no cover - depends on deployment
-            raise RuntimeError("The anthropic package is not installed on this server.") from None
+        from apps.core import ai
 
         context = "\n\n".join(
             f"--- {hit.record.title} · {hit.passage.heading or 'record'} ---\n{hit.passage.text}"
             for hit in hits
         )
-        client = anthropic.Anthropic(api_key=settings.KNOWLEDGE_API_KEY, timeout=30.0)
-        response = client.beta.messages.create(
-            model=settings.KNOWLEDGE_MODEL,
+        response = ai.create(
             # Room for the model's own thinking as well as the short answer;
             # thinking counts against this, and a cut-off answer is worse
             # than none.
@@ -135,10 +130,6 @@ class Claude:
             # A cook mid-service needs a quick, short answer from passages
             # already found, not deep reasoning.
             output_config={"effort": "low"},
-            # If the model declines a question, the API retries it on a
-            # suitable model inside the same call.
-            betas=["server-side-fallback-2026-07-01"],
-            fallbacks="default",
             system=SYSTEM_PROMPT,
             messages=[
                 {
@@ -156,16 +147,18 @@ class Claude:
                 }
             ],
         )
-        if response.stop_reason == "refusal":
-            # Raised so ask() answers from the chef's own words instead.
-            raise RuntimeError("The model declined to answer.")
-        text = "".join(block.text for block in response.content if block.type == "text").strip()
-        if not text:
-            raise RuntimeError("The model returned no answer.")
-        return text
+        # A refusal or an empty answer raises, and ask() answers from the
+        # chef's own words instead.
+        return ai.text_of(response)
 
 
 ENGINES = {"records": Passages(), "claude": Claude()}
+
+
+def _ai_configured() -> bool:
+    from apps.core import ai
+
+    return ai.available()
 
 
 def current():
@@ -184,7 +177,7 @@ def current():
             engine.name,
         )
         return ENGINES["records"]
-    if engine.sends_externally and not settings.KNOWLEDGE_API_KEY:
-        log.warning("Engine %r has no API key configured. Falling back.", engine.name)
+    if engine.sends_externally and not _ai_configured():
+        log.warning("Engine %r has no API key or Google Cloud project configured. Falling back.", engine.name)
         return ENGINES["records"]
     return engine

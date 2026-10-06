@@ -229,6 +229,16 @@ TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
 KNOWLEDGE_ENGINE = os.environ.get("KNOWLEDGE_ENGINE", "records")
 KNOWLEDGE_CONSENT = env_bool("KNOWLEDGE_CONSENT", default=False)
 KNOWLEDGE_API_KEY = os.environ.get("KNOWLEDGE_API_KEY", "")
+
+# Where Claude is reached (apps.core.ai). "vertex": the restaurant's own Google
+# Cloud project, billed there -- the owners' choice. "anthropic": an Anthropic
+# API key (KNOWLEDGE_API_KEY). Same model either way.
+AI_PROVIDER = os.environ.get("AI_PROVIDER", "anthropic").strip().lower()
+GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "")
+GCP_REGION = os.environ.get("GCP_REGION", "global")
+# A service account's JSON key, pasted whole into the host's settings. Not
+# needed on a laptop signed in with `gcloud auth application-default login`.
+GCP_SERVICE_ACCOUNT_JSON = os.environ.get("GCP_SERVICE_ACCOUNT_JSON", "")
 KNOWLEDGE_MODEL = os.environ.get("KNOWLEDGE_MODEL", "claude-opus-5-5")
 
 
