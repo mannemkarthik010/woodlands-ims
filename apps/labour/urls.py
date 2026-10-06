@@ -26,6 +26,8 @@ _pages = [
     ("hours/people/<int:pk>/add-shift/", views.shift_add, "hours_shift_add"),
     ("hours/people/<int:pk>/confirm/", views.confirm, "hours_confirm"),
     ("hours/people/<int:pk>/merge/", views.merge, "hours_merge"),
+    ("team/", views.team_today, "team_today"),
+    ("team/plan/", views.team_plan, "team_plan"),
 ]
 
 urlpatterns = [path(route, never_cache(view), name=name) for route, view, name in _pages]

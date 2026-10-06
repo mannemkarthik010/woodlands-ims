@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load hours %}
+{% block title %}Team · {{ board.day|date:"D j M" }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<div class="teamhead">
+  <div>
+    <p class="teamhead__eyebrow">{% if board.day == today %}Today{% else %}Team{% endif %}</p>
+    <h1 class="teamhead__title">{{ board.day|date:"l j F" }}</h1>
+    <p class="teamhead__hours">
+      {% if board.is_open %}Open {% for start, end in board.hours %}{{ start|time:"g:i" }}–{{ end|time:"g:i A" }}{% if not forloop.last %} · {% endif %}{% endfor %}
+      {% else %}Closed{% endif %}
+    </p>
+  </div>
+  <nav class="teamhead__nav no-print">
+    <a class="btn btn--ghost btn--small" href="?date={{ prev|date:'Y-m-d' }}" aria-label="Previous day">‹</a>
+    {% if board.day != today %}<a class="btn btn--ghost btn--small" href="?">Today</a>{% endif %}
+    <a class="btn btn--ghost btn--small" href="?date={{ next|date:'Y-m-d' }}" aria-label="Next day">›</a>
+    {% if can_plan %}<a class="btn btn--primary btn--small" href="{% url 'team_plan' %}?date={{ board.day|date:'Y-m-d' }}">Plan this day</a>{% endif %}
+  </nav>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="stat__n">{{ board.planned|length }}</span><span class="stat__l">on the team</span></div>
+  <div class="stat stat--green"><span class="stat__n">{{ board.working }}</span><span class="stat__l">working now</span></div>
+  <div class="stat"><span class="stat__n">{{ board.recorded }}</span><span class="stat__l">hours recorded</span></div>
+  <div class="stat{% if board.unplanned %} stat--amber{% endif %}"><span class="stat__n">{{ board.unplanned|length }}</span><span class="stat__l">not on the plan</span></div>
+</div>
+
+{% if not board.planned and not board.unplanned %}
+  <div class="empty">
+    <p><strong>No team planned for this day yet.</strong></p>
+    {% if can_plan %}<p><a class="btn btn--primary" href="{% url 'team_plan' %}?date={{ board.day|date:'Y-m-d' }}">Plan the team</a></p>
+    {% else %}<p class="muted">The owner sets who is working and in which job.</p>{% endif %}
+  </div>
+{% else %}
+  <div class="team">
+    <section class="team__col">
+      <h2 class="team__h">Morning <span class="team__count">{{ board.morning|length }}</span></h2>
+      {% for row in board.morning %}{% include "labour/_team_person.html" %}{% empty %}<p class="muted team__none">Nobody planned.</p>{% endfor %}
+    </section>
+    <section class="team__col">
+      <h2 class="team__h">Evening <span class="team__count">{{ board.evening|length }}</span></h2>
+      {% for row in board.evening %}{% include "labour/_team_person.html" %}{% empty %}<p class="muted team__none">Nobody planned.</p>{% endfor %}
+    </section>
+  </div>
+
+  {% if board.unplanned %}
+    <h2 class="h2">Recorded hours, but not on the plan</h2>
+    <div class="team team--one">
+      {% for row in board.unplanned %}{% include "labour/_team_person.html" %}{% endfor %}
+    </div>
+  {% endif %}
+{% endif %}
+{% endblock %}

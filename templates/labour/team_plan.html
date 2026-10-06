@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Plan the team · {{ day|date:"D j M" }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<div class="teamhead">
+  <div>
+    <p class="teamhead__eyebrow">Plan the team</p>
+    <h1 class="teamhead__title">{{ day|date:"l j F" }}</h1>
+    <p class="teamhead__hours muted">Choose who works, in which job, morning or evening. No times — people still write in their own hours.</p>
+  </div>
+  <nav class="teamhead__nav no-print">
+    <a class="btn btn--ghost btn--small" href="?date={{ prev|date:'Y-m-d' }}" aria-label="Previous day">‹</a>
+    <a class="btn btn--ghost btn--small" href="?date={{ next|date:'Y-m-d' }}" aria-label="Next day">›</a>
+    <form method="post" class="inline">{% csrf_token %}
+      <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
+      <button class="btn btn--ghost btn--small" name="action" value="copy" type="submit">Copy last {{ copy_from|date:"l" }} ({{ copy_from|date:"j M" }})</button>
+    </form>
+  </nav>
+</div>
+
+{% if not rows %}
+  <p class="empty">Nobody is on the staff list yet. People appear here once they are added in My hours or the admin.</p>
+{% else %}
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
+  <div class="table-wrap">
+    <table class="plan">
+      <thead><tr><th>Name</th><th>Working</th><th>Job</th><th>Note</th></tr></thead>
+      <tbody>
+        {% for person, a in rows %}
+          <tr>
+            <td class="plan__name">{{ person.display_name|default:person.username }}</td>
+            <td>
+              <div class="seg" role="radiogroup" aria-label="Working on {{ day|date:'D j M' }}">
+                {% for value, label in covers %}
+                  <label class="seg__opt"><input type="radio" name="cover_{{ person.pk }}" value="{{ value }}"
+                    {% if a and a.cover == value %}checked{% elif not a and not value %}checked{% endif %}><span>{% if value == "BOTH" %}Both{% else %}{{ label }}{% endif %}</span></label>
+                {% endfor %}
+              </div>
+            </td>
+            <td>
+              <select name="position_{{ person.pk }}" aria-label="Job for {{ person }}">
+                {% for p in positions %}
+                  <option value="{{ p.pk }}" {% if a and a.position_id == p.pk %}selected{% elif not a and person.position_id == p.pk %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td><input type="text" name="note_{{ person.pk }}" value="{{ a.note|default:'' }}" maxlength="120" placeholder="e.g. catering prep" aria-label="Note for {{ person }}"></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="actions">
+    <button class="btn btn--primary btn--big" type="submit">Save the team</button>
+    <a class="btn btn--ghost" href="{% url 'team_today' %}?date={{ day|date:'Y-m-d' }}">Back to the board</a>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

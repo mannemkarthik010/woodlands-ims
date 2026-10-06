@@ -66,6 +66,7 @@ A job in the kitchen or on the floor -- dosa station, prep, server, dishwasher. 
 |---|---|---|---|
 | `staff` | ForeignKey → User | yes |  |
 | `shift_templates` | ForeignKey → ShiftTemplate | yes |  |
+| `assignments` | ForeignKey → Assignment | yes |  |
 | `id` | BigAuto |  |  |
 | `created_at` | DateTime |  |  |
 | `updated_at` | DateTime |  |  |
@@ -100,6 +101,7 @@ A job in the kitchen or on the floor -- dosa station, prep, server, dishwasher. 
 | `notifications` | ForeignKey → Notification | yes |  |
 | `shifts` | ForeignKey → Shift | yes |  |
 | `pay_lines` | ForeignKey → PayRunLine | yes |  |
+| `assignments` | ForeignKey → Assignment | yes |  |
 | `logentry` | ForeignKey → LogEntry | yes |  |
 | `id` | BigAuto |  |  |
 | `password` | Char(128) |  |  |
@@ -585,6 +587,22 @@ One CSV, one business date.
 | `raw_row` | JSON |  | The original CSV row, kept so an import can always be explained. |
 
 ## `labour`
+
+### Assignment
+
+One person planned for one day, in one job. A plan, not a record of hours: it says who the owner expects and what they will do, and nothing about when they start -- the times change all the time, so the hours stay whatever the worker writes in (`Shift`). The job is chosen for the day, because the p…
+
+| Field | Type | Null | Notes |
+|---|---|---|---|
+| `id` | BigAuto |  |  |
+| `created_at` | DateTime |  |  |
+| `updated_at` | DateTime |  |  |
+| `created_by` | ForeignKey → User | yes |  |
+| `business_date` | Date |  |  |
+| `employee` | ForeignKey → User |  |  |
+| `position` | ForeignKey → Position |  |  |
+| `cover` | Char(8) |  | _MORNING, EVENING, BOTH_ |
+| `note` | Char(120) |  |  |
 
 ### PayRun
 

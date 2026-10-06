@@ -748,3 +748,85 @@ def shift_add(request, pk):
             messages.success(request, f"Shift added for {person} on {data['day']:%a %-d %b}.")
             return redirect(_next_or(request, _person_page(person, shift.business_date)))
     return render(request, "labour/shift_add.html", context)
+
+
+# --- Today's team: who is working, in what job (planned by the owner) ------
+
+
+def _day_from(request, default: date) -> date:
+    with suppress(ValueError, TypeError):
+        return date.fromisoformat(request.GET.get("date") or request.POST.get("date") or "")
+    return default
+
+
+@login_required
+def team_today(request):
+    """The board: the day's plan next to the hours people have recorded. Anyone signed in may look."""
+    from apps.core.permissions import is_owner
+    from apps.labour import team
+
+    today = timezone.localdate()
+    day = _day_from(request, today)
+    return render(
+        request,
+        "labour/team.html",
+        {
+            "board": team.board(day),
+            "today": today,
+            "prev": day - timedelta(days=1),
+            "next": day + timedelta(days=1),
+            "can_plan": is_owner(request.user),
+        },
+    )
+
+
+@owner_required
+def team_plan(request):
+    """The owner sets the day's team: job and morning/evening for each person, or not working."""
+    from apps.labour import team
+    from apps.labour.models import Assignment, Cover
+
+    day = _day_from(request, team.default_plan_day())
+    people = list(_people().select_related("position"))
+    positions = list(Position.objects.filter(is_active=True))
+    by_pk = {p.pk: p for p in positions}
+
+    if request.method == "POST":
+        try:
+            if request.POST.get("action") == "copy":
+                source = team.same_day_last_week(day)
+                n = team.copy_plan(source, day, user=request.user)
+                messages.success(request, f"Copied {n} from {source:%a %-d %b}. Check and save.")
+                return redirect(f"{reverse('team_plan')}?date={day:%Y-%m-%d}")
+            rows = []
+            for person in people:
+                position_pk = request.POST.get(f"position_{person.pk}", "")
+                rows.append(
+                    {
+                        "person": person,
+                        "cover": request.POST.get(f"cover_{person.pk}", ""),
+                        "position": by_pk.get(int(position_pk)) if position_pk.isdigit() else None,
+                        "note": request.POST.get(f"note_{person.pk}", ""),
+                    }
+                )
+            n = team.save_plan(day, rows, user=request.user)
+        except team.PlanError as e:
+            messages.error(request, str(e))
+        else:
+            messages.success(request, f"{n} on the team for {day:%a %-d %b}.")
+            return redirect(f"{reverse('team_today')}?date={day:%Y-%m-%d}")
+
+    plan = {a.employee_id: a for a in Assignment.objects.filter(business_date=day)}
+    return render(
+        request,
+        "labour/team_plan.html",
+        {
+            "day": day,
+            "rows": [(p, plan.get(p.pk)) for p in people],
+            "positions": positions,
+            "covers": [("", "Off"), *Cover.choices],
+            "copy_from": team.same_day_last_week(day),
+            "prev": day - timedelta(days=1),
+            "next": day + timedelta(days=1),
+        },
+    )

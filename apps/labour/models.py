@@ -296,3 +296,45 @@ class PayRunLine(TimeStamped):
 
     def __str__(self) -> str:
         return f"{self.employee} · {self.pay_run}"
+
+
+class Cover(models.TextChoices):
+    """Which part of the day somebody is planned for. A few people do both."""
+
+    MORNING = "MORNING", "Morning"
+    EVENING = "EVENING", "Evening"
+    BOTH = "BOTH", "Morning and evening"
+
+    def includes(self, period: str) -> bool:
+        return self == Cover.BOTH or self == period
+
+
+# Implements: the owners' request of 6 October 2026 -- who is working today,
+# and in what job, decided by the owner before the day.
+class Assignment(TimeStamped):
+    """
+    One person planned for one day, in one job.
+
+    A plan, not a record of hours: it says who the owner expects and what
+    they will do, and nothing about when they start -- the times change all
+    the time, so the hours stay whatever the worker writes in (`Shift`). The
+    job is chosen for the day, because the person who usually runs the dosa
+    station may be on prep for a catering order.
+    """
+
+    business_date = models.DateField(db_index=True)
+    employee = models.ForeignKey("core.User", on_delete=models.PROTECT, related_name="assignments")
+    position = models.ForeignKey(Position, on_delete=models.PROTECT, related_name="assignments")
+    cover = models.CharField(max_length=8, choices=Cover.choices)
+    note = models.CharField(max_length=120, blank=True)
+
+    class Meta:
+        ordering = ["business_date", "position__sort_order", "position__name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["business_date", "employee"], name="one_assignment_per_person_per_day"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.business_date} {self.employee} — {self.position} ({self.get_cover_display()})"

@@ -535,3 +535,53 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 .payto__quick { margin: 10px 0 4px; }
 .portion { display: inline-flex; align-items: center; gap: 6px; }
 .portion input { width: 80px; min-height: 40px; font: inherit; padding: 0 8px; border: 2px solid var(--rule); border-radius: 8px; }
+
+/* --- Today's team ------------------------------------------------------- */
+.teamhead { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: flex-end; margin: 4px 0 18px; }
+.teamhead__eyebrow { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); }
+.teamhead__title { margin: 2px 0 2px; font-size: 28px; line-height: 1.15; }
+.teamhead__hours { margin: 0; color: var(--grey); }
+.teamhead__nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.teamhead__nav form.inline { display: inline; margin: 0; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+.stat { border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px 16px; background: #fff; }
+.stat__n { display: block; font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat__l { display: block; margin-top: 6px; font-size: 14px; color: var(--grey); }
+.stat--green .stat__n { color: var(--green); }
+.stat--amber { border-color: #E9C46A; background: #FFF8E6; }
+.stat--amber .stat__n { color: var(--amber); }
+.team { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.team--one { grid-template-columns: 1fr; }
+.team__col { background: var(--tint); border-radius: var(--radius); padding: 14px; }
+.team__h { margin: 0 0 10px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.team__count { font-size: 13px; font-weight: 600; color: #fff; background: var(--brand); border-radius: 999px; padding: 1px 9px; }
+.team__none { margin: 6px 2px; }
+.person { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--rule); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+.person--working { border-left-color: var(--green); }
+.person--recorded { border-left-color: var(--brand); }
+.person__avatar { flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: #fff; font-weight: 700; }
+.person__main { flex: 1; min-width: 0; }
+.person__name { margin: 0; font-weight: 600; }
+.person__job { margin: 0; font-size: 14px; color: var(--grey); }
+.person__status { margin: 0; text-align: right; }
+.pill { display: inline-block; font-size: 13px; padding: 3px 10px; border-radius: 999px; background: #EEF1F4; color: var(--ink); white-space: nowrap; }
+.pill--green { background: #E3F1EA; color: var(--green); font-weight: 600; }
+.pill--quiet { background: transparent; border: 1px dashed var(--rule); color: var(--grey); }
+.empty { border: 1px dashed var(--rule); border-radius: var(--radius); padding: 22px; text-align: center; }
+.plan { width: 100%; border-collapse: collapse; }
+.plan th, .plan td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+.plan__name { font-weight: 600; }
+.plan select, .plan input[type=text] { width: 100%; font: inherit; padding: 8px; border: 1px solid var(--rule); border-radius: 8px; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.seg__opt { margin: 0; }
+.seg__opt input { position: absolute; opacity: 0; pointer-events: none; }
+.seg__opt span { display: block; padding: 8px 12px; cursor: pointer; border-right: 1px solid var(--rule); white-space: nowrap; }
+.seg__opt:last-child span { border-right: 0; }
+.seg__opt input:checked + span { background: var(--brand); color: #fff; }
+.seg__opt input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: -2px; }
+@media (max-width: 720px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .team { grid-template-columns: 1fr; }
+  .person { flex-wrap: wrap; }
+  .person__status { width: 100%; text-align: left; padding-left: 50px; }
+}

@@ -1,0 +1,13 @@
+{% load hours %}
+<article class="person person--{{ row.status }}">
+  <span class="person__avatar" aria-hidden="true">{{ row.person.display_name|default:row.person.username|make_list|first|upper }}</span>
+  <div class="person__main">
+    <p class="person__name">{{ row.person.display_name|default:row.person.username }}</p>
+    <p class="person__job">{{ row.position|default:"No job set" }}{% if row.cover == "BOTH" %} · both shifts{% endif %}{% if row.note %} · {{ row.note }}{% endif %}</p>
+  </div>
+  <p class="person__status">
+    {% if row.status == "working" %}<span class="pill pill--green">Working since {{ row.working_now.clocked_in_at|time:"g:i A" }}</span>
+    {% elif row.status == "recorded" %}<span class="pill">{% for s in row.shifts %}{{ s.clocked_in_at|time:"g:i" }}–{{ s.clocked_out_at|time:"g:i A" }}{% if not forloop.last %}, {% endif %}{% endfor %} · {{ row.minutes|hm }}</span>
+    {% else %}<span class="pill pill--quiet">No hours yet</span>{% endif %}
+  </p>
+</article>

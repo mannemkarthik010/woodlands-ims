@@ -3,6 +3,11 @@
 {% block content %}
 <h1>What are you doing?</h1>
 
+<a class="tile" href="{% url 'team_today' %}">
+  <span class="tile__title">Today's team</span>
+  <span class="tile__sub">Who is working today, in which job, and whose hours are in</span>
+</a>
+
 <a class="tile" href="{% url 'hours_start' %}">
   <span class="tile__title">My hours</span>
   <span class="tile__sub">Record when you started and when you left</span>

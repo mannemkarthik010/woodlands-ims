@@ -5,6 +5,11 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Today's team: a board of who is working each day, in which job, morning or evening, next to
+  the hours they have recorded — working now, hours in, none yet, and anyone with hours who was
+  not on the plan. Owners plan any day on one screen (job, morning/evening/both, a note), with
+  one tap to copy the same day last week. No times: they change, and the hours stay what the
+  worker writes in. Anyone signed in sees the board; only owners plan
 - The chefs' approval of the recipes, recorded in their names ("Edwin and Anderson, passed on by
   Karthik") on each record; `ingest_recipes --leave-out` imports a replaced sheet without
   publishing it, so an old tomato chutney with garlic never answers a cook
