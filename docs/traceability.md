@@ -10,7 +10,7 @@ Write `FR-403` in a docstring, a comment or a test name and it appears here.
 Nothing is inferred from a function looking roughly relevant — that would
 make this table reassuring and wrong, which is worse than an empty one.
 
-**86 of 158** requirements referenced in code · **56** covered by a test.
+**86 of 158** requirements referenced in code · **57** covered by a test.
 
 ## M1 — Time and attendance
 
@@ -46,7 +46,7 @@ make this table reassuring and wrong, which is worse than an empty one.
 | **FR-209** | Items can be marked as raw material, prepared component, packaging, consumable or non-stock. | Must | `apps/catalog/models.py`<br>`apps/sales/views.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_mapping.py` |
 | **FR-210** | Items can be marked as allergen-relevant, and dishes inherit that flag through their recipe. | Should | — | — |
 | **FR-211** | An item can be deactivated without deleting its history. | Must | `apps/catalog/models.py`<br>`apps/sales/views.py` | `apps/catalog/tests/test_merge_and_convert.py`<br>`apps/sales/tests/test_import_menu.py`<br>`apps/sales/tests/test_mapping.py` |
-| **FR-212** | Each item has a par level per location — the quantity that should be on hand. | Should | `apps/catalog/models.py`<br>`apps/stock/alerts.py` | — |
+| **FR-212** | Each item has a par level per location — the quantity that should be on hand. | Should | `apps/catalog/models.py`<br>`apps/stock/alerts.py` | `apps/core/tests/test_import_visit.py` |
 
 ## M3 — Purchasing and goods receipt
 
@@ -105,8 +105,8 @@ make this table reassuring and wrong, which is worse than an empty one.
 
 | Ref | Requirement | Priority | Code | Tests |
 |---|---|---|---|---|
-| **FR-601** | Every menu item can have a recipe listing its components and quantities. | Must | `apps/catalog/models.py` | `apps/sales/tests/test_mapping.py` |
-| **FR-602** | A recipe component may itself be a prepared component with its own recipe, to any sensible depth. | Must | `apps/catalog/models.py`<br>`apps/sales/daily.py`<br>`apps/sales/views.py`<br>`apps/stock/services.py` | `apps/sales/tests/test_daily_sales.py`<br>`apps/stock/tests/test_ledger.py` |
+| **FR-601** | Every menu item can have a recipe listing its components and quantities. | Must | `apps/catalog/models.py` | `apps/core/tests/test_import_visit.py`<br>`apps/sales/tests/test_mapping.py` |
+| **FR-602** | A recipe component may itself be a prepared component with its own recipe, to any sensible depth. | Must | `apps/catalog/models.py`<br>`apps/sales/daily.py`<br>`apps/sales/views.py`<br>`apps/stock/services.py` | `apps/core/tests/test_import_visit.py`<br>`apps/sales/tests/test_daily_sales.py`<br>`apps/stock/tests/test_ledger.py` |
 | **FR-603** | The system calculates the cost of a dish from current component costs, all the way down. | Must | `apps/stock/services.py` | `apps/stock/tests/test_ledger.py` |
 | **FR-604** | The system shows gross margin per dish against its menu price. | Should | `apps/sales/services.py` | — |
 | **FR-605** | The system alerts when a dish's cost rises past a threshold, so pricing can be reviewed. | Could | — | — |

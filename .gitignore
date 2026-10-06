@@ -19,3 +19,6 @@ db.sqlite3
 # restaurant's own, and they stay on the machine that needs them.
 data/**
 !data/.gitkeep
+
+# The scanned visit forms -- the restaurant's invoices, prices and recipes.
+/survey data/

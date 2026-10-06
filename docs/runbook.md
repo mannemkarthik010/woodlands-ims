@@ -444,6 +444,12 @@ docker build -t woodlands-ims .
    database once, to know it works.
 4. From the host's shell: `python manage.py seed`, then one owner link each —
    see below.
+4a. Load what the kitchen has told us, in this order (the files are in
+   `data/from-client/`, which is not in git — copy them up for this step only):
+   `import_ingredients`, `import_measures`, `import_menu`, then
+   `import_visit visit-2026-10-02.json --dry-run`, read it, and run it again
+   without `--dry-run`. Every line it prints carries the code of the box on the
+   visit form it came from, and it lists the questions still open at the end.
 5. Open the address on the kitchen tablet, sign in as the tablet account, leave
    it signed in.
 

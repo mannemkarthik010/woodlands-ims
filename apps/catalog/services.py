@@ -184,7 +184,9 @@ def find_by_name(name: str) -> Item | None:
     # "Toor  dal" and "toor-dal" that a database lookup would not.
     # Sample data (seed_demo, codes starting DEMO-) never counts: a demo
     # "Onions" must not stop the restaurant adding its real onions.
-    real = Item.objects.exclude(code__startswith="DEMO-")
+    # The one in use comes first: a merged-away "Chana Masala" must not hide
+    # the live one of the same name.
+    real = Item.objects.exclude(code__startswith="DEMO-").order_by("-is_active", "pk")
     return next((item for item in real if _same_name(item.name) == key), None)
 
 

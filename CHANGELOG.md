@@ -5,6 +5,17 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- What the kitchen told us on the 2 October visit, loaded: `manage.py import_visit` reads the
+  typed-up visit form (every figure tagged with its box, C1, K03, O22.1) and sets one plate of
+  each dosa, rava dosa, idly and vada dish (batter, filling, sambar and chutneys, in ounces as the
+  chefs said them), the six menu buttons sold with no size, what a bucket of batter weighs, the
+  scoop and ladle, which list each kitchen-made item is counted on, and make-more levels for the
+  batters and sambar. A day's sales now take batter, sambar and chutney out of stock. Dry run
+  first; running it again changes nothing; a changed plate is a new recipe version
+- The chefs' handwritten recipe corrections (tomato chutney without garlic, the one-third
+  Manchurian sauce, green and tamarind chutney amounts, Mysore and coconut chutney) are in the
+  recipe assistant, unapproved until the chefs read them
+
 - Daily sales from Shift4: upload the day's "Sales Summary by Item" CSV and say which day it
   is; the file's own total is checked, the same file is refused, a second file for a day asks
   before replacing and undoes the first. Every line is matched to its menu button; recording
@@ -150,6 +161,8 @@ Notable changes per release. Newest first.
   separate shifts and hours are the plain span of each (ADR 0008 supersedes FR-103/FR-104)
 
 ### Fixed
+- Looking an item up by name found a retired copy before the one in use ("Chana Masala",
+  "Masala Dosa"), so anything matched by name could land on the dead item
 - Choices inside a form (the count and item forms) were shown stacked and oversized because
   the general form style reached them; they sit side by side again
 - A person who added themselves on the tablet could seem missing from the name list: the
