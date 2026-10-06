@@ -5,6 +5,9 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- The chefs' approval of the recipes, recorded in their names ("Edwin and Anderson, passed on by
+  Karthik") on each record; `ingest_recipes --leave-out` imports a replaced sheet without
+  publishing it, so an old tomato chutney with garlic never answers a cook
 - Ready for Vercel, the owners' choice of host: a serverless entrypoint (`api/index.py`,
   `vercel.json`), CSS served without a build step, `.vercelignore` keeping client data off the
   host, and a refusal to start there without PostgreSQL. Verified locally the way Vercel runs it

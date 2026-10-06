@@ -79,6 +79,18 @@ class Command(BaseCommand):
             help="Publish immediately. Only with the head chef reading along.",
         )
         parser.add_argument("--approver", default="", help="Username of the person approving.")
+        parser.add_argument(
+            "--note",
+            default="",
+            help='Whose approval it is, e.g. "Edwin and Anderson, passed on by Karthik".',
+        )
+        parser.add_argument(
+            "--leave-out",
+            action="append",
+            default=[],
+            metavar="TITLE",
+            help="A record to import but not publish -- one replaced by a newer sheet. Repeatable.",
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -97,8 +109,13 @@ class Command(BaseCommand):
             if approver is None:
                 raise CommandError("Approving needs a person to attribute it to. Pass --approver <username>.")
 
+        records = split_records(path.read_text())
+        unknown = set(options["leave_out"]) - {title for title, _ in records}
+        if unknown:
+            raise CommandError(f"No record called {', '.join(sorted(unknown))} in {path.name}.")
+
         created = updated = passages = 0
-        for title, body in split_records(path.read_text()):
+        for title, body in records:
             record, made = Record.objects.update_or_create(
                 title=title,
                 origin=path.name,
@@ -111,10 +128,14 @@ class Command(BaseCommand):
             created += made
             updated += not made
 
-            if options["approve"]:
+            if options["approve"] and title in options["leave_out"]:
+                record.approved_by, record.approved_at, record.approved_note = None, None, ""
+                record.save(update_fields=["approved_by", "approved_at", "approved_note", "updated_at"])
+            elif options["approve"]:
                 record.approved_by = approver
                 record.approved_at = timezone.now()
-                record.save(update_fields=["approved_by", "approved_at", "updated_at"])
+                record.approved_note = options["note"][:200]
+                record.save(update_fields=["approved_by", "approved_at", "approved_note", "updated_at"])
 
             record.passages.all().delete()
             for ordinal, (heading, text) in enumerate(split_passages(body)):

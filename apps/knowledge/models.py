@@ -91,6 +91,10 @@ class Record(TimeStamped):
         "core.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
     )
     approved_at = models.DateTimeField(null=True, blank=True)
+    # Who said yes, in words, when it was not the person at the keyboard --
+    # "Edwin and Anderson, passed on by Karthik". `approved_by` is who
+    # recorded it; this is whose recipe it is.
+    approved_note = models.CharField(max_length=200, blank=True)
 
     class Meta:
         ordering = ["title"]

@@ -488,6 +488,16 @@ Set in the Vercel project's Environment Variables: `DJANGO_SECRET_KEY`,
    `import_visit visit-2026-10-02.json --dry-run`, read it, and run it again
    without `--dry-run`. Every line it prints carries the code of the box on the
    visit form it came from, and it lists the questions still open at the end.
+   Then the recipes, approved by the chefs (Edwin and Anderson, 6 October 2026);
+   the versions a newer sheet replaced are imported but left unpublished:
+
+   ```bash
+   N="Edwin and Anderson (chefs), passed on by Karthik, 6 Oct 2026"
+   python manage.py ingest_recipes data/from-client/recipes-ramesh.md --approve --approver karthik \
+       --note "$N" --leave-out "Tomato Chutney" --leave-out "Manchurian Sauce"
+   python manage.py ingest_recipes data/from-client/recipes-visit-2026-10-02.md --approve --approver karthik \
+       --note "$N" --leave-out "Tomato Chutney (older sheet)"
+   ```
 5. Open the address on the kitchen tablet, sign in as the tablet account, leave
    it signed in.
 
