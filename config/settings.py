@@ -258,6 +258,15 @@ if HTTPS:
     # Revisit only with the restaurant's own domain.
     SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
 
+# ---------------------------------------------------------------------------
+# Yesterday's sales, by email
+# ---------------------------------------------------------------------------
+#
+# The secret part of the address the email service posts Shift4's daily report
+# to: /sales/inbound/<this>/. Long and random; empty switches the address off.
+#   python -c "import secrets;print(secrets.token_urlsafe(32))"
+SALES_INBOUND_TOKEN = os.environ.get("SALES_INBOUND_TOKEN", "")
+
 # A "set your password" link for a new owner works once and for this long.
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3
 

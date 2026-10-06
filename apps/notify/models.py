@@ -42,6 +42,7 @@ class Kind(models.TextChoices):
     BASE_LOW = "BASE_LOW", "A base or batter is running out"
     ASSIGNMENT = "ASSIGNMENT", "Somebody has been asked to make something"
     EXPIRING = "EXPIRING", "A batch is close to its use-by"
+    SALES = "SALES", "A day's sales came in by email"
 
 
 # Implements: FR-1302, FR-1303, FR-1308.

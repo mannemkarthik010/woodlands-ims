@@ -28,6 +28,7 @@ The design is about how few decisions there are, not how fast each one is:
 Nothing here maps anything by itself. See docs/architecture.md §3.3.
 """
 
+from contextlib import suppress
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
@@ -37,6 +38,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from apps.catalog import services as catalog
@@ -349,3 +351,64 @@ def sales_portion(request, pk, pos_pk):
     else:
         messages.success(request, f"One sale of {pos.pos_name} is now {ounces.normalize():f} oz.")
     return redirect("sales_day", pk=pk)
+
+
+# --- Yesterday's sales, arriving by email -----------------------------------
+
+
+def _csv_from(request) -> tuple[bytes, str] | None:
+    """
+    The report from whatever posted it: Postmark's JSON (attachments in
+    base64), or a form upload (Mailgun, SendGrid, Cloudflare, curl).
+    """
+    import base64
+    import json
+
+    if request.content_type == "application/json":
+        try:
+            payload = json.loads(request.body)
+        except ValueError:
+            return None
+        for attachment in payload.get("Attachments") or []:
+            name = attachment.get("Name") or ""
+            if name.lower().endswith(".csv") or "csv" in (attachment.get("ContentType") or ""):
+                try:
+                    return base64.b64decode(attachment.get("Content") or ""), name
+                except ValueError:
+                    return None
+        return None
+    for upload in request.FILES.values():
+        if upload.name.lower().endswith(".csv"):
+            return upload.read(), upload.name
+    return None
+
+
+# Implements: FR-610.
+@csrf_exempt
+@require_POST
+def sales_inbound(request, token: str):
+    """Where the email service posts Shift4's daily report. A secret in the address is the only key."""
+    import hmac
+
+    from django.conf import settings
+    from django.http import Http404, JsonResponse
+
+    from apps.sales import inbound
+
+    expected = settings.SALES_INBOUND_TOKEN
+    if not expected or not hmac.compare_digest(token.encode(), expected.encode()):
+        raise Http404
+    found = _csv_from(request)
+    if found is None:
+        return JsonResponse({"status": "refused", "message": "No CSV attachment."}, status=400)
+    location = _restaurant()
+    if location is None:
+        return JsonResponse({"status": "refused", "message": "No restaurant set up."}, status=500)
+    day = None
+    with suppress(ValueError):
+        day = date.fromisoformat(request.GET.get("date", ""))
+    data, name = found
+    outcome = inbound.receive(data, filename=name, location=location, business_date=day)
+    # 200 for every outcome the system dealt with, so the email service does
+    # not keep re-sending a file that was already handled.
+    return JsonResponse({"status": outcome.status, "message": outcome.message})

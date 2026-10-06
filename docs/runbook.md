@@ -467,6 +467,34 @@ Set in the Vercel project's Environment Variables: `DJANGO_SECRET_KEY`,
 `KNOWLEDGE_ENGINE=claude`, `KNOWLEDGE_CONSENT=1` (the owners agreed on
 6 October 2026) and `KNOWLEDGE_API_KEY` — the restaurant's own Anthropic key.
 
+### Yesterday's sales, by email (no upload needed)
+
+Once it is set up, nobody uploads the sales file: it arrives, is read as
+yesterday's, and is recorded when every line is matched. Anything that needs
+a person — a new menu button, a tub with no size, a day that already has a
+file, a file that will not read — is kept and left for the owners, with a
+message. A hand upload still works and always wins: the email never replaces
+a day that has a file.
+
+1. Generate the secret and set it in Vercel as `SALES_INBOUND_TOKEN`:
+   `python -c "import secrets;print(secrets.token_urlsafe(32))"`.
+   The address is then `https://<site>/sales/inbound/<secret>/`.
+2. An inbound email address that posts to it. Any of these work as they are:
+   - **Postmark** inbound stream, webhook set to the address above (JSON);
+   - **Mailgun** route, or **SendGrid** Inbound Parse, forwarding to it (form);
+   - **Cloudflare** Email Routing with a small worker that posts the attachment.
+3. In Shift4's back office, schedule the **Sales Summary by Item** report:
+   yesterday, CSV, every morning, sent to that inbound email address.
+   (Item O10 on the visit form — the owners have to switch this on.)
+4. Test it with last Sunday's file before relying on it:
+
+   ```bash
+   curl -F "attachment-1=@sales-summary.csv" \
+     "https://<site>/sales/inbound/<secret>/?date=2026-09-27"
+   ```
+
+   `?date=` is only for tests and back-filling; the email leaves it off.
+
 ### Going live, in order
 
 1. The owners agree the host and the monthly cost.

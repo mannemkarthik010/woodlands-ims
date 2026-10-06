@@ -5,6 +5,10 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Yesterday's sales by email: Shift4's scheduled report, posted by an inbound email service to
+  a secret address, is read as yesterday's sales and recorded when nothing needs a decision;
+  otherwise it is kept and the owners are told what to match. A day uploaded by hand is never
+  replaced, the same email twice is handled once, and every outcome leaves the owners a message
 - Today's team: a board of who is working each day, in which job, morning or evening, next to
   the hours they have recorded — working now, hours in, none yet, and anyone with hours who was
   not on the plan. Owners plan any day on one screen (job, morning/evening/both, a note), with
