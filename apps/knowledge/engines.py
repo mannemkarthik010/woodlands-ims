@@ -125,10 +125,20 @@ class Claude:
             f"--- {hit.record.title} · {hit.passage.heading or 'record'} ---\n{hit.passage.text}"
             for hit in hits
         )
-        client = anthropic.Anthropic(api_key=settings.KNOWLEDGE_API_KEY)
-        response = client.messages.create(
+        client = anthropic.Anthropic(api_key=settings.KNOWLEDGE_API_KEY, timeout=30.0)
+        response = client.beta.messages.create(
             model=settings.KNOWLEDGE_MODEL,
-            max_tokens=700,
+            # Room for the model's own thinking as well as the short answer;
+            # thinking counts against this, and a cut-off answer is worse
+            # than none.
+            max_tokens=4000,
+            # A cook mid-service needs a quick, short answer from passages
+            # already found, not deep reasoning.
+            output_config={"effort": "low"},
+            # If the model declines a question, the API retries it on a
+            # suitable model inside the same call.
+            betas=["server-side-fallback-2026-07-01"],
+            fallbacks="default",
             system=SYSTEM_PROMPT,
             messages=[
                 {
@@ -146,7 +156,13 @@ class Claude:
                 }
             ],
         )
-        return "".join(block.text for block in response.content if block.type == "text").strip()
+        if response.stop_reason == "refusal":
+            # Raised so ask() answers from the chef's own words instead.
+            raise RuntimeError("The model declined to answer.")
+        text = "".join(block.text for block in response.content if block.type == "text").strip()
+        if not text:
+            raise RuntimeError("The model returned no answer.")
+        return text
 
 
 ENGINES = {"records": Passages(), "claude": Claude()}

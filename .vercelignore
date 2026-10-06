@@ -1,0 +1,14 @@
+# Never uploaded to Vercel. The client's own data stays on this machine:
+# recipes, sales exports, invoices, the scanned visit forms.
+data/
+survey data/
+Claude outputs/
+other notes/
+db.sqlite3
+media/
+staticfiles/
+.env
+.venv/
+venv/
+**/__pycache__/
+docs/

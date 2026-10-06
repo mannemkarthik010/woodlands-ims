@@ -429,6 +429,44 @@ built yet** (Docker was not running) — build it once before the first deploy:
 docker build -t woodlands-ims .
 ```
 
+### On Vercel (the owners' choice, 6 October 2026)
+
+The owners chose Vercel. The container above stays as the fallback if Vercel
+ever stops suiting.
+
+- `api/index.py` hands Django to Vercel's Python runtime; `vercel.json` sends
+  every address to it. `api/requirements.txt` is what Vercel installs.
+- **`.vercelignore` keeps the client's data off Vercel** — `data/`, the scanned
+  forms, outputs, the local database. Never delete it.
+- **The database must be PostgreSQL** (Neon, from Vercel's Storage tab, or any
+  PostgreSQL). The app refuses to start on Vercel without `DATABASE_URL`.
+- **CSS** is served by WhiteNoise straight from `static/` on Vercel
+  (`WHITENOISE_USE_FINDERS`, switched on by Vercel's own `VERCEL=1`), because
+  there is no `collectstatic` step there.
+- **Migrations do not run on Vercel.** Run them from this Mac, against the
+  production database, before each deploy that adds one:
+
+  ```bash
+  pip install -r requirements-prod.txt
+  DATABASE_URL='postgres://…' DJANGO_SECRET_KEY=x python manage.py migrate
+  ```
+
+  The same way, once, for `seed` and the data imports (step 4a below) — the
+  client files never leave this machine; only the rows they produce do.
+- **Plan:** Vercel's free Hobby plan is for non-commercial use only. A
+  restaurant is commercial, so it is the **Pro plan** (about $20 a month per
+  member), plus the database (Neon's free tier is enough to start).
+- **Limits that matter here:** a request may run 30 seconds (a day's sales file
+  takes about one) and upload up to 4.5 MB (a Shift4 CSV is about 10 KB).
+  There is no lasting disk: photo uploads (invoices, clock-in pictures, not
+  used yet) will need Vercel Blob or similar before they are switched on.
+
+Set in the Vercel project's Environment Variables: `DJANGO_SECRET_KEY`,
+`DATABASE_URL`, `DJANGO_HTTPS=1`, `DJANGO_ALLOWED_HOSTS`,
+`DJANGO_CSRF_TRUSTED_ORIGINS`, `SITE_URL`, and for the recipe assistant
+`KNOWLEDGE_ENGINE=claude`, `KNOWLEDGE_CONSENT=1` (the owners agreed on
+6 October 2026) and `KNOWLEDGE_API_KEY` — the restaurant's own Anthropic key.
+
 ### Going live, in order
 
 1. The owners agree the host and the monthly cost.

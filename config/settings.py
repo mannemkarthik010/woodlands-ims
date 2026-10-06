@@ -121,6 +121,10 @@ if os.environ.get("DATABASE_URL"):
     import dj_database_url
 
     DATABASES = {"default": dj_database_url.config(conn_max_age=600, conn_health_checks=True)}
+elif env_bool("VERCEL"):
+    # The bundle is read-only and every request may be a fresh machine: a
+    # SQLite file there would lose everything. Stop, and say why.
+    raise RuntimeError("DATABASE_URL is not set. On Vercel the database must be PostgreSQL.")
 else:
     DATABASES = {
         "default": {
@@ -173,6 +177,11 @@ STORAGES = {
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
 }
 
+# On Vercel there is no build step for `collectstatic`, and the bundle is
+# read-only: WhiteNoise serves the CSS straight from where it lives instead.
+# Vercel sets VERCEL=1 in every function.
+WHITENOISE_USE_FINDERS = env_bool("VERCEL")
+
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -220,7 +229,7 @@ TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
 KNOWLEDGE_ENGINE = os.environ.get("KNOWLEDGE_ENGINE", "records")
 KNOWLEDGE_CONSENT = env_bool("KNOWLEDGE_CONSENT", default=False)
 KNOWLEDGE_API_KEY = os.environ.get("KNOWLEDGE_API_KEY", "")
-KNOWLEDGE_MODEL = os.environ.get("KNOWLEDGE_MODEL", "claude-sonnet-4-5")
+KNOWLEDGE_MODEL = os.environ.get("KNOWLEDGE_MODEL", "claude-opus-5-5")
 
 
 # ---------------------------------------------------------------------------

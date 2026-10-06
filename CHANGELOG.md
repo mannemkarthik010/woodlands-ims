@@ -5,6 +5,12 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Ready for Vercel, the owners' choice of host: a serverless entrypoint (`api/index.py`,
+  `vercel.json`), CSS served without a build step, `.vercelignore` keeping client data off the
+  host, and a refusal to start there without PostgreSQL. Verified locally the way Vercel runs it
+- The recipe assistant may word its answers with Claude (Opus 5.5) — the owners agreed on
+  6 October 2026. It still answers only from the passages found; a declined or failed call falls
+  back to the chef's own words
 - The restaurant's week, as the owners gave it: closed Mondays, Tuesday–Thursday dinner, Friday–
   Sunday lunch and dinner. The sales page shows a Monday as Closed rather than a missing file
 - What the kitchen told us on the 2 October visit, loaded: `manage.py import_visit` reads the

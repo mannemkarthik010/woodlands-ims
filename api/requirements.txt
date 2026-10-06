@@ -1,0 +1,11 @@
+# What the Vercel function installs. Vercel prefers a requirements.txt next to
+# the entrypoint over the root one; keep in step with ../requirements.txt and
+# ../requirements-prod.txt (gunicorn is not needed here -- Vercel runs WSGI).
+Django>=5.2.17,<6.0
+python-dotenv>=1.2.3
+django-simple-history>=3.5
+Pillow>=12.3.0
+whitenoise>=6.12
+psycopg[binary]>=3.3.5
+dj-database-url>=3.1.2
+anthropic>=1.11,<2

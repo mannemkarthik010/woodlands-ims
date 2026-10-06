@@ -7,7 +7,10 @@ confident wrong answer about how to make a dish is worse than no answer at
 all, and "nobody has written this down" is the most useful sentence it has.
 """
 
+from contextlib import contextmanager
 from decimal import Decimal
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 from django.utils import timezone
@@ -23,6 +26,19 @@ def record(title, body, *, approved=True, item=None):
     )
     Passage.objects.create(record=row, ordinal=0, text=body, length=len(body.split()))
     return row
+
+
+@contextmanager
+def model_replying(*, text="", stop_reason="end_turn", error=None):
+    """The Anthropic client, replaced: no test ever reaches the network."""
+    response = SimpleNamespace(
+        stop_reason=stop_reason, content=[SimpleNamespace(type="text", text=text)] if text else []
+    )
+    with patch("anthropic.Anthropic") as client:
+        create = client.return_value.beta.messages.create
+        create.side_effect = error
+        create.return_value = response
+        yield create
 
 
 class AskTests(TestCase):
@@ -142,10 +158,34 @@ class ConsentTests(TestCase):
     @override_settings(KNOWLEDGE_ENGINE="claude", KNOWLEDGE_CONSENT=True, KNOWLEDGE_API_KEY="k")
     def test_a_model_that_fails_falls_back_to_the_chefs_own_words(self):
         """A model being unreachable must not mean the cook gets nothing."""
-        answer = services.ask("how do I make sambar")
+        with model_replying(error=ConnectionError("no network")):
+            answer = services.ask("how do I make sambar")
         self.assertEqual(answer.outcome, Outcome.ANSWERED)
         self.assertIn("Toor dal 3 scoop", answer.answer)
         self.assertTrue(answer.answered_by.startswith("records ("))
+
+    @override_settings(
+        KNOWLEDGE_ENGINE="claude",
+        KNOWLEDGE_CONSENT=True,
+        KNOWLEDGE_API_KEY="k",
+        KNOWLEDGE_MODEL="claude-opus-5-5",
+    )
+    def test_the_model_is_given_only_the_passages_found_and_answers_in_its_words(self):
+        with model_replying(text="Three scoops of toor dal.") as create:
+            answer = services.ask("how do I make sambar")
+        self.assertEqual(answer.answered_by, "claude")
+        self.assertEqual(answer.answer, "Three scoops of toor dal.")
+        sent = create.call_args.kwargs
+        self.assertEqual(sent["model"], "claude-opus-5-5")
+        self.assertEqual(sent["fallbacks"], "default")
+        self.assertIn("Toor dal 3 scoop", sent["messages"][0]["content"])
+
+    @override_settings(KNOWLEDGE_ENGINE="claude", KNOWLEDGE_CONSENT=True, KNOWLEDGE_API_KEY="k")
+    def test_a_declined_question_is_answered_from_the_records(self):
+        with model_replying(text="", stop_reason="refusal"):
+            answer = services.ask("how do I make sambar")
+        self.assertIn("Toor dal 3 scoop", answer.answer)
+        self.assertEqual(answer.answered_by, "records (after RuntimeError)")
 
 
 class ScreenTests(TestCase):
