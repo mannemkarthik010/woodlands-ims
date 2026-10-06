@@ -585,3 +585,5 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
   .person { flex-wrap: wrap; }
   .person__status { width: 100%; text-align: left; padding-left: 50px; }
 }
+.card textarea { width: 100%; font: inherit; padding: 10px; border: 1px solid var(--rule); border-radius: 8px; margin: 8px 0 4px; }
+.plan .flag { display: inline-block; margin-top: 4px; }

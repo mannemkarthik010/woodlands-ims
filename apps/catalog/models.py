@@ -148,6 +148,12 @@ class Item(TimeStamped):
         help_text="Which count this item is on. Left empty, it follows the kitchen's rule for its kind.",
     )
 
+    # A dish whose contents change from day to day -- the thali, with
+    # whatever curries were made that morning. It has no fixed recipe; what
+    # one plate uses comes from the owner's entry for that day
+    # (sales.ThaliDay).
+    changes_daily = models.BooleanField(default=False)
+
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
 

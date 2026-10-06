@@ -199,3 +199,34 @@ class SalesImportLine(models.Model):
         A comped dish WAS made and given away, so it depletes in full.
         """
         return self.quantity_sold + self.quantity_comped
+
+
+# Implements: the owners' request of 6 October 2026 -- the thali's curries
+# change every day, so the owners say each day what is in it.
+class ThaliDay(TimeStamped):
+    """What went into the thali on one day, as the owner entered it."""
+
+    business_date = models.DateField(unique=True)
+    said = models.TextField(blank=True, help_text="What the owner typed, kept as they wrote it.")
+
+    class Meta:
+        ordering = ["-business_date"]
+
+    def __str__(self) -> str:
+        return f"Thali {self.business_date}"
+
+
+class ThaliLine(models.Model):
+    """One thing in that day's thali, and how much of it one plate gets."""
+
+    thali_day = models.ForeignKey(ThaliDay, on_delete=models.CASCADE, related_name="lines")
+    item = models.ForeignKey(Item, on_delete=models.PROTECT, related_name="+")
+    ounces = models.DecimalField(help_text="Per plate, as the kitchen says it.", **QTY)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["thali_day", "sort_order"]
+        constraints = [models.UniqueConstraint(fields=["thali_day", "item"], name="thali_item_once_a_day")]
+
+    def __str__(self) -> str:
+        return f"{self.ounces:g} oz {self.item}"

@@ -76,7 +76,7 @@ def receive(
         return Outcome("refused", str(e))
 
     preview = daily.preview(sales_import)
-    if sales_import.is_safe_to_post and not preview.needs_portion:
+    if sales_import.is_safe_to_post and not preview.needs_portion and not preview.no_thali:
         daily.post_day(sales_import)
         sales_import.refresh_from_db()
         _tell_owners(
@@ -88,6 +88,8 @@ def receive(
         return Outcome("recorded", f"{label} recorded.", sales_import)
 
     waiting = [line.pos_item.pos_name for line in preview.unmatched + preview.needs_portion]
+    if preview.no_thali:
+        waiting.append(f"what was in the thali on {label}")
     _tell_owners(
         day,
         f"Sales for {label} came in. {len(waiting)} menu item(s) need a decision before stock is "

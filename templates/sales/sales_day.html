@@ -37,6 +37,14 @@
   </section>
 {% endif %}
 
+{% if preview.no_thali and not posted %}
+  <section class="fixlist">
+    <h2 class="h2">What was in the thali? — {% for dish, qty in preview.no_thali %}{{ qty|floatformat:"-2" }} {{ dish }}{% if not forloop.last %}, {% endif %}{% endfor %} sold</h2>
+    <p class="muted small">The thali changes every day, so each plate takes out whatever was in it that day.</p>
+    <p><a class="btn btn--add" href="{% url 'thali' %}?date={{ day.business_date|date:'Y-m-d' }}&amp;back={{ day.pk }}">Enter that day's thali</a></p>
+  </section>
+{% endif %}
+
 <h2 class="h2">{% if posted %}Taken out of stock{% else %}Recording this takes out of stock{% endif %}</h2>
 {% if preview.takes_out %}
   <ul class="lines">

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Thali · {{ day|date:"D j M" }}{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+{% if back %}<a class="back" href="{% url 'sales_day' back %}">← Back to that day's sales</a>{% endif %}
+<div class="teamhead">
+  <div>
+    <p class="teamhead__eyebrow">Thali of the day</p>
+    <h1 class="teamhead__title">{{ day|date:"l j F" }}</h1>
+    <p class="teamhead__hours muted">Type what is in the thali, the way you would say it. Each thali sold takes out what was in it that day.</p>
+  </div>
+</div>
+
+{% if saved and not suggestions %}
+  <section class="card">
+    <p class="card__title">Saved for {{ day|date:"D j M" }}</p>
+    <ul class="lines">
+      {% for line in saved.lines.all %}
+        <li class="lines__row"><span class="lines__qty">{{ line.ounces|floatformat:"-2" }} oz</span><span class="lines__name">{{ line.item.name }}</span></li>
+      {% endfor %}
+    </ul>
+    {% if saved.said %}<p class="muted small">You wrote: “{{ saved.said }}”</p>{% endif %}
+  </section>
+  <h2 class="h2">Change it</h2>
+{% endif %}
+
+{% if suggestions %}
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
+    <input type="hidden" name="back" value="{{ back }}">
+    <input type="hidden" name="said" value="{{ said }}">
+    <input type="hidden" name="rows" value="{{ suggestions|length }}">
+    <p class="muted small">{% if method == "claude" %}Matched with AI from your list of dishes{% else %}Matched by name{% endif %} — check each one. Leave a line on “Not in the thali” to skip it.</p>
+    <div class="table-wrap">
+      <table class="plan">
+        <thead><tr><th>You wrote</th><th>Is this</th><th>One plate</th></tr></thead>
+        <tbody>
+          {% for s in suggestions %}
+            <tr>
+              <td class="plan__name">{{ s.said }}</td>
+              <td>
+                <select name="item_{{ forloop.counter0 }}" aria-label="What {{ s.said }} is">
+                  <option value="">Not in the thali / not on the list</option>
+                  {% for i in items %}<option value="{{ i.pk }}" {% if s.item and s.item.pk == i.pk %}selected{% endif %}>{{ i.name }}</option>{% endfor %}
+                </select>
+                {% if not s.item %}<small class="flag">No match found — choose one</small>{% endif %}
+              </td>
+              <td><span class="portion"><input type="text" name="oz_{{ forloop.counter0 }}" inputmode="decimal" value="{{ s.ounces|floatformat:'-2' }}" aria-label="Ounces of {{ s.said }} in one thali"> oz</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <button class="btn btn--primary btn--big" name="action" value="save" type="submit">Save the thali</button>
+    </div>
+  </form>
+{% else %}
+  <form method="post" class="card">{% csrf_token %}
+    <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
+    <input type="hidden" name="back" value="{{ back }}">
+    <label for="said"><b>In today's thali</b></label>
+    <textarea id="said" name="said" rows="3" placeholder="e.g. dal fry, aloo gobi, veg kurma, rasam, payasam">{{ said|default:saved.said|default:'' }}</textarea>
+    <p class="muted small">One plate gets {{ default_ounces|floatformat:"-2" }} oz of each unless you change it on the next step.</p>
+    <div class="actions"><button class="btn btn--primary btn--big" name="action" value="suggest" type="submit">Next: check the matches</button></div>
+  </form>
+{% endif %}
+{% endblock %}

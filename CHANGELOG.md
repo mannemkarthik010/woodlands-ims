@@ -5,6 +5,12 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Today's thali: the curries change every day, so an owner types what is in it the way they
+  would say it ("dal fry, aloo gobi, veg kurma"); each phrase is matched to the kitchen's own
+  list — by Claude when the owners have agreed (it may only choose from the list), by name
+  otherwise — and the owner confirms before anything is saved. Each thali sold then takes out
+  that day's plate. A day's sales with thalis and no entry say so, and the email intake waits
+  for it. The thali dishes are marked from the visit form (C11)
 - Yesterday's sales by email: Shift4's scheduled report, posted by an inbound email service to
   a secret address, is read as yesterday's sales and recorded when nothing needs a decision;
   otherwise it is kept and the owners are told what to match. A day uploaded by hand is never

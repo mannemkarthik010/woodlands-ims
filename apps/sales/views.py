@@ -37,6 +37,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -412,3 +413,57 @@ def sales_inbound(request, token: str):
     # 200 for every outcome the system dealt with, so the email service does
     # not keep re-sending a file that was already handled.
     return JsonResponse({"status": outcome.status, "message": outcome.message})
+
+
+# --- The thali of the day ----------------------------------------------------
+
+
+@owner_required
+def thali_page(request):
+    """
+    What went into the thali on a day. The owner types it as they would say
+    it; the system suggests a match for each part; the owner confirms.
+    """
+    from apps.sales import thali
+    from apps.sales.models import ThaliDay
+
+    today = timezone.localdate()
+    try:
+        day = date.fromisoformat(request.GET.get("date") or request.POST.get("date") or "")
+    except ValueError:
+        day = today
+    back = request.GET.get("back") or request.POST.get("back") or ""
+    context = {"day": day, "back": back, "default_ounces": thali.DEFAULT_OUNCES, "items": thali.candidates()}
+    saved = ThaliDay.objects.filter(business_date=day).prefetch_related("lines__item").first()
+    context["saved"] = saved
+
+    if request.method == "POST" and request.POST.get("action") == "suggest":
+        said = request.POST.get("said", "")
+        context["said"] = said
+        try:
+            context["suggestions"], context["method"] = thali.suggest(said)
+        except thali.ThaliError as e:
+            context["error"] = str(e)
+    elif request.method == "POST" and request.POST.get("action") == "save":
+        by_pk = {i.pk: i for i in context["items"]}
+        lines = []
+        for n in range(int(request.POST.get("rows", "0") or 0)):
+            pk = request.POST.get(f"item_{n}", "")
+            if not pk.isdigit() or int(pk) not in by_pk:
+                continue
+            try:
+                ounces = Decimal(request.POST.get(f"oz_{n}", "") or "0")
+            except InvalidOperation:
+                ounces = Decimal("0")
+            lines.append((by_pk[int(pk)], ounces))
+        try:
+            thali.save_day(day, lines, said=request.POST.get("said", ""), user=request.user)
+        except thali.ThaliError as e:
+            context["error"] = str(e)
+            context["said"] = request.POST.get("said", "")
+        else:
+            messages.success(request, f"Thali for {day:%a %-d %b} saved.")
+            if back.isdigit():
+                return redirect("sales_day", int(back))
+            return redirect(f"{reverse('thali')}?date={day:%Y-%m-%d}")
+    return render(request, "sales/thali.html", context)

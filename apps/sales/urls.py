@@ -6,6 +6,7 @@ urlpatterns = [
     path("sales/", views.sales_home, name="sales_home"),
     path("sales/<int:pk>/", views.sales_day, name="sales_day"),
     path("sales/inbound/<str:token>/", views.sales_inbound, name="sales_inbound"),
+    path("thali/", views.thali_page, name="thali"),
     path("sales/<int:pk>/portion/<int:pos_pk>/", views.sales_portion, name="sales_portion"),
     path("mapping/", views.mapping_queue, name="mapping_queue"),
     path("mapping/search/", views.mapping_search, name="mapping_search"),

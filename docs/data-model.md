@@ -161,6 +161,7 @@ A job in the kitchen or on the floor -- dosa station, prep, server, dishwasher. 
 | `allergen_notes` | Char(240) |  |  |
 | `current_unit_cost` | Decimal(12,4) | yes | Weighted average, per base unit. |
 | `count_every` | Char(8) |  | Which count this item is on. Left empty, it follows the kitchen's rule for its kind. _DAILY, WEEKLY, MONTHLY, NEVER_ |
+| `changes_daily` | Boolean |  |  |
 | `is_active` | Boolean |  |  |
 | `notes` | Text |  |  |
 
@@ -585,6 +586,32 @@ One CSV, one business date.
 | `quantity_comped` | Decimal(14,4) |  |  |
 | `gross_amount` | Decimal(12,4) | yes |  |
 | `raw_row` | JSON |  | The original CSV row, kept so an import can always be explained. |
+
+### ThaliDay
+
+What went into the thali on one day, as the owner entered it.
+
+| Field | Type | Null | Notes |
+|---|---|---|---|
+| `lines` | ForeignKey → ThaliLine | yes |  |
+| `id` | BigAuto |  |  |
+| `created_at` | DateTime |  |  |
+| `updated_at` | DateTime |  |  |
+| `created_by` | ForeignKey → User | yes |  |
+| `business_date` | Date |  |  |
+| `said` | Text |  | What the owner typed, kept as they wrote it. |
+
+### ThaliLine
+
+One thing in that day's thali, and how much of it one plate gets.
+
+| Field | Type | Null | Notes |
+|---|---|---|---|
+| `id` | BigAuto |  |  |
+| `thali_day` | ForeignKey → ThaliDay |  |  |
+| `item` | ForeignKey → Item |  |  |
+| `ounces` | Decimal(14,4) |  | Per plate, as the kitchen says it. |
+| `sort_order` | PositiveSmallInteger |  |  |
 
 ## `labour`
 

@@ -117,6 +117,12 @@ class ImportVisitTests(TestCase):
         self.assertEqual(self.chutney.count_every, CountEvery.DAILY)
         self.assertEqual(Item.objects.get(name="Vada Batter").kind, ItemKind.PREPARED)
 
+    def test_the_thali_is_marked_as_changing_daily(self):
+        thali = item("Thali", kind=ItemKind.DISH, unit="each")
+        self.run_visit({"changes_daily": {"_code": "C11", "dishes": ["Thali"]}})
+        thali.refresh_from_db()
+        self.assertTrue(thali.changes_daily)
+
     def test_a_dry_run_keeps_nothing(self):
         self.run_visit(self.plate({"Dosa Batter": 5, "sides": 1}), dry_run=True)
         self.assertFalse(Recipe.objects.exists())

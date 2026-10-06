@@ -185,6 +185,7 @@ class Preview:
     no_recipe: list = field(default_factory=list)  # (dish, how many sold) with nothing to take out
     unmatched: list = field(default_factory=list)  # SalesImportLine
     needs_portion: list = field(default_factory=list)  # SalesImportLine sold with no size per sale
+    no_thali: list = field(default_factory=list)  # (dish, how many sold): the day's thali not entered
     ignored: int = 0
     total_quantity: Decimal = Decimal("0")
     total_net: Decimal = Decimal("0")
@@ -192,7 +193,10 @@ class Preview:
 
 # Implements: FR-602, FR-610.
 def preview(sales_import: SalesImport) -> Preview:
+    from apps.sales import thali
+
     out = Preview()
+    today_plate = None
     for line in sales_import.lines.select_related("pos_item", "pos_item__item", "pos_item__item__base_unit"):
         out.total_quantity += line.quantity_sold
         out.total_net += net_of(line)
@@ -207,7 +211,18 @@ def preview(sales_import: SalesImport) -> Preview:
             out.needs_portion.append(line)
             continue
         quantity = line.quantity_to_deplete * pos.quantity_per_sale
-        components = [c for c in explode(pos.item, quantity) if c.item.is_stocked]
+        if pos.item.changes_daily:
+            # The thali: what one plate used is what the owner said for that day.
+            if today_plate is None:
+                today_plate = thali.plate(sales_import.business_date) or []
+            if not today_plate:
+                out.no_thali.append((pos.item, line.quantity_to_deplete))
+                continue
+            components = [
+                c for item, per in today_plate for c in explode(item, per * quantity) if c.item.is_stocked
+            ]
+        else:
+            components = [c for c in explode(pos.item, quantity) if c.item.is_stocked]
         if not components:
             out.no_recipe.append((pos.item, line.quantity_to_deplete))
         for c in components:

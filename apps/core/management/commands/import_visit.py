@@ -17,6 +17,7 @@ WHAT IS LOADED
   new_items         things the answers need that the system did not have yet
   make_more_below   par levels: below this, make more
   sized_buttons     the menu buttons sold by size with no size on them
+  changes_daily     the thalis, whose curries the owners enter each day
   plates            what one plate of a dish uses -- a recipe for the dish,
                     so a day's sales take batter and chutney out of stock
 
@@ -112,6 +113,7 @@ class Command(BaseCommand):
         self.load_count_every()
         self.load_make_more()
         self.load_sized_buttons()
+        self.load_changes_daily()
         self.load_plates()
 
     def item(self, name: str, code: str) -> Item | None:
@@ -204,6 +206,19 @@ class Command(BaseCommand):
                 continue
             set_portion(pos, ounces=Decimal(str(row["oz"])), user=self.user)
             self.changes.append(f"{row['code']}: one {pos.pos_name} is {row['oz']} oz")
+
+    def load_changes_daily(self):
+        """The thalis: no fixed plate; what each one uses is entered day by day."""
+        block = self.visit.get("changes_daily", {})
+        for name in block.get("dishes", []):
+            dish = self.item(name, block.get("_code", "C11"))
+            if dish is None or dish.changes_daily:
+                continue
+            dish.changes_daily = True
+            dish.save(update_fields=["changes_daily", "updated_at"])
+            self.changes.append(
+                f"{block.get('_code', 'C11')}: {dish.name} changes daily -- entered as Today's thali"
+            )
 
     def load_plates(self):
         plates = self.visit.get("plates", {})
