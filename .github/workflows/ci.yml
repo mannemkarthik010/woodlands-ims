@@ -23,7 +23,9 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt ruff
+          # What the server runs, so a test needing a server-only package
+          # (the AI library, the PostgreSQL driver) runs here too.
+          pip install -r requirements-prod.txt ruff
 
       - name: Lint
         run: ruff check .
