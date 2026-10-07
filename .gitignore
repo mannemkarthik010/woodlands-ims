@@ -22,3 +22,5 @@ data/**
 
 # The scanned visit forms -- the restaurant's invoices, prices and recipes.
 /survey data/
+.vercel
+.env*

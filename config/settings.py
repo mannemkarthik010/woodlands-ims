@@ -50,6 +50,16 @@ else:
 CSRF_TRUSTED_ORIGINS = [
     o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
 ]
+# On Vercel the app's own addresses come from Vercel itself: the production
+# address (woodlands-ims.vercel.app or the restaurant's domain) and the
+# address of this particular deployment. Nothing to type in by hand.
+if os.environ.get("VERCEL"):
+    for name in ("VERCEL_PROJECT_PRODUCTION_URL", "VERCEL_URL", "VERCEL_BRANCH_URL"):
+        host = os.environ.get(name, "").strip()
+        if host and host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(host)
+            CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
+
 if DEBUG:
     CSRF_TRUSTED_ORIGINS += [
         "http://localhost:8000",

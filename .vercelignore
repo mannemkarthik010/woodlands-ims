@@ -12,3 +12,6 @@ staticfiles/
 venv/
 **/__pycache__/
 docs/
+.env.local
+.env.*
+.vercel/
