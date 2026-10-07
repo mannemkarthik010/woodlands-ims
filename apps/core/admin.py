@@ -1,9 +1,9 @@
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm
 
-from apps.core.models import Area, Location, Position, Supplier, User
+from apps.core.models import Area, Location, Position, Role, Supplier, User
 from apps.core.pins import PinError, set_pin, validate_pin
 from apps.labour.admin import ShiftTemplateInline
 
@@ -39,6 +39,7 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ("role", "position", "is_active_staff")
     search_fields = ("username", "display_name", "first_name", "last_name")
     readonly_fields = ("pin_status",)
+    actions = ["password_link"]
     fieldsets = BaseUserAdmin.fieldsets + (
         (
             "Woodlands",
@@ -52,6 +53,34 @@ class UserAdmin(BaseUserAdmin):
         if not obj.can_use_pin:
             return "Owners sign in with a password"
         return "Set" if obj.pin else "Not set — this person cannot record hours yet"
+
+    @admin.action(description="Make a one-time “choose your password” link (owners)")
+    def password_link(self, request, queryset):
+        """
+        A fresh link for an owner whose first one ran out, or who forgot their
+        password. Made here, on the live site, because a link is signed with
+        the site's secret key and that key is kept nowhere else. Only an owner
+        may make one, and only for an owner; it is shown once, to be sent to
+        that person directly -- never posted in a channel.
+        """
+        from apps.core.invites import set_password_link
+        from apps.core.permissions import is_owner
+
+        if not is_owner(request.user):
+            self.message_user(request, "Only an owner can make these links.", messages.ERROR)
+            return
+        for user in queryset:
+            if user.role != Role.OWNER:
+                self.message_user(
+                    request, f"{user}: staff sign in with a PIN, not a password.", messages.WARNING
+                )
+                continue
+            self.message_user(
+                request,
+                f"{user.display_name or user.username}: {set_password_link(user)} — works once, for 3 days. "
+                "Send it to them directly.",
+                messages.SUCCESS,
+            )
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

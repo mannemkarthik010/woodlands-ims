@@ -577,7 +577,11 @@ python manage.py invite_owner pawan --name "Pawan"
 python manage.py invite_owner harash --name "Harash"
 ```
 
-Each makes the owner's account and prints a one-time link. Send it to that owner
+Each makes the owner's account and prints a one-time link. **The link is signed
+with the live site's secret key**, so run it with that key (it is a sensitive
+Vercel variable and cannot be read back). After the first links, make fresh ones
+on the live site instead: *Admin → Users*, tick the owner, action *Make a
+one-time “choose your password” link*. Only an owner can, only for an owner. Send it to that owner
 **privately** — a Slack direct message to them, never the channel: whoever opens it chooses the password. It works
 once, for three days, and signs them in. Run it again for the same owner to get a
 fresh link — for a lost password too. Owners get the *Owners* group: in the admin

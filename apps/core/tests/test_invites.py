@@ -95,6 +95,24 @@ class InviteTests(TestCase):
         with self.assertRaises(CommandError):
             call_command("invite_owner", " ", stdout=StringIO())
 
+    def test_an_owner_makes_a_fresh_link_for_another_owner_in_the_admin(self):
+        """The live site's key signs links, so they are made there, not on a laptop."""
+        pj, _, _ = invite_owner("pj")
+        harash, _, _ = invite_owner("harash")
+        cook = User.objects.create_user("cook", role=Role.KITCHEN)
+        pj.set_password("a long kitchen phrase 42")
+        pj.save()
+        self.client.force_login(User.objects.get(pk=pj.pk))
+        page = self.client.post(
+            reverse("admin:core_user_changelist"),
+            {"action": "password_link", "_selected_action": [harash.pk, cook.pk]},
+            follow=True,
+        )
+        text = page.content.decode()
+        self.assertIn("https://woodlands.example.com/welcome/", text)
+        self.assertIn("staff sign in with a PIN", text)
+        self.assertEqual(text.count("/welcome/"), 1)  # none for the cook
+
 
 class HealthTests(TestCase):
     def test_the_health_check_answers_without_a_login(self):
