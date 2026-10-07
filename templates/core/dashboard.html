@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load hours %}
+{% block title %}Dashboard · Woodlands{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+<div class="teamhead">
+  <div>
+    <p class="teamhead__eyebrow">Dashboard</p>
+    <h1 class="teamhead__title">{{ board.today|date:"l j F" }}</h1>
+    <p class="teamhead__hours">{% if board.is_open %}Open {% for start, end in board.hours %}{{ start|time:"g:i" }}–{{ end|time:"g:i A" }}{% if not forloop.last %} · {% endif %}{% endfor %}{% else %}Closed today{% endif %}</p>
+  </div>
+</div>
+
+<div class="stats">
+  <a class="stat stat--link" href="{% if board.sales %}{% url 'sales_day' board.sales.pk %}{% else %}{% url 'sales_home' %}{% endif %}">
+    <span class="stat__n">{% if board.sales_preview %}${{ board.sales_preview.total_net|floatformat:0 }}{% else %}—{% endif %}</span>
+    <span class="stat__l">Sales {{ board.sales_day|date:"D j M" }}{% if board.sales_preview %} · {{ board.sales_preview.total_quantity|floatformat:"-2" }} items{% else %} · no file yet{% endif %}</span>
+  </a>
+  <a class="stat stat--link" href="{% url 'team_today' %}">
+    <span class="stat__n">{{ board.team.planned|length }}</span>
+    <span class="stat__l">on today's team · {{ board.team.recorded }} with hours in</span>
+  </a>
+  <a class="stat stat--link{% if board.low %} stat--amber{% endif %}" href="{% url 'count_home' %}">
+    <span class="stat__n">{{ board.low|length }}</span>
+    <span class="stat__l">item{{ board.low|length|pluralize }} running low</span>
+  </a>
+  <a class="stat stat--link" href="{% url 'hours_pay' %}">
+    <span class="stat__n">{{ board.unpaid_minutes|hm }}</span>
+    <span class="stat__l">unpaid hours · {{ board.unpaid_people }} {{ board.unpaid_people|pluralize:"person,people" }}</span>
+  </a>
+</div>
+
+<div class="dash">
+  <section class="panel panel--wide">
+    <h2 class="panel__h">Needs attention {% if board.todos %}<span class="team__count">{{ board.todos|length }}</span>{% endif %}</h2>
+    {% if board.todos %}
+      <ul class="todo">
+        {% for t in board.todos|slice:":6" %}
+          <li class="todo__row todo__row--{{ t.level }}"><a href="{{ t.url }}">{{ t.text }}</a><span aria-hidden="true">›</span></li>
+        {% endfor %}
+      </ul>
+      {% if board.todos|length > 6 %}
+        <details class="todo__more">
+          <summary>{{ board.todos|length|add:"-6" }} more</summary>
+          <ul class="todo">
+            {% for t in board.todos|slice:"6:" %}
+              <li class="todo__row todo__row--{{ t.level }}"><a href="{{ t.url }}">{{ t.text }}</a><span aria-hidden="true">›</span></li>
+            {% endfor %}
+          </ul>
+        </details>
+      {% endif %}
+    {% else %}
+      <p class="muted">All clear — nothing waiting on anyone.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2 class="panel__h">Sales, last 7 days <small class="muted">${{ board.week_total|floatformat:0 }}</small></h2>
+    <div class="bars" role="img" aria-label="Net sales per day for the last seven days">
+      {% for b in board.week %}
+        <div class="bars__col">
+          <span class="bars__val">{% if b.net is not None %}${{ b.net|floatformat:0 }}{% elif b.closed %}closed{% else %}—{% endif %}</span>
+          <span class="bars__bar{% if b.net is None %} bars__bar--none{% endif %}" style="height: {% if b.net is not None %}{{ b.pct }}{% else %}0{% endif %}%"></span>
+          <span class="bars__day">{{ b.day|date:"D" }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="panel__h">Top sellers {{ board.sales_day|date:"D" }}</h2>
+    {% if board.top_sellers %}
+      <ol class="rank">{% for name, qty in board.top_sellers %}<li><span>{{ name }}</span><b>{{ qty|floatformat:"-2" }}</b></li>{% endfor %}</ol>
+    {% else %}
+      <p class="muted">No sales file for that day yet. <a href="{% url 'sales_home' %}">Upload it</a>.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2 class="panel__h">Running low</h2>
+    {% if board.low %}
+      <ul class="rank">{% for s in board.low|slice:":6" %}<li><span>{{ s.par.item.name }}</span><b class="{% if s.is_out %}bad{% endif %}">{{ s.on_hand|floatformat:"-1" }} / {{ s.par.quantity|floatformat:"-1" }} {{ s.par.item.base_unit.code }}</b></li>{% endfor %}</ul>
+    {% else %}
+      <p class="muted">Nothing below its make-more or re-order level.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2 class="panel__h">Today's team</h2>
+    {% if board.team.planned %}
+      <ul class="rank">
+        {% for row in board.team.planned %}<li><span>{{ row.person.display_name|default:row.person.username }} <small class="muted">{{ row.position }}</small></span><b>{% if row.cover == "BOTH" %}Both{% else %}{{ row.cover|title }}{% endif %}</b></li>{% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">Nobody planned yet. <a href="{% url 'team_plan' %}">Plan the team</a>.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h2 class="panel__h">Made today</h2>
+    {% if board.made_today %}
+      <ul class="rank">{% for b in board.made_today %}<li><span>{{ b.item.name }}</span><b>{% if b.actual_yield %}{{ b.actual_yield|floatformat:"-1" }} {{ b.item.base_unit.code }}{% else %}{{ b.get_status_display }}{% endif %}</b></li>{% endfor %}</ul>
+    {% else %}
+      <p class="muted">Nothing recorded yet. <a href="{% url 'made_today' %}">Record a batch</a>.</p>
+    {% endif %}
+  </section>
+</div>
+
+<h2 class="h2">Quick actions</h2>
+<div class="quick">
+  <a class="quick__btn" href="{% url 'team_plan' %}">Plan tomorrow's team</a>
+  <a class="quick__btn" href="{% url 'thali' %}">Enter today's thali</a>
+  <a class="quick__btn" href="{% url 'sales_home' %}">Upload a sales file</a>
+  <a class="quick__btn" href="{% url 'count_home' %}">Count stock</a>
+  <a class="quick__btn" href="{% url 'receipt_new' %}">Delivery received</a>
+  <a class="quick__btn" href="{% url 'hours_pay' %}">Pay hours</a>
+  <a class="quick__btn" href="{% url 'count_lists' %}">What we count</a>
+  <a class="quick__btn" href="{% url 'ask_page' %}">Ask the kitchen</a>
+</div>
+{% endblock %}

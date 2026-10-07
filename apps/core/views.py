@@ -13,6 +13,7 @@ instead of quietly turning `stock` into the app that imports everything.
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
+from apps.core.permissions import is_owner
 from apps.sales.models import PosItem
 from apps.stock.models import DocumentStatus, Transfer
 
@@ -28,11 +29,13 @@ def home(request):
     # something in it. A tile that always reads "0 left" is furniture.
     mapping_remaining = PosItem.objects.filter(item__isnull=True, ignore=False).count()
 
-    return render(
-        request,
-        "stock/home.html",
-        {"open_transfers": open_transfers, "mapping_remaining": mapping_remaining},
-    )
+    context = {"open_transfers": open_transfers, "mapping_remaining": mapping_remaining}
+    if is_owner(request.user):
+        from apps.core import dashboard
+
+        context["board"] = dashboard.build()
+        return render(request, "core/dashboard.html", context)
+    return render(request, "stock/home.html", context)
 
 
 # Implements: NFR-02.

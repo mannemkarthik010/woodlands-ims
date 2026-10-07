@@ -12,9 +12,20 @@
 <header class="bar no-print">
   <a class="bar__home" href="{% url 'home' %}">Woodlands</a>
   {% if user.is_authenticated %}
-    <span class="bar__who">{{ user.display_name|default:user.username }}</span>
+    <div class="bar__right">
+      <span class="bar__who">{{ user.display_name|default:user.username }}</span>
+      {% if nav_is_owner %}<a class="bar__link" href="{% url 'admin:index' %}">Admin</a>{% endif %}
+      <form method="post" action="{% url 'logout' %}" class="bar__out">{% csrf_token %}<button type="submit">Sign out</button></form>
+    </div>
   {% endif %}
 </header>
+{% if nav %}
+  <nav class="nav no-print" aria-label="Main">
+    <div class="nav__inner">
+      {% for n in nav %}<a class="nav__link{% if n.on %} nav__link--on{% endif %}" href="{{ n.url }}"{% if n.on %} aria-current="page"{% endif %}>{{ n.label }}</a>{% endfor %}
+    </div>
+  </nav>
+{% endif %}
 
 <main class="wrap {% block wrap_class %}{% endblock %}">
   {% for m in messages %}

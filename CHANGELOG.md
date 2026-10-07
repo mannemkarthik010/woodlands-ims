@@ -5,6 +5,15 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Navigation on every page: a menu for owners (Dashboard, Team, Hours & pay, Sales, Thali,
+  Stock, Made today, Deliveries, Recipes) and a shorter one for staff, with the current section
+  marked, plus Admin and Sign out. It scrolls sideways on a phone
+- The owners' dashboard as the home page: yesterday's sales, today's team, items running low
+  and unpaid hours at a glance; a Needs attention list (out of stock, missing or unrecorded
+  sales files, counts due, thali not entered, shifts with no finish, new names, unmatched menu
+  buttons), each linking to the page that fixes it; the last 7 days' sales, top sellers,
+  what is running low, today's team, what was made today, and quick actions. Staff keep
+  their simple task tiles
 - The AI runs on the restaurant's own Google Cloud (Vertex AI), the owners' choice: every AI
   step goes through `apps/core/ai.py`, where `AI_PROVIDER=vertex` reaches Claude in their
   project, billed there, and `anthropic` reaches it directly. Same model, same consent gate;
