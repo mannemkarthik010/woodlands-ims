@@ -67,7 +67,13 @@ def transfer_new(request):
     if not (storage and restaurant):
         return render(request, "stock/no_locations.html", status=400)
 
-    transfer = Transfer.objects.create(
+    # Opening the screen again carries on with an empty draft already
+    # started, rather than leaving a trail of blank ones behind.
+    transfer = (
+        Transfer.objects.filter(status=DocumentStatus.DRAFT, lines__isnull=True, created_by=request.user)
+        .order_by("-occurred_at")
+        .first()
+    ) or Transfer.objects.create(
         from_location=storage,
         to_location=restaurant,
         occurred_at=timezone.now(),
@@ -489,9 +495,11 @@ def receipt_new(request):
     restaurant = Location.objects.filter(kind=Location.Kind.RESTAURANT, is_active=True).first()
     if restaurant is None:
         return render(request, "stock/no_locations.html", status=400)
-    receipt = GoodsReceipt.objects.create(
-        location=restaurant, received_at=timezone.now(), created_by=request.user
-    )
+    receipt = (
+        GoodsReceipt.objects.filter(status=DocumentStatus.DRAFT, lines__isnull=True, created_by=request.user)
+        .order_by("-received_at")
+        .first()
+    ) or GoodsReceipt.objects.create(location=restaurant, received_at=timezone.now(), created_by=request.user)
     return redirect("receipt_edit", pk=receipt.pk)
 
 

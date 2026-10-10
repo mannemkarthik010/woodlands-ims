@@ -66,6 +66,7 @@ STAFF = [
 ]
 DEMO_PIN = "2580"
 TABLET = ("demo-tablet", "demo-tablet")  # username, password -- a development convenience only
+OWNER = ("demo-owner", "demo-owner")  # the same, for trying the owners' screens locally
 
 BASES = [
     ("DEMO-batter-dosa", "Dosa batter", "gal", "Batters (in-house)"),
@@ -187,12 +188,18 @@ class Command(BaseCommand):
         if created:
             tablet.set_password(TABLET[1])
             tablet.save()
+        owner, created = User.objects.get_or_create(
+            username=OWNER[0], defaults={"display_name": "Owner (demo)", "role": Role.OWNER}
+        )
+        if created:
+            owner.set_password(OWNER[1])
+            owner.save()
 
         self.stdout.write(
             self.style.SUCCESS(f"Added {made} demo items with opening stock at {storage.name}.")
         )
         self.stdout.write(
             f"Demo staff: {', '.join(d for _, d, _ in STAFF)} -- PIN {DEMO_PIN}. "
-            f"Tablet sign-in: {TABLET[0]} / {TABLET[1]}."
+            f"Tablet sign-in: {TABLET[0]} / {TABLET[1]}. Owner sign-in: {OWNER[0]} / {OWNER[1]}."
         )
         self.stdout.write(self.style.WARNING("Sample data. Remove with: python manage.py seed_demo --clear"))

@@ -60,7 +60,7 @@
     <input type="hidden" name="date" value="{{ day|date:'Y-m-d' }}">
     <input type="hidden" name="back" value="{{ back }}">
     <label for="said"><b>In today's thali</b></label>
-    <textarea id="said" name="said" rows="3" placeholder="e.g. dal fry, aloo gobi, veg kurma, rasam, payasam">{{ said|default:saved.said|default:'' }}</textarea>
+    <textarea id="said" name="said" rows="3" placeholder="e.g. dal fry, aloo gobi, veg kurma, rasam, payasam">{{ typed }}</textarea>
     <p class="muted small">One plate gets {{ default_ounces|floatformat:"-2" }} oz of each unless you change it on the next step.</p>
     <div class="actions"><button class="btn btn--primary btn--big" name="action" value="suggest" type="submit">Next: check the matches</button></div>
   </form>

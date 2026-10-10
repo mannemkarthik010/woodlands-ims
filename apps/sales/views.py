@@ -466,4 +466,6 @@ def thali_page(request):
             if back.isdigit():
                 return redirect("sales_day", int(back))
             return redirect(f"{reverse('thali')}?date={day:%Y-%m-%d}")
+    # What the box starts with: what was just typed, else what was saved for the day.
+    context["typed"] = context.get("said") or (saved.said if saved else "")
     return render(request, "sales/thali.html", context)

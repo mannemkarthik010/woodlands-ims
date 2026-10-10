@@ -42,6 +42,11 @@ class TransferFlowTests(TestCase):
             movement_type=MovementType.RECEIPT,
         )
 
+    def test_opening_the_screen_again_carries_on_with_the_empty_draft(self):
+        self.client.get(reverse("transfer_new"))
+        self.client.get(reverse("transfer_new"))
+        self.assertEqual(Transfer.objects.count(), 1)
+
     # Covers: FR-403, FR-404, FR-405.
     def test_the_whole_run_from_start_to_recorded(self):
         # Tap "Storage run" -- a draft exists immediately, so nothing is lost

@@ -163,6 +163,19 @@ class ThaliTests(SalesTestCase):
         self.assertRedirects(page, url)
         self.assertEqual(ThaliDay.objects.get(business_date=SUN).lines.count(), 2)
 
+    def test_the_page_opens_on_a_day_with_nothing_entered_yet(self):
+        self.client.force_login(self.owner)
+        page = self.client.get(reverse("thali"))
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "In today's thali")
+
+    def test_the_page_shows_what_was_saved_for_the_day(self):
+        thali.save_day(SUN, [(self.rasam, Decimal("8"))], said="rasam")
+        self.client.force_login(self.owner)
+        page = self.client.get(f"{reverse('thali')}?date=2026-09-27")
+        self.assertContains(page, "Saved for")
+        self.assertContains(page, ">rasam</textarea>")
+
     def test_only_owners_enter_the_thali(self):
         from apps.core.models import User
 

@@ -91,6 +91,11 @@ class ServiceTests(DeliveryTestCase):
 
 
 class ScreenTests(DeliveryTestCase):
+    def test_opening_the_screen_again_carries_on_with_the_empty_draft(self):
+        self.client.get(reverse("receipt_new"))
+        self.client.get(reverse("receipt_new"))
+        self.assertEqual(GoodsReceipt.objects.count(), 1)
+
     def test_the_whole_delivery_from_start_to_recorded(self):
         response = self.client.get(reverse("receipt_new"))
         r = GoodsReceipt.objects.get()
