@@ -15,7 +15,7 @@ from django.db import transaction
 from django.db.models import F, Sum
 from django.utils import timezone
 
-from apps.catalog.models import Item
+from apps.catalog.models import Item, ItemKind
 from apps.core.models import Location, User
 from apps.stock.models import MovementType, StockBalance, StockMovement
 
@@ -198,7 +198,9 @@ class ExplodedComponent:
 
 
 # Implements: FR-602, FR-603, FR-610.
-def explode(item: Item, quantity: Decimal, *, _seen=None, _depth=0) -> list[ExplodedComponent]:
+def explode(
+    item: Item, quantity: Decimal, *, stop_at_made: bool = False, _seen=None, _depth=0
+) -> list[ExplodedComponent]:
     """
     Walk a dish down to the things that are actually held in stock.
 
@@ -218,6 +220,13 @@ def explode(item: Item, quantity: Decimal, *, _seen=None, _depth=0) -> list[Expl
     if _depth > 12:
         raise StockError(f"Recipe nested more than 12 deep at {item}; refusing to continue.")
 
+    # What the kitchen makes ahead and keeps -- batter, sambar -- is where a
+    # sale stops: the rice and dal went out when the batch was recorded as
+    # made, and taking them out again per dosa would count them twice.
+    # Planning ("how much rice for 2000 dosas") leaves this off and walks on.
+    if stop_at_made and item.kind == ItemKind.PREPARED and item.is_stocked:
+        return [ExplodedComponent(item=item, quantity=quantity, depth=_depth)]
+
     recipe = Recipe.objects.filter(item=item, is_active=True).prefetch_related("lines").first()
     if recipe is None or not recipe.yield_quantity:
         return [ExplodedComponent(item=item, quantity=quantity, depth=_depth)]
@@ -229,6 +238,7 @@ def explode(item: Item, quantity: Decimal, *, _seen=None, _depth=0) -> list[Expl
             explode(
                 line.component,
                 line.quantity * scale,
+                stop_at_made=stop_at_made,
                 _seen=_seen | {item.pk},
                 _depth=_depth + 1,
             )

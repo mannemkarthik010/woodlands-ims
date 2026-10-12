@@ -219,10 +219,13 @@ def preview(sales_import: SalesImport) -> Preview:
                 out.no_thali.append((pos.item, line.quantity_to_deplete))
                 continue
             components = [
-                c for item, per in today_plate for c in explode(item, per * quantity) if c.item.is_stocked
+                c
+                for item, per in today_plate
+                for c in explode(item, per * quantity, stop_at_made=True)
+                if c.item.is_stocked
             ]
         else:
-            components = [c for c in explode(pos.item, quantity) if c.item.is_stocked]
+            components = [c for c in explode(pos.item, quantity, stop_at_made=True) if c.item.is_stocked]
         if not components:
             out.no_recipe.append((pos.item, line.quantity_to_deplete))
         for c in components:

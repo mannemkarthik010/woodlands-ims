@@ -93,6 +93,19 @@ def remove_input(batch: ProductionBatch, input_pk: int) -> None:
     _open(batch).inputs.filter(pk=input_pk).delete()
 
 
+def from_recipe(item: Item, made: Decimal) -> list[tuple[Item, Decimal]]:
+    """What the active recipe says goes into `made` (base units) of `item`; empty without one."""
+    from apps.catalog.models import Recipe
+
+    recipe = Recipe.objects.filter(item=item, is_active=True).prefetch_related("lines__component").first()
+    if recipe is None or not recipe.yield_quantity:
+        return []
+    scale = made / recipe.yield_quantity
+    return [
+        (line.component, (line.quantity * scale).quantize(Decimal("0.0001"))) for line in recipe.lines.all()
+    ]
+
+
 # Implements: FR-503, FR-504, FR-506.
 @transaction.atomic
 def finish_batch(
@@ -119,6 +132,15 @@ def finish_batch(
     if note:
         batch.note = note[:2000]
     batch.save()
+
+    # Nobody listed what went in: the chefs' recipe says, scaled to what was
+    # made. Without this a grind of batter would never take out its rice and
+    # dal, and the rice would never look like it was running out.
+    if not batch.inputs.exists():
+        for component, quantity in from_recipe(batch.item, made):
+            ProductionInput.objects.create(
+                batch=batch, item=component, quantity=quantity, note="from the recipe"
+            )
 
     post_movement(
         item=batch.item,

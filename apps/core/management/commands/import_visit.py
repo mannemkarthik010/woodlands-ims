@@ -18,6 +18,10 @@ WHAT IS LOADED
   make_more_below   par levels: below this, make more
   sized_buttons     the menu buttons sold by size with no size on them
   changes_daily     the thalis, whose curries the owners enter each day
+  measures          what one scoop (or cap) of a particular ingredient weighs
+  recipes           how a batch is made: the batters, from scoops and pounds
+  watch             what must never run out, and how long more takes
+  positions         the jobs people do, for the team plan
   plates            what one plate of a dish uses -- a recipe for the dish,
                     so a day's sales take batter and chutney out of stock
 
@@ -108,13 +112,17 @@ class Command(BaseCommand):
 
     def load(self):
         self.load_vessels()
+        self.load_positions()
         self.load_new_items()
         self.load_containers()
+        self.load_measures()
         self.load_count_every()
         self.load_make_more()
         self.load_sized_buttons()
         self.load_changes_daily()
         self.load_plates()
+        self.load_recipes()
+        self.load_watch()
 
     def item(self, name: str, code: str) -> Item | None:
         found = find_by_name(name)
@@ -125,7 +133,8 @@ class Command(BaseCommand):
 
     def load_vessels(self):
         for row in self.visit.get("vessels", []):
-            ml = (Decimal(str(row["fl_oz"])) * FLUID_OUNCE_ML).quantize(Decimal("0.01"))
+            fl_oz = Decimal(str(row["fl_oz"])) if "fl_oz" in row else Decimal(str(row["gal"])) * 128
+            ml = (fl_oz * FLUID_OUNCE_ML).quantize(Decimal("0.01"))
             vessel = Vessel.objects.filter(name=row["name"]).first()
             if vessel and vessel.volume_ml == ml:
                 continue
@@ -133,20 +142,117 @@ class Command(BaseCommand):
                 name=row["name"],
                 defaults={"volume_ml": ml, "measured_on": self.measured_on, "note": f"{row['code']}, visit"},
             )
-            self.changes.append(f"{row['code']}: a {row['name']} holds {row['fl_oz']} fl oz")
+            size = f"{row['fl_oz']} fl oz" if "fl_oz" in row else f"{row['gal']} gal"
+            self.changes.append(f"{row['code']}: a {row['name']} holds {size}")
 
     def load_new_items(self):
         for row in self.visit.get("new_items", []):
             if find_by_name(row["name"]):
                 continue
+            pack = row.get("pack") or {}
             add_item(
                 name=row["name"],
                 what=row["what"],
                 base_unit=Unit.objects.get(code=row["unit"]),
                 count_every=row["every"],
+                pack_name=pack.get("name", ""),
+                pack_quantity=Decimal(str(pack["qty"])) if pack else None,
                 user=self.user,
             )
-            self.changes.append(f"new item: {row['name']} ({row['why']})")
+            self.changes.append(f"new item: {row['name']} ({row.get('why', '')})")
+
+    def load_positions(self):
+        from apps.core.models import Position
+
+        for order, name in enumerate(self.visit.get("positions", []), start=1):
+            _, made = Position.objects.get_or_create(name=name, defaults={"sort_order": order})
+            if made:
+                self.changes.append(f"S: job {name}")
+
+    def load_measures(self):
+        """What one scoop of a particular thing weighs -- per item, because a scoop is a volume."""
+        for row in self.visit.get("measures", []):
+            item = self.item(row["item"], row["code"])
+            if item is None:
+                continue
+            quantity = ounces(item, row["oz"])
+            measure = item.measures.filter(name=row["measure"], is_active=True).first()
+            if measure and measure.quantity_in_base_units == quantity:
+                continue
+            if measure is None:
+                measure = ItemMeasure(
+                    item=item, name=row["measure"], kind=MeasureKind.KITCHEN, created_by=self.user
+                )
+            measure.quantity_in_base_units = quantity
+            measure.measured_on = self.measured_on
+            measure.save()
+            self.changes.append(f"{row['code']}: a {row['measure']} of {item.name} weighs {row['oz']} oz")
+
+    def _amount(self, item: Item, row: dict, code: str) -> Decimal | None:
+        """A quantity as written: in a measure of the item ("6 scoop"), in oz, or in lb."""
+        if "measure" in row:
+            measure = item.measures.filter(name=row["measure"], is_active=True).first()
+            if measure is None:
+                self.skipped.append(f"{code}: {item.name} has no {row['measure']} measure")
+                return None
+            return Decimal(str(row["quantity"])) * measure.quantity_in_base_units
+        if "oz" in row:
+            return ounces(item, row["oz"])
+        return ounces(item, Decimal(str(row["lb"])) * 16)
+
+    def load_recipes(self):
+        """A batch, from what the chefs said goes in. Unchanged recipes are left alone."""
+        for row in self.visit.get("recipes", []):
+            item = self.item(row["item"], row["code"])
+            if item is None:
+                continue
+            yields = self._amount(item, row["yield"], row["code"])
+            lines = {}
+            for line in row["lines"]:
+                component = self.item(line["item"], row["code"])
+                amount = component and self._amount(component, line, row["code"])
+                if amount is None:
+                    break
+                lines[component] = lines.get(component, Decimal("0")) + amount
+            else:
+                if yields:
+                    self._save_recipe(item, yields, lines, row)
+
+    def _save_recipe(self, item: Item, yields: Decimal, lines: dict, row: dict):
+        current = Recipe.objects.filter(item=item, is_active=True).first()
+        if current:
+            have = {line.component: line.quantity for line in current.lines.select_related("component")}
+            if have == lines and current.yield_quantity == yields:
+                return
+            current.is_active = False
+            current.save(update_fields=["is_active", "updated_at"])
+        version = (
+            Recipe.objects.filter(item=item).order_by("-version").values_list("version", flat=True).first()
+            or 0
+        ) + 1
+        recipe = Recipe.objects.create(
+            item=item,
+            version=version,
+            yield_quantity=yields,
+            method=row.get("method", ""),
+            created_by=self.user,
+        )
+        for order, (component, quantity) in enumerate(lines.items()):
+            RecipeLine.objects.create(
+                recipe=recipe, component=component, quantity=quantity, sort_order=order, created_by=self.user
+            )
+        self.changes.append(f"{row['code']}: recipe for {item.name} ({len(lines)} ingredients)")
+
+    def load_watch(self):
+        for row in self.visit.get("watch", []):
+            item = self.item(row["item"], row["code"])
+            if item is None or item.lead_days == row["lead_days"]:
+                continue
+            item.lead_days = row["lead_days"]
+            item.save(update_fields=["lead_days", "updated_at"])
+            self.changes.append(
+                f"{row['code']}: watch {item.name} for running out (more takes {row['lead_days']} day)"
+            )
 
     def load_containers(self):
         for row in self.visit.get("containers", []):
@@ -221,7 +327,11 @@ class Command(BaseCommand):
             )
 
     def load_plates(self):
-        plates = self.visit.get("plates", {})
+        # "plates", and any further "plates_..." block with its own sides.
+        for key in sorted(k for k in self.visit if k.startswith("plates")):
+            self._load_plate_block(self.visit[key])
+
+    def _load_plate_block(self, plates: dict):
         sides = {k: v for k, v in plates.get("sides", {}).items() if not k.startswith("_")}
         for row in plates.get("dishes", []):
             dish = self.item(row["dish"], row["codes"])

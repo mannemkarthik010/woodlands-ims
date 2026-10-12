@@ -635,3 +635,17 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
   .bar__who { display: none; }
 }
 .todo__more summary { cursor: pointer; color: var(--grey); padding: 6px 2px; }
+
+/* --- Run-out watch -------------------------------------------------------- */
+.watch { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.watch__card { display: flex; flex-direction: column; gap: 3px; padding: 14px 16px; border-radius: var(--radius); border: 1px solid var(--rule); border-top: 5px solid var(--green); text-decoration: none; color: var(--ink); background: #fff; }
+.watch__card:hover { box-shadow: 0 2px 8px #0000000f; }
+.watch__card--tomorrow { border-top-color: #E9C46A; background: #FFFBF0; }
+.watch__card--now, .watch__card--out { border-top-color: var(--deep); background: #FBF1EE; }
+.watch__card--unknown { border-top-color: var(--rule); }
+.watch__name { font-weight: 700; font-size: 17px; }
+.watch__left { font-size: 15px; font-variant-numeric: tabular-nums; }
+.watch__advice { font-weight: 600; }
+.watch__card--now .watch__advice, .watch__card--out .watch__advice { color: var(--deep); }
+.watch__rate { font-size: 13px; color: var(--grey); }
+.watch__card--uncounted { border-top-color: #E9C46A; }

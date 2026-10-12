@@ -154,6 +154,14 @@ class Item(TimeStamped):
     # (sales.ThaliDay).
     changes_daily = models.BooleanField(default=False)
 
+    # How many days it takes to have more once somebody decides to: a batter
+    # is soaked, ground and fermented (about a day), sambar is made the same
+    # day, rice comes with the next delivery. Set only for what the kitchen
+    # must never run out of -- that is what puts an item on the run-out watch.
+    lead_days = models.PositiveSmallIntegerField(
+        null=True, blank=True, help_text="Days to make or get more. Set = watched for running out."
+    )
+
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
 

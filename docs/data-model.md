@@ -162,6 +162,7 @@ A job in the kitchen or on the floor -- dosa station, prep, server, dishwasher. 
 | `current_unit_cost` | Decimal(12,4) | yes | Weighted average, per base unit. |
 | `count_every` | Char(8) |  | Which count this item is on. Left empty, it follows the kitchen's rule for its kind. _DAILY, WEEKLY, MONTHLY, NEVER_ |
 | `changes_daily` | Boolean |  |  |
+| `lead_days` | PositiveSmallInteger | yes | Days to make or get more. Set = watched for running out. |
 | `is_active` | Boolean |  |  |
 | `notes` | Text |  |  |
 

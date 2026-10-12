@@ -123,6 +123,71 @@ class ImportVisitTests(TestCase):
         thali.refresh_from_db()
         self.assertTrue(thali.changes_daily)
 
+    def test_a_batch_recipe_in_scoops_and_ounces_becomes_pounds(self):
+        rice = item("Long-grain Rice", kind=ItemKind.RAW)
+        salt = item("Salt", kind=ItemKind.RAW)
+        self.run_visit(
+            {
+                "containers": [{"code": "Q4", "item": "Dosa Batter", "measure": "bucket", "lb": 30}],
+                "measures": [{"code": "W2", "item": "Long-grain Rice", "measure": "scoop", "oz": 30}],
+                "recipes": [
+                    {
+                        "code": "C26",
+                        "item": "Dosa Batter",
+                        "yield": {"quantity": 4, "measure": "bucket"},
+                        "lines": [
+                            {"item": "Long-grain Rice", "quantity": 10, "measure": "scoop"},
+                            {"item": "Salt", "oz": 16},
+                        ],
+                    }
+                ],
+            }
+        )
+        recipe = Recipe.objects.get(item=self.batter, is_active=True)
+        self.assertEqual(recipe.yield_quantity, Decimal("120"))
+        self.assertEqual(
+            {line.component: line.quantity for line in recipe.lines.all()},
+            {rice: Decimal("18.75"), salt: Decimal("1")},
+        )
+
+    def test_a_recipe_with_an_unweighed_measure_is_skipped_whole(self):
+        item("Urad Gota", kind=ItemKind.RAW)
+        self.run_visit(
+            {
+                "recipes": [
+                    {
+                        "code": "C26",
+                        "item": "Dosa Batter",
+                        "yield": {"lb": 120},
+                        "lines": [{"item": "Urad Gota", "quantity": 6, "measure": "scoop"}],
+                    }
+                ]
+            }
+        )
+        self.assertFalse(Recipe.objects.filter(item=self.batter).exists())
+
+    def test_watched_items_get_their_lead_time(self):
+        self.run_visit({"watch": [{"code": "x", "item": "Dosa Batter", "lead_days": 1}]})
+        self.batter.refresh_from_db()
+        self.assertEqual(self.batter.lead_days, 1)
+
+    def test_new_items_can_come_with_their_pack(self):
+        self.run_visit(
+            {
+                "new_items": [
+                    {
+                        "name": "Idly Rice",
+                        "what": "RAW",
+                        "unit": "lb",
+                        "every": "DAILY",
+                        "pack": {"name": "bag", "qty": 20},
+                    }
+                ]
+            }
+        )
+        rice = Item.objects.get(name="Idly Rice")
+        self.assertEqual(rice.measures.get().quantity_in_base_units, Decimal("20"))
+
     def test_a_dry_run_keeps_nothing(self):
         self.run_visit(self.plate({"Dosa Batter": 5, "sides": 1}), dry_run=True)
         self.assertFalse(Recipe.objects.exists())

@@ -21,6 +21,12 @@
 </form>
 
 <h2 class="h2">What went in? <small class="muted">(if you know — you can skip this)</small></h2>
+{% if recipe %}
+  <p class="banner">Skip this and the chefs' recipe is used, scaled to what you made:
+    {% for line in recipe.lines.all %}{{ line.component.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+    (one batch makes {{ recipe.yield_quantity|floatformat:"-1" }} {{ batch.item.base_unit.code }}).
+    Add anything here and only what you list is used.</p>
+{% endif %}
 <form class="search"
       hx-get="{% url 'item_search' %}"
       hx-trigger="input changed delay:200ms, search"

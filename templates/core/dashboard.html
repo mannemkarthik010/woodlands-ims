@@ -30,6 +30,19 @@
   </a>
 </div>
 
+{% if board.watch %}
+  <section class="watch" aria-label="Run-out watch">
+    {% for w in board.watch %}
+      <a class="watch__card watch__card--{{ w.status }}" href="{% if w.makes %}{% url 'made_today' %}{% else %}{% url 'receipt_new' %}{% endif %}">
+        <span class="watch__name">{{ w.item.name }}</span>
+        <span class="watch__left">{% if w.status != "uncounted" %}{% if w.in_containers %}<b>{{ w.in_containers }}</b> · {% endif %}{{ w.on_hand|floatformat:"-1" }} {{ w.unit }} left{% else %}—{% endif %}</span>
+        <span class="watch__advice">{{ w.advice }}</span>
+        <span class="watch__rate">{% if w.per_day %}uses ~{{ w.per_day|floatformat:"-1" }} {{ w.unit }}/day{% else %}usage not known yet{% endif %}{% if w.par %} · make-more at {{ w.par|floatformat:"-1" }}{% endif %}</span>
+      </a>
+    {% endfor %}
+  </section>
+{% endif %}
+
 <div class="dash">
   <section class="panel panel--wide">
     <h2 class="panel__h">Needs attention {% if board.todos %}<span class="team__count">{{ board.todos|length }}</span>{% endif %}</h2>

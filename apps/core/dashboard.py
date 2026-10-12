@@ -54,6 +54,7 @@ class Dashboard:
     unpaid_minutes: int = 0
     unpaid_people: int = 0
     made_today: list = field(default_factory=list)
+    watch: list = field(default_factory=list)
     todos: list[Todo] = field(default_factory=list)
 
     @property
@@ -118,11 +119,32 @@ def _sales(board: Dashboard, location) -> None:
         )
 
 
+def _watch(board: Dashboard) -> None:
+    from apps.stock.runout import watched
+
+    board.watch = watched(board.today)
+    uncounted = [w.item.name for w in board.watch if w.status == "uncounted"]
+    for w in board.watch:
+        if w.status in ("out", "now", "tomorrow"):
+            board.todos.append(
+                Todo(
+                    f"{w.item.name}: {w.advice} — {w.on_hand:.1f} {w.unit} left",
+                    reverse("made_today") if w.makes else reverse("receipt_new"),
+                    "bad" if w.status in ("out", "now") else "warn",
+                )
+            )
+    if uncounted:
+        board.todos.append(
+            Todo(f"Count tonight to start the run-out watch: {', '.join(uncounted)}", reverse("count_home"))
+        )
+
+
 def _stock(board: Dashboard) -> None:
     from apps.stock.alerts import shortfalls
 
     board.low = shortfalls()
-    for s in board.low[:3]:
+    watched_ids = {w.item.pk for w in board.watch}
+    for s in [s for s in board.low if s.par.item_id not in watched_ids][:3]:
         board.todos.append(
             Todo(
                 s.sentence(),
@@ -214,6 +236,7 @@ def build(today: date | None = None) -> Dashboard:
         board.todos.append(Todo("No restaurant location set up yet", reverse("admin:index"), "bad"))
         return board
     _sales(board, location)
+    _watch(board)
     _people(board)
     _kitchen(board)
     _stock(board)

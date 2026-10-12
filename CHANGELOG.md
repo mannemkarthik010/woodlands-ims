@@ -5,6 +5,20 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- Run-out watch for what the kitchen must never run out of (sambar, dosa and idly batter, the
+  rices): on hand, used per day over the recent open days (what counts found missing included),
+  days left against how long more takes, and one plain answer — Make today, Make tomorrow,
+  Order today, Enough for N days, or Not counted yet. In buckets and bags as well as pounds,
+  top of the owners' dashboard
+- The 10 October visit, loaded: scoop weights, the dosa and idly batter recipes, a 14 kg batter
+  bucket, idly/vada plates with their 3 oz sides, uthappams with dosa batter and dosa sides, jobs,
+  packaging and the groceries from the shelf lists; the watched items on the daily count
+- A batch recorded on Made today with nothing listed takes out what the chefs' recipe says,
+  scaled to what was made; anything the cook lists wins
+
+### Changed
+- A sale stops at what the kitchen makes ahead: a dosa takes out batter, not the rice and dal the
+  batter was made from (those went out when the batch was made)
 - Navigation on every page: a menu for owners (Dashboard, Team, Hours & pay, Sales, Thali,
   Stock, Made today, Deliveries, Recipes) and a shorter one for staff, with the current section
   marked, plus Admin and Sign out. It scrolls sideways on a phone

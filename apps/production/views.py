@@ -77,11 +77,23 @@ def batch_start(request):
     return redirect("batch_edit", pk=batch.pk)
 
 
+def _recipe_lines(item):
+    from apps.catalog.models import Recipe
+
+    recipe = (
+        Recipe.objects.filter(item=item, is_active=True)
+        .prefetch_related("lines__component__base_unit")
+        .first()
+    )
+    return recipe
+
+
 def _batch_context(batch, **extra):
     return {
         "batch": batch,
         "inputs": batch.inputs.select_related("item", "item__base_unit", "entered_measure"),
         "measures": _measures(batch.item),
+        "recipe": _recipe_lines(batch.item),
         **extra,
     }
 

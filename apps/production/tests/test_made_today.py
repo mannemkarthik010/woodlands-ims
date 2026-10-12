@@ -71,6 +71,26 @@ class ServiceTests(MadeTodayTestCase):
         self.assertEqual(on_hand(self.sambar, self.restaurant), Decimal("32"))
         self.assertFalse(StockMovement.objects.filter(movement_type=MovementType.PRODUCTION_CONSUME).exists())
 
+    def test_with_nothing_listed_the_recipe_says_what_went_in(self):
+        from apps.catalog.models import Recipe, RecipeLine
+
+        recipe = Recipe.objects.create(item=self.sambar, yield_quantity=Decimal("128"))  # 4 buckets
+        RecipeLine.objects.create(recipe=recipe, component=self.toor, quantity=Decimal("12"))
+        finish_batch(self.start(), quantity=Decimal("2"), measure=self.bucket)  # half the recipe
+        self.assertEqual(on_hand(self.toor, self.restaurant), Decimal("-6"))
+        self.assertEqual(self.sambar.batches.get().inputs.get().note, "from the recipe")
+
+    def test_what_the_cook_lists_wins_over_the_recipe(self):
+        from apps.catalog.models import Recipe, RecipeLine
+
+        recipe = Recipe.objects.create(item=self.sambar, yield_quantity=Decimal("128"))
+        RecipeLine.objects.create(recipe=recipe, component=self.toor, quantity=Decimal("12"))
+        batch = self.start()
+        add_input(batch, item=self.powder, quantity=Decimal("1"))
+        finish_batch(batch, quantity=Decimal("2"), measure=self.bucket)
+        self.assertEqual(on_hand(self.toor, self.restaurant), Decimal("0"))
+        self.assertEqual(on_hand(self.powder, self.restaurant), Decimal("-1"))
+
     def test_nothing_is_written_to_stock_until_it_is_saved(self):
         batch = self.start()
         add_input(batch, item=self.toor, quantity=Decimal("3"), measure=self.scoop)

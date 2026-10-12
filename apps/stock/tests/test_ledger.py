@@ -167,6 +167,11 @@ class ExplosionTests(TestCase):
         self.assertAlmostEqual(result["raw-urad"], Decimal("5") * (Decimal("5") / Decimal("11")), places=6)
         self.assertNotIn("prep-dosa-batter", result)  # intermediate, not a leaf
 
+    def test_a_sale_stops_at_what_the_kitchen_makes_ahead(self):
+        """The rice and dal went out when the batter was made; a dosa takes out batter."""
+        result = {c.item.code: c.quantity for c in explode(self.dosa, Decimal("100"), stop_at_made=True)}
+        self.assertEqual(result, {"prep-dosa-batter": Decimal("5")})
+
     # Covers: FR-602.
     def test_a_recipe_loop_is_refused_rather_than_hanging(self):
         loop = Recipe.objects.create(item=self.rice, yield_quantity=Decimal("1"))
