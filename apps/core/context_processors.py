@@ -19,6 +19,7 @@ OWNER_NAV = [
     ("Made today", "made_today", ("/made/",)),
     ("Deliveries", "receipt_new", ("/delivery/",)),
     ("Recipes", "ask_page", ("/ask/",)),
+    ("Assistant", "assistant", ("/assistant/",)),
 ]
 STAFF_NAV = [
     ("Home", "home", ("/",)),
@@ -28,6 +29,7 @@ STAFF_NAV = [
     ("Made today", "made_today", ("/made/",)),
     ("Deliveries", "receipt_new", ("/delivery/",)),
     ("Recipes", "ask_page", ("/ask/",)),
+    ("Assistant", "assistant", ("/assistant/",)),
 ]
 
 

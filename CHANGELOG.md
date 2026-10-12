@@ -5,6 +5,11 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- The kitchen assistant (menu: Assistant): staff say what happened in English or Spanish — a batch
+  made, a delivery, a count — and Claude turns it into records with tools; it can read stock and
+  the run-out watch, but every change is only proposed, shown as a card, and saved by the
+  ordinary services when a person taps Confirm. Item names are limited to the restaurant's own
+  list by strict tool schemas; units are checked again on confirm. Off without AI consent
 - Run-out watch for what the kitchen must never run out of (sambar, dosa and idly batter, the
   rices): on hand, used per day over the recent open days (what counts found missing included),
   days left against how long more takes, and one plain answer — Make today, Make tomorrow,

@@ -54,3 +54,49 @@ def healthz(request):
     except Exception:  # noqa: BLE001 -- any failure means "not healthy", which is the answer
         return HttpResponse("database unreachable", status=503, content_type="text/plain")
     return HttpResponse("ok", content_type="text/plain")
+
+
+# --- The kitchen assistant ---------------------------------------------------
+
+SESSION_KEY = "assistant_proposals"
+
+
+@login_required
+def assistant_page(request):
+    """Tell it what happened; check what it prepared; confirm. Nothing is saved without a tap."""
+    from django.contrib import messages
+    from django.shortcuts import redirect
+
+    from apps.core import ai, assistant
+
+    pending = assistant.from_session(request.session.get(SESSION_KEY, []))
+    context = {"available": ai.available()}
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "ask":
+            said = request.POST.get("said", "")
+            context["said"] = said
+            try:
+                reply = assistant.ask(said)
+            except assistant.AssistantError as e:
+                context["error"] = str(e)
+            except Exception:  # network, quota: the screens still work
+                context["error"] = "The assistant can't be reached right now. Please use the screens below."
+            else:
+                context["reply"] = reply.text
+                pending = reply.proposals + pending
+        elif action in ("confirm", "discard"):
+            chosen = next((p for p in pending if p.id == request.POST.get("id")), None)
+            if chosen is not None:
+                if action == "confirm":
+                    try:
+                        messages.success(request, assistant.carry_out(chosen, user=request.user))
+                    except assistant.AssistantError as e:
+                        messages.error(request, str(e))
+                        return redirect("assistant")
+                pending = [p for p in pending if p.id != chosen.id]
+            request.session[SESSION_KEY] = assistant.to_session(pending)
+            return redirect("assistant")
+        request.session[SESSION_KEY] = assistant.to_session(pending[:10])
+    context["pending"] = pending
+    return render(request, "core/assistant.html", context)

@@ -649,3 +649,10 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 .watch__card--now .watch__advice, .watch__card--out .watch__advice { color: var(--deep); }
 .watch__rate { font-size: 13px; color: var(--grey); }
 .watch__card--uncounted { border-top-color: #E9C46A; }
+
+/* --- Assistant ------------------------------------------------------------ */
+.assistant__reply { background: var(--tint); border-radius: var(--radius); padding: 12px 14px; }
+.proposal { border: 1px solid var(--rule); border-left: 4px solid var(--gold); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; display: grid; gap: 10px; }
+.proposal__title { margin: 0 0 4px; font-weight: 700; }
+.proposal__actions form { display: flex; gap: 8px; flex-wrap: wrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

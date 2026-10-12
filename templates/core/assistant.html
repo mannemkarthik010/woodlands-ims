@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Assistant · Woodlands{% endblock %}
+{% block content %}
+<div class="teamhead">
+  <div>
+    <p class="teamhead__eyebrow">Assistant</p>
+    <h1 class="teamhead__title">Tell me what happened</h1>
+    <p class="teamhead__hours muted">“We made 4 buckets of dosa batter” · “2 bags of idly rice came in” · “Sambar 1.5 buckets, dosa batter 2 buckets” · “How much sambar is left?” — English or Spanish.</p>
+  </div>
+</div>
+
+{% if not available %}
+  <p class="banner">The assistant isn't switched on yet. Everything still works from the menu: Made today, Deliveries, Stock count.</p>
+{% else %}
+  <form method="post" class="card">{% csrf_token %}
+    <input type="hidden" name="action" value="ask">
+    <label for="said" class="sr-only">What happened</label>
+    <textarea id="said" name="said" rows="2" placeholder="e.g. we made 4 buckets of dosa batter" required>{{ said|default:"" }}</textarea>
+    <div class="actions"><button class="btn btn--primary btn--big" type="submit">Send</button></div>
+  </form>
+  {% if reply %}<p class="answer__body assistant__reply">{{ reply }}</p>{% endif %}
+{% endif %}
+
+{% if pending %}
+  <h2 class="h2">Check and confirm — nothing is saved until you tap Confirm</h2>
+  {% for p in pending %}
+    <section class="proposal">
+      <div>
+        <p class="proposal__title">{{ p.title }}</p>
+        <ul class="rank">
+          {% for line in p.lines %}<li><span>{{ line.item }}</span><b>{{ line.quantity }} {{ line.measure }}</b></li>{% endfor %}
+        </ul>
+      </div>
+      <div class="proposal__actions">
+        <form method="post">{% csrf_token %}<input type="hidden" name="id" value="{{ p.id }}">
+          <button class="btn btn--primary" name="action" value="confirm" type="submit">Confirm</button>
+          <button class="btn btn--ghost" name="action" value="discard" type="submit">Not right — remove</button>
+        </form>
+      </div>
+    </section>
+  {% endfor %}
+{% endif %}
+{% endblock %}

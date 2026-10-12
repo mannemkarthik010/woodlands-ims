@@ -5,6 +5,7 @@ from apps.stock import views
 
 urlpatterns = [
     path("", core_views.home, name="home"),
+    path("assistant/", core_views.assistant_page, name="assistant"),
     path("transfer/", views.transfer_new, name="transfer_new"),
     path("transfer/<int:pk>/", views.transfer_edit, name="transfer_edit"),
     path("transfer/<int:pk>/add/", views.transfer_add_line, name="transfer_add_line"),
