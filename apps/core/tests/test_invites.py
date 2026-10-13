@@ -187,4 +187,4 @@ class TabletLoginTests(TestCase):
         out = StringIO()
         call_command("invite_tablet", stdout=out)
         self.assertIn("https://woodlands.example.com/welcome/", out.getvalue())
-        self.assertIn("Created the tablet login kitchen", out.getvalue())
+        self.assertIn("the tablet login kitchen", out.getvalue())

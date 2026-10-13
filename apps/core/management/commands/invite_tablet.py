@@ -29,9 +29,16 @@ class Command(BaseCommand):
         days = settings.PASSWORD_RESET_TIMEOUT // 86400
         self.stdout.write(
             self.style.SUCCESS(
-                f"{'Created' if created else 'Fresh link for'} the tablet login {user.username}."
+                f"{'Created' if created else 'Already have'} the tablet login {user.username}."
             )
         )
+        if "localhost" in settings.SITE_URL or settings.SECRET_KEY == "maintenance-only":
+            # Run from a laptop, the link is not signed with the live site's key and would not open.
+            self.stdout.write(
+                "Make its password link on the live site: Admin → Users → tick "
+                f"{user.username} → “Make a one-time choose-your-password link”."
+            )
+            return
         self.stdout.write("")
         self.stdout.write(f"  {link}")
         self.stdout.write("")
