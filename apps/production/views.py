@@ -12,11 +12,13 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from apps.catalog.models import Item, ItemKind, ItemMeasure
 from apps.core.models import Location
 from apps.production.models import BatchStatus, ProductionBatch
+from apps.production.pots import all_pots
 from apps.production.services import (
     BatchError,
     add_input,
@@ -54,6 +56,7 @@ def made_today(request):
         "production/made_today.html",
         {
             "items": Item.objects.filter(is_active=True, kind=ItemKind.PREPARED).order_by("name"),
+            "pots": all_pots(),
             "open": batches.filter(status=BatchStatus.IN_PROGRESS).order_by("-started_at"),
             "made": batches.exclude(status=BatchStatus.IN_PROGRESS)
             .filter(finished_at__gte=start, finished_at__lt=start + timedelta(days=1))
@@ -161,3 +164,38 @@ def batch_discard(request, pk):
     except BatchError as e:
         messages.error(request, str(e))
     return redirect("made_today")
+
+
+# --- Cooked rice: the next pot ------------------------------------------------
+
+
+@login_required
+def pots_banner(request):
+    """
+    The "cook the next pot" reminder, asked for by every page once a minute.
+    Empty outside service and when nothing needs cooking yet.
+    """
+    from apps.production.pots import tell_owners
+
+    pots = [p for p in all_pots() if p.status not in ("closed", "ok", "enough")]
+    tell_owners(pots)
+    return render(request, "production/_pots_banner.html", {"pots": pots})
+
+
+@login_required
+@require_POST
+def pot_cooked(request, pk):
+    from apps.production.pots import pot_for, record_pot
+
+    item = get_object_or_404(Item, pk=pk, is_active=True, cook_minutes__isnull=False)
+    try:
+        record_pot(item, by=request.user)
+    except BatchError as e:
+        messages.error(request, str(e))
+    else:
+        pot = pot_for(item)
+        messages.success(request, f"Fresh pot of {item.name.lower()} recorded. {pot.sentence()}")
+    back = request.POST.get("next", "")
+    if not url_has_allowed_host_and_scheme(back, {request.get_host()}, require_https=request.is_secure()):
+        back = ""
+    return redirect(back or "made_today")

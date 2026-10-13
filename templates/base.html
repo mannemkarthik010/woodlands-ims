@@ -28,6 +28,10 @@
 {% endif %}
 
 <main class="wrap {% block wrap_class %}{% endblock %}">
+  {% if user.is_authenticated %}
+    {# Cooked rice: "cook the next pot" -- checked every minute on every page. #}
+    <div id="pots" class="no-print" hx-get="{% url 'pots_banner' %}" hx-trigger="load, every 60s" hx-swap="innerHTML"></div>
+  {% endif %}
   {% for m in messages %}
     <p class="{% if m.level_tag == 'error' %}alert{% else %}banner{% endif %}" role="status">{{ m }}</p>
   {% endfor %}

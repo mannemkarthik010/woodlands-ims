@@ -162,6 +162,23 @@ class Item(TimeStamped):
         null=True, blank=True, help_text="Days to make or get more. Set = watched for running out."
     )
 
+    # Cooked fresh through service -- rice, above all. Setting cook_minutes
+    # is what puts the item on the "cook the next pot" reminder
+    # (production.pots): the kitchen is told to start a pot early enough that
+    # it is ready before the last one is finished. How long a pot lasts is
+    # learned from the pots already recorded; pot_every_minutes is the
+    # kitchen's own guess, used until there are enough of those.
+    cook_minutes = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="Minutes to cook a fresh pot. Set = the kitchen is told when to cook the next.",
+    )
+    pot_every_minutes = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="About how long one pot lasts in service, until the system has learned it.",
+    )
+
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
 

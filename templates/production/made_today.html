@@ -3,6 +3,10 @@
 {% block content %}
 <h1>What did you make?</h1>
 
+{% for pot in pots %}{% if pot.status != "closed" %}
+  <p class="nudge">{{ pot.sentence }}{% if pot.basis %} <small class="muted">({{ pot.basis }})</small>{% endif %}</p>
+{% endif %}{% endfor %}
+
 {% if open %}
   <h2 class="h2">Not finished</h2>
   <ul class="list">
@@ -14,11 +18,18 @@
 
 <div class="names">
   {% for item in items %}
-    <form method="post" action="{% url 'batch_start' %}">
-      {% csrf_token %}
-      <input type="hidden" name="item" value="{{ item.pk }}">
-      <button class="names__btn" type="submit">{{ item.name }}</button>
-    </form>
+    {% if item.cook_minutes %}
+      <form method="post" action="{% url 'pot_cooked' item.pk %}">
+        {% csrf_token %}
+        <button class="names__btn" type="submit">{{ item.name }} — fresh pot</button>
+      </form>
+    {% else %}
+      <form method="post" action="{% url 'batch_start' %}">
+        {% csrf_token %}
+        <input type="hidden" name="item" value="{{ item.pk }}">
+        <button class="names__btn" type="submit">{{ item.name }}</button>
+      </form>
+    {% endif %}
   {% empty %}
     <p class="muted">Nothing is listed as made in the kitchen yet.</p>
   {% endfor %}

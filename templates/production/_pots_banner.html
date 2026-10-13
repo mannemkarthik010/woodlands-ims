@@ -1,0 +1,13 @@
+{% for pot in pots %}
+  <div class="pot pot--{{ pot.status }}" role="{% if pot.alarm %}alert{% else %}status{% endif %}">
+    <div class="pot__text">
+      <span class="pot__say">{{ pot.sentence }}</span>
+      {% if pot.basis %}<span class="pot__why">{{ pot.basis|capfirst }}.</span>{% endif %}
+    </div>
+    <form method="post" action="{% url 'pot_cooked' pot.item.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.headers.HX_Current_URL|default:'' }}">
+      <button class="btn btn--primary" type="submit">Cooked a fresh pot</button>
+    </form>
+  </div>
+{% endfor %}

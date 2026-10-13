@@ -656,3 +656,18 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 .proposal__title { margin: 0 0 4px; font-weight: 700; }
 .proposal__actions form { display: flex; gap: 8px; flex-wrap: wrap; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* Cooked rice: "cook the next pot" */
+.pot {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+  border-left: 5px solid var(--amber); background: #fdf6e7;
+  padding: 12px 14px; border-radius: 6px; margin: 0 0 14px;
+}
+.pot--cook, .pot--late { border-left-color: var(--deep); background: #FBEDE9; }
+.pot--late { animation: pot-pulse 1.6s ease-in-out infinite; }
+.pot__text { flex: 1 1 260px; }
+.pot__say { font-size: 19px; font-weight: 700; display: block; }
+.pot__why { font-size: 14px; color: var(--grey); }
+.pot form { margin: 0; }
+@keyframes pot-pulse { 50% { background: #F6D9D1; } }
+@media (prefers-reduced-motion: reduce) { .pot--late { animation: none; } }

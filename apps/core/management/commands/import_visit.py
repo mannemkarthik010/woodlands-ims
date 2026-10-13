@@ -49,6 +49,7 @@ from django.db import transaction
 from django.utils.dateparse import parse_date
 
 from apps.catalog.models import (
+    CountEvery,
     Item,
     ItemKind,
     ItemMeasure,
@@ -129,6 +130,7 @@ class Command(BaseCommand):
         self.load_plates()
         self.load_recipes()
         self.load_watch()
+        self.load_pots()
 
     def item(self, name: str, code: str) -> Item | None:
         found = find_by_name(name)
@@ -248,6 +250,35 @@ class Command(BaseCommand):
                 recipe=recipe, component=component, quantity=quantity, sort_order=order, created_by=self.user
             )
         self.changes.append(f"{row['code']}: recipe for {item.name} ({len(lines)} ingredients)")
+
+    def load_pots(self):
+        """Cooked through service, a pot at a time: the "cook the next pot" reminder."""
+        for row in self.visit.get("pots", []):
+            item = find_by_name(row["item"])
+            if item is None:
+                item = add_item(
+                    name=row["item"],
+                    what="PREPARED",
+                    base_unit=Unit.objects.get(code="each"),
+                    count_every=CountEvery.NEVER,  # made fresh all service; nothing is kept
+                    pack_name="pot",
+                    pack_quantity=Decimal("1"),
+                    user=self.user,
+                )
+                self.changes.append(f"new item: {item.name}, recorded a pot at a time")
+            elif not item.is_active:
+                self.skipped.append(f"{row['code']}: {item.name} is no longer used -- skipped")
+                continue
+            wanted = {"cook_minutes": row["cook_minutes"], "pot_every_minutes": row.get("every_minutes")}
+            if all(getattr(item, f) == v for f, v in wanted.items()):
+                continue
+            for field, value in wanted.items():
+                setattr(item, field, value)
+            item.save(update_fields=[*wanted, "updated_at"])
+            every = f", a pot lasts about {row['every_minutes']} min" if row.get("every_minutes") else ""
+            self.changes.append(
+                f"{row['code']}: remind the kitchen to cook {item.name} ({row['cook_minutes']} min to cook{every})"
+            )
 
     def load_watch(self):
         for row in self.visit.get("watch", []):
