@@ -423,3 +423,29 @@ class RecipeLine(TimeStamped):
 
     def __str__(self) -> str:
         return f"{self.quantity} {self.component.base_unit} {self.component.name}"
+
+
+class PlannedUse(TimeStamped):
+    """
+    How much of an item the owners expect the kitchen to use in a week, from
+    their weekly prep plan ("Kitchen prep, Oct 13-18": 13 gallons of sambar,
+    3 buckets of dosa batter, 7 hotel pans of rice).
+
+    The run-out watch learns how fast things go from what is recorded, which
+    takes days. Until it has, this is the next best thing -- the owners' own
+    forecast -- and the screen says that is where the figure came from. A
+    measured rate always wins over a plan.
+    """
+
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="planned_uses")
+    week_starting = models.DateField(help_text="The first day the plan covers; it runs seven days.")
+    quantity = models.DecimalField(help_text="For the whole week, in the item's base unit.", **QTY)
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["item", "week_starting"], name="uniq_planned_use_per_week")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.item} — {self.quantity} {self.item.base_unit.code}, week of {self.week_starting}"

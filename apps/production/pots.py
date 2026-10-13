@@ -113,6 +113,12 @@ class Pot:
     now: datetime
 
     @property
+    def noun(self) -> str:
+        """What the kitchen cooks it in -- "hotel pan" for rice at Woodlands; "pot" if nobody has said."""
+        measure = _measure(self.item)
+        return measure.name if measure else "pot"
+
+    @property
     def cook(self) -> timedelta:
         return timedelta(minutes=self.item.cook_minutes or 0)
 
@@ -157,27 +163,33 @@ class Pot:
         )  # "Cook rice now", not "cook cooked rice"
         at = _clock
         if self.status == "late":
-            return f"Cook {name} now — the last pot ({at(self.last)}) is due to run out."
+            return f"Cook {name} now — the last {self.noun} ({at(self.last)}) is due to run out."
         if self.status == "cook" and self.last is None:
-            return f"Cook the first pot of {name} now — service starts at {at(self.service.starts)}."
+            return f"Cook the first {self.noun} of {name} now — service starts at {at(self.service.starts)}."
         if self.status == "cook":
-            return f"Cook {name} now — the pot from {at(self.last)} runs out around {at(self.needed_by)}."
+            return f"Cook {name} now — the {self.noun} from {at(self.last)} runs out around {at(self.needed_by)}."
         if self.status == "soon":
-            return f"Cook {name} at {at(self.start_by)} — the pot runs out around {at(self.needed_by)}."
+            return (
+                f"Cook {name} at {at(self.start_by)} — the {self.noun} runs out around {at(self.needed_by)}."
+            )
         if self.status == "enough":
-            return f"The {name} pot from {at(self.last)} should last until closing."
+            return f"The {name} {self.noun} from {at(self.last)} should last until closing."
         if self.status == "ok":
-            return f"Next pot of {name}: start at {at(self.start_by)}."
+            return f"Next {self.noun} of {name}: start at {at(self.start_by)}."
         if self.status == "unknown":
-            return f"Cooked {name} at {at(self.last)}. Say how long a pot lasts to get reminders."
+            return f"Cooked {name} at {at(self.last)}. Say how long a {self.noun} lasts to get reminders."
         return ""
 
     def basis(self) -> str:
         if self.learned_from:
-            return f"a pot lasts about {_minutes(self.lasts)}, from the last {self.learned_from} pots"
+            return f"a {self.noun} lasts about {_minutes(self.lasts)}, from the last {self.learned_from} {self.noun}s"
         if self.lasts:
-            return f"a pot lasts about {_minutes(self.lasts)} (the kitchen's estimate)"
+            return f"a {self.noun} lasts about {_minutes(self.lasts)} (the kitchen's estimate)"
         return ""
+
+
+def _measure(item: Item) -> ItemMeasure | None:
+    return ItemMeasure.objects.filter(item=item, is_active=True).order_by("pk").first()
 
 
 def _clock(moment: datetime) -> str:
@@ -223,7 +235,7 @@ def record_pot(item: Item, *, by=None) -> ProductionBatch:
     from apps.production.services import finish_batch, start_batch
 
     location = Location.objects.filter(kind=Location.Kind.RESTAURANT, is_active=True).first()
-    measure = ItemMeasure.objects.filter(item=item, name__iexact="pot").first()
+    measure = _measure(item)
     batch = start_batch(item, location=location, by=by)
     return finish_batch(batch, quantity=Decimal("1"), measure=measure, by=by, note="Cooked a fresh pot")
 

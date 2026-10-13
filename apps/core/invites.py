@@ -36,6 +36,7 @@ OWNER_MODELS = [
     ("catalog", "item"),
     ("catalog", "itemmeasure"),
     ("catalog", "itemalias"),
+    ("catalog", "planneduse"),
 ]
 
 

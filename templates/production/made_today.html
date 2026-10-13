@@ -21,7 +21,7 @@
     {% if item.cook_minutes %}
       <form method="post" action="{% url 'pot_cooked' item.pk %}">
         {% csrf_token %}
-        <button class="names__btn" type="submit">{{ item.name }} — fresh pot</button>
+        <button class="names__btn" type="submit">{{ item.name }} — just cooked</button>
       </form>
     {% else %}
       <form method="post" action="{% url 'batch_start' %}">

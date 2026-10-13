@@ -6,6 +6,7 @@ from apps.catalog.models import (
     ItemCategory,
     ItemMeasure,
     ParLevel,
+    PlannedUse,
     Recipe,
     RecipeLine,
     Unit,
@@ -43,6 +44,14 @@ class ParLevelInline(admin.TabularInline):
     extra = 0
 
 
+class PlannedUseInline(admin.TabularInline):
+    """The owners' weekly prep plan: what the run-out watch uses until it has measured the real rate."""
+
+    model = PlannedUse
+    extra = 0
+    ordering = ("-week_starting",)
+
+
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
     list_display = (
@@ -60,9 +69,10 @@ class ItemAdmin(admin.ModelAdmin):
     list_filter = ("kind", "count_every", "category", "is_active", "is_allergen_relevant")
     search_fields = ("name", "code", "aliases__alias")
     autocomplete_fields = ("category", "base_unit")
-    inlines = [ItemAliasInline, ItemMeasureInline, ParLevelInline]
+    inlines = [ItemAliasInline, ItemMeasureInline, ParLevelInline, PlannedUseInline]
     fieldsets = (
         (None, {"fields": ("code", "name", "kind", "category", "base_unit", "is_stocked", "count_every")}),
+        ("Running out", {"fields": ("lead_days", "cook_minutes", "pot_every_minutes")}),
         ("Handling", {"fields": ("shelf_life_days", "is_allergen_relevant", "allergen_notes")}),
         ("Cost", {"fields": ("current_unit_cost",)}),
         ("Admin", {"fields": ("is_active", "notes")}),

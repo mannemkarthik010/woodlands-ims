@@ -21,11 +21,12 @@ and turns that into the one thing a person needs to know:
                time, or it is already below its make-more level
     tomorrow   it will be "now" tomorrow
     ok         enough for a while
-    unknown    not enough history yet to say how fast it goes; the make-more
-               level alone is used until there is
+    unknown    not enough history yet to say how fast it goes; the owners'
+               weekly plan is used if there is one, else the make-more level
+               alone
     uncounted  never counted or delivered here, so nothing is known yet
 
-It never invents a usage figure. With no history it says so.
+It never invents a usage figure. With no history and no plan it says so.
 """
 
 from __future__ import annotations
@@ -36,7 +37,7 @@ from decimal import Decimal
 
 from django.utils import timezone
 
-from apps.catalog.models import Item, ItemKind, ParLevel
+from apps.catalog.models import Item, ItemKind, ParLevel, PlannedUse
 from apps.core.models import Location
 from apps.core.week import is_open
 from apps.stock.models import MovementType, StockBalance, StockMovement
@@ -63,6 +64,7 @@ class Watch:
     par: Decimal | None
     open_days: int
     counted: bool = True  # anything at all recorded for it here yet
+    planned: bool = False  # per_day is the owners' weekly plan, not yet measured
 
     @property
     def lead(self) -> int:
@@ -136,6 +138,18 @@ def _open_days(end: date, days: int) -> int:
     return sum(1 for i in range(days) if is_open(end - timedelta(days=i)))
 
 
+def _plans(today: date, items) -> dict[int, Decimal]:
+    """Per open day, from the owners' plan for the week that includes today."""
+    found = {}
+    for plan in PlannedUse.objects.filter(
+        item__in=items, week_starting__lte=today, week_starting__gt=today - timedelta(days=7)
+    ).order_by("week_starting"):
+        days = sum(1 for i in range(7) if is_open(plan.week_starting + timedelta(days=i)))
+        if days and plan.quantity > 0:
+            found[plan.item_id] = (plan.quantity / days).quantize(Decimal("0.01"))
+    return found
+
+
 def watched(today: date | None = None) -> list[Watch]:
     """Every watched item at the restaurant, the most urgent first."""
     today = today or timezone.localdate()
@@ -155,6 +169,8 @@ def watched(today: date | None = None) -> list[Watch]:
     by_item: dict[int, list[StockMovement]] = {}
     for m in StockMovement.objects.filter(location=location, item__in=items).order_by("occurred_at", "pk"):
         by_item.setdefault(m.item_id, []).append(m)
+
+    plans = _plans(today, items)
 
     out = []
     for item in items:
@@ -181,6 +197,9 @@ def watched(today: date | None = None) -> list[Watch]:
             days = _open_days(yesterday, span) if span > 0 else 0
             if days >= MIN_OPEN_DAYS and total_used > 0:
                 per_day = (total_used / days).quantize(Decimal("0.01"))
+        planned = per_day is None and item.pk in plans
+        if planned:
+            per_day = plans[item.pk]
         out.append(
             Watch(
                 item=item,
@@ -192,6 +211,7 @@ def watched(today: date | None = None) -> list[Watch]:
                 # Before its first count or delivery the ledger's zero means
                 # "not known", not "none left".
                 counted=bool(moves),
+                planned=planned,
             )
         )
     order = {"out": 0, "now": 1, "tomorrow": 2, "uncounted": 3, "unknown": 4, "ok": 5}

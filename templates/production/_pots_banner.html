@@ -7,7 +7,7 @@
     <form method="post" action="{% url 'pot_cooked' pot.item.pk %}">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.headers.HX_Current_URL|default:'' }}">
-      <button class="btn btn--primary" type="submit">Cooked a fresh pot</button>
+      <button class="btn btn--primary" type="submit">Cooked a fresh {{ pot.noun }}</button>
     </form>
   </div>
 {% endfor %}

@@ -132,3 +132,32 @@ class RunoutTests(TestCase):
         self.move(self.batter, 10, MovementType.PRODUCTION_YIELD, days_ago=5)
         self.move(self.batter, -10, MovementType.SALE_DEPLETION, days_ago=1)
         self.assertEqual(runout.watched(TODAY)[0].status, "out")
+
+    # --- the owners' weekly prep plan -------------------------------------------
+
+    def plan(self, item, quantity, week=date(2026, 10, 13)):
+        from apps.catalog.models import PlannedUse
+
+        PlannedUse.objects.create(item=item, week_starting=week, quantity=Decimal(str(quantity)))
+
+    def test_with_no_history_the_owners_plan_gives_the_rate(self):
+        # Week of Tue 13 Oct: Tue-Sun open, six days. 12 buckets' worth / 6 = 2 a day.
+        self.plan(self.batter, 120)
+        self.move(self.batter, 30, MovementType.PRODUCTION_YIELD, days_ago=0)
+        w = self.watch(self.batter)
+        self.assertTrue(w.planned)
+        self.assertEqual(w.per_day, Decimal("20.00"))
+        self.assertEqual(w.status, "tomorrow")  # 1.5 days left, made in a day: make tomorrow
+
+    def test_a_measured_rate_wins_over_the_plan(self):
+        self.plan(self.batter, 600)
+        self.move(self.batter, 120, MovementType.PRODUCTION_YIELD, days_ago=13)
+        self.move(self.batter, -55, MovementType.SALE_DEPLETION, days_ago=2)
+        w = self.watch(self.batter)
+        self.assertFalse(w.planned)
+        self.assertEqual(w.per_day, Decimal("5.00"))
+
+    def test_last_weeks_plan_is_not_used_for_this_week(self):
+        self.plan(self.batter, 120, week=date(2026, 10, 6))
+        self.move(self.batter, 30, MovementType.PRODUCTION_YIELD, days_ago=0)
+        self.assertIsNone(self.watch(self.batter).per_day)
