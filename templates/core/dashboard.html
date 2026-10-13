@@ -37,7 +37,7 @@
         <span class="watch__name">{{ w.item.name }}</span>
         <span class="watch__left">{% if w.status != "uncounted" %}{% if w.in_containers %}<b>{{ w.in_containers }}</b> · {% endif %}{{ w.on_hand|floatformat:"-1" }} {{ w.unit }} left{% else %}—{% endif %}</span>
         <span class="watch__advice">{{ w.advice }}</span>
-        <span class="watch__rate">{% if w.per_day %}uses ~{{ w.per_day|floatformat:"-1" }} {{ w.unit }}/day{% else %}usage not known yet{% endif %}{% if w.par %} · make-more at {{ w.par|floatformat:"-1" }}{% endif %}</span>
+        <span class="watch__rate">{% if w.per_day %}uses ~{{ w.per_day|floatformat:"-1" }} {{ w.unit }}/day (based on {{ w.open_days }} day{{ w.open_days|pluralize }}){% else %}usage not known yet{% endif %}{% if w.par %} · make-more at {{ w.par|floatformat:"-1" }}{% endif %}</span>
       </a>
     {% endfor %}
   </section>

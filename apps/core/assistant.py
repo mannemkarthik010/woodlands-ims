@@ -275,7 +275,6 @@ def carry_out(proposal: Proposal, *, user: User) -> str:
         post_count,
         post_receipt,
         record_counted,
-        start_count,
     )
 
     location = _restaurant()
@@ -294,7 +293,11 @@ def carry_out(proposal: Proposal, *, user: User) -> str:
         post_receipt(receipt, user=user)
         return f"Recorded: delivery of {len(resolved)} item{'s' if len(resolved) != 1 else ''}."
     if proposal.kind == "count":
-        count = start_count(location=location, cadence=StockCount.Cadence.ADHOC, user=user)
+        # A sheet of just the items said -- not the full ad-hoc list a count
+        # started from the screens would carry.
+        count = StockCount.objects.create(
+            location=location, cadence=StockCount.Cadence.ADHOC, counted_at=timezone.now(), created_by=user
+        )
         build_count_sheet(count, items=[item for item, _, _ in resolved])
         by_item = {line.item_id: line for line in count.lines.all()}
         for item, quantity, measure in resolved:

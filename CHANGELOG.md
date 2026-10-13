@@ -224,6 +224,10 @@ Notable changes per release. Newest first.
   separate shifts and hours are the plain span of each (ADR 0008 supersedes FR-103/FR-104)
 
 ### Fixed
+- Run-out watch: the first count (opening stock) was read as negative usage, so a daily rate
+  never appeared; tracking now starts at the first thing recorded, and a rate shows from the
+  first full open day ("based on N days"). Yogurt and paneer show in tubs and cases
+- The assistant's count carried a full sheet of every item; it now holds only what was said
 - Looking an item up by name found a retired copy before the one in use ("Chana Masala",
   "Masala Dosa"), so anything matched by name could land on the dead item
 - Choices inside a form (the count and item forms) were shown stacked and oversized because

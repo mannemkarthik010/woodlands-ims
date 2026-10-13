@@ -34,7 +34,6 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from django.db.models import Sum
 from django.utils import timezone
 
 from apps.catalog.models import Item, ItemKind, ParLevel
@@ -52,7 +51,7 @@ USE = [
     MovementType.CORRECTION,
 ]
 WINDOW_DAYS = 14
-MIN_OPEN_DAYS = 3  # fewer than this and the average means little
+MIN_OPEN_DAYS = 1  # a rate from one day is rough; the screen says "based on 1 day"
 
 
 @dataclass
@@ -77,7 +76,12 @@ class Watch:
     def in_containers(self) -> str:
         """46 lb of batter as the kitchen says it: "1.5 buckets". Empty when there is no bucket or bag."""
         measure = next(
-            (m for m in self.item.measures.all() if m.is_active and m.name in ("bucket", "bag")), None
+            (
+                m
+                for m in self.item.measures.all()
+                if m.is_active and m.name in ("bucket", "bag", "tub", "case")
+            ),
+            None,
         )
         if measure is None or not measure.quantity_in_base_units:
             return ""
@@ -141,33 +145,42 @@ def watched(today: date | None = None) -> list[Watch]:
     items = list(
         Item.objects.filter(is_active=True, lead_days__isnull=False)
         .select_related("base_unit")
+        .prefetch_related("measures")
         .order_by("name")
     )
     balances = {b.item_id: b.quantity for b in StockBalance.objects.filter(location=location, item__in=items)}
     pars = {p.item_id: p.quantity for p in ParLevel.objects.filter(location=location, item__in=items)}
-    start = timezone.make_aware(datetime.combine(today - timedelta(days=WINDOW_DAYS), time.min))
-    used = {
-        row["item"]: -(row["total"] or Decimal("0"))
-        for row in StockMovement.objects.filter(
-            location=location, item__in=items, movement_type__in=USE, occurred_at__gte=start
-        )
-        .values("item")
-        .annotate(total=Sum("quantity"))
-    }
-    open_days = _open_days(today - timedelta(days=1), WINDOW_DAYS)
-    # Before its first count or delivery the ledger's zero means "not known",
-    # not "none left" -- an alarm on day one for everything is noise.
-    known = set(
-        StockMovement.objects.filter(location=location, item__in=items)
-        .values_list("item_id", flat=True)
-        .distinct()
-    )
+    window_start = timezone.make_aware(datetime.combine(today - timedelta(days=WINDOW_DAYS), time.min))
+
+    by_item: dict[int, list[StockMovement]] = {}
+    for m in StockMovement.objects.filter(location=location, item__in=items).order_by("occurred_at", "pk"):
+        by_item.setdefault(m.item_id, []).append(m)
+
     out = []
     for item in items:
-        total_used = used.get(item.pk, Decimal("0"))
-        per_day = None
-        if open_days >= MIN_OPEN_DAYS and total_used > 0:
-            per_day = (total_used / open_days).quantize(Decimal("0.01"))
+        moves = by_item.get(item.pk, [])
+        per_day, days = None, 0
+        if moves:
+            # Tracking starts at the first thing recorded. If that was a
+            # count, it set the opening stock -- it is not usage, and treating
+            # "0 to 2 buckets" as negative use would hide the real rate.
+            first = moves[0]
+            opening_kinds = (MovementType.COUNT_ADJUSTMENT, MovementType.OPENING_BALANCE)
+            opening = first.pk if first.movement_type in opening_kinds else None
+            since = max(window_start, first.occurred_at)
+            total_used = -sum(
+                (
+                    m.quantity
+                    for m in moves
+                    if m.pk != opening and m.movement_type in USE and m.occurred_at >= since
+                ),
+                Decimal("0"),
+            )
+            yesterday = today - timedelta(days=1)
+            span = (yesterday - timezone.localtime(since).date()).days + 1
+            days = _open_days(yesterday, span) if span > 0 else 0
+            if days >= MIN_OPEN_DAYS and total_used > 0:
+                per_day = (total_used / days).quantize(Decimal("0.01"))
         out.append(
             Watch(
                 item=item,
@@ -175,8 +188,10 @@ def watched(today: date | None = None) -> list[Watch]:
                 on_hand=balances.get(item.pk, Decimal("0")),
                 per_day=per_day,
                 par=pars.get(item.pk),
-                open_days=open_days,
-                counted=item.pk in known,
+                open_days=days,
+                # Before its first count or delivery the ledger's zero means
+                # "not known", not "none left".
+                counted=bool(moves),
             )
         )
     order = {"out": 0, "now": 1, "tomorrow": 2, "uncounted": 3, "unknown": 4, "ok": 5}

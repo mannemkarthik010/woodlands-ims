@@ -91,6 +91,10 @@ class AssistantTests(TestCase):
         self.assertEqual(on_hand(self.rice, self.here), Decimal("40"))
         assistant.carry_out(count, user=self.cook)
         self.assertEqual(on_hand(self.rice, self.here), Decimal("50"))
+        from apps.stock.models import StockCount
+
+        sheet = StockCount.objects.get()
+        self.assertEqual([line.item for line in sheet.lines.all()], [self.rice])  # only what was said
         self.assertTrue(StockMovement.objects.filter(movement_type=MovementType.COUNT_ADJUSTMENT).exists())
 
     @override_settings(**AI_ON)
