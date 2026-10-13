@@ -60,7 +60,7 @@ IDLE_SECONDS = 180
 def _people():
     """Everybody on staff, whether or not they have a PIN yet. What owners act on."""
     return (
-        User.objects.filter(is_active=True, is_active_staff=True)
+        User.objects.filter(is_active=True, is_active_staff=True, is_shared_login=False)
         .exclude(role=Role.OWNER)
         .order_by("display_name", "username")
     )

@@ -82,3 +82,36 @@ def invite_owner(username: str, *, display_name: str = "") -> tuple[User, str, b
     user.save()
     user.groups.add(owners_group())
     return user, set_password_link(user), created
+
+
+TABLET_USERNAME = "kitchen"
+
+
+@transaction.atomic
+def invite_tablet(username: str = TABLET_USERNAME) -> tuple[User, str, bool]:
+    """
+    The restaurant's own login, for the kitchen tablet, and the link that lets
+    an owner choose its password on the tablet itself. It sees the staff
+    screens and nothing else: no admin, no dashboard, sales, pay or reports.
+    It is not a person -- never on the name list, never clocked in -- so the
+    staff still sign their own hours with their PINs after it is signed in.
+    Returns (user, link, created).
+    """
+    username = (username or "").strip().lower()
+    user, created = User.objects.get_or_create(username=username)
+    if not created and not user.is_shared_login:
+        raise ValueError(f"{username} is already somebody's account; choose another name.")
+    user.role = Role.KITCHEN
+    user.display_name = user.display_name or "Kitchen tablet"
+    user.is_shared_login = True
+    user.is_active_staff = False  # keeps it off the name list, the clock and the pay
+    user.is_staff = False  # no admin
+    user.is_superuser = False
+    user.is_active = True
+    user.pin = ""
+    if created:
+        user.set_unusable_password()
+    user.save()
+    user.groups.clear()
+    user.user_permissions.clear()
+    return user, set_password_link(user), created

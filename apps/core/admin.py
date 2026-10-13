@@ -43,7 +43,16 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = BaseUserAdmin.fieldsets + (
         (
             "Woodlands",
-            {"fields": ("role", "position", "display_name", "preferred_language", "is_active_staff")},
+            {
+                "fields": (
+                    "role",
+                    "position",
+                    "display_name",
+                    "preferred_language",
+                    "is_active_staff",
+                    "is_shared_login",
+                )
+            },
         ),
         ("Tablet", {"fields": ("pin_status", "new_pin")}),
     )
@@ -54,11 +63,11 @@ class UserAdmin(BaseUserAdmin):
             return "Owners sign in with a password"
         return "Set" if obj.pin else "Not set — this person cannot record hours yet"
 
-    @admin.action(description="Make a one-time “choose your password” link (owners)")
+    @admin.action(description="Make a one-time “choose your password” link (owners, kitchen tablet)")
     def password_link(self, request, queryset):
         """
-        A fresh link for an owner whose first one ran out, or who forgot their
-        password. Made here, on the live site, because a link is signed with
+        A fresh link for an owner -- or the kitchen tablet's login -- whose
+        first one ran out, or who forgot their password. Made here, on the live site, because a link is signed with
         the site's secret key and that key is kept nowhere else. Only an owner
         may make one, and only for an owner; it is shown once, to be sent to
         that person directly -- never posted in a channel.
@@ -70,7 +79,7 @@ class UserAdmin(BaseUserAdmin):
             self.message_user(request, "Only an owner can make these links.", messages.ERROR)
             return
         for user in queryset:
-            if user.role != Role.OWNER:
+            if user.role != Role.OWNER and not user.is_shared_login:
                 self.message_user(
                     request, f"{user}: staff sign in with a PIN, not a password.", messages.WARNING
                 )

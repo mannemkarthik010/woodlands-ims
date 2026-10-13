@@ -97,7 +97,9 @@ def _is_close(a: str, b: str) -> bool:
 
 
 def _listed():
-    return User.objects.filter(is_active=True, is_active_staff=True).exclude(role=Role.OWNER)
+    return User.objects.filter(is_active=True, is_active_staff=True, is_shared_login=False).exclude(
+        role=Role.OWNER
+    )
 
 
 def find_matches(first: str, last: str = "") -> tuple[User | None, list[User]]:

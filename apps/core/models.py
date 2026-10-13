@@ -114,6 +114,12 @@ class User(AbstractUser):
         default=True,
         help_text="Unticking keeps all history intact but stops the person signing in.",
     )
+    # The restaurant's own login, for the kitchen tablet: signs in with a
+    # password, sees only the staff screens, and is never a person -- not on
+    # the tablet's name list, never clocked in, never paid.
+    is_shared_login = models.BooleanField(
+        default=False, help_text="The kitchen tablet's login. Staff screens only; never on the name list."
+    )
 
     # Implements: FR-102, D-04.
     @property

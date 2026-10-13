@@ -33,7 +33,6 @@ from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
@@ -70,7 +69,7 @@ def _card(request, key: str, *, message: str = "", error: str = ""):
 
 
 # Implements: FR-610, NFR-05.
-@login_required
+@owner_required
 def mapping_queue(request):
     """
     The queue itself. Biggest groups first, so the first few decisions clear
@@ -108,7 +107,7 @@ def mapping_queue(request):
 
 
 # Implements: FR-202, FR-610.
-@login_required
+@owner_required
 def mapping_search(request):
     """
     Search the catalogue for the thing a group should point at.
@@ -135,7 +134,7 @@ def mapping_search(request):
 
 # Implements: FR-610.
 @require_POST
-@login_required
+@owner_required
 def mapping_apply(request, key):
     """
     Map a group to an item, creating the dish first if that is what was asked
@@ -179,7 +178,7 @@ def mapping_apply(request, key):
 
 # Implements: FR-610.
 @require_POST
-@login_required
+@owner_required
 def mapping_ignore(request, key):
     try:
         count = services.ignore_group(key, user=request.user)
@@ -190,14 +189,14 @@ def mapping_ignore(request, key):
 
 # Implements: FR-610.
 @require_POST
-@login_required
+@owner_required
 def mapping_reopen(request, key):
     services.reopen_group(key)
     return _card(request, key, message="Back in the queue")
 
 
 # Implements: FR-202, FR-209, FR-211.
-@login_required
+@owner_required
 def mapping_review(request):
     """
     The second look.
@@ -217,7 +216,7 @@ def mapping_review(request):
 
 # Implements: FR-202, FR-211.
 @require_POST
-@login_required
+@owner_required
 def item_merge(request):
     """Fold one item into another, keeping the old name as a searchable alias."""
     source = get_object_or_404(Item, pk=request.POST.get("source"))
@@ -233,7 +232,7 @@ def item_merge(request):
 
 # Implements: FR-203, FR-209, FR-501.
 @require_POST
-@login_required
+@owner_required
 def item_convert(request):
     """Turn a dish sold by the ounce into the prepared component it actually is."""
     item = get_object_or_404(Item, pk=request.POST.get("item"))
@@ -253,7 +252,7 @@ def item_convert(request):
 
 # Implements: FR-211.
 @require_POST
-@login_required
+@owner_required
 def item_retire(request):
     item = get_object_or_404(Item, pk=request.POST.get("item"))
     catalog.retire_item(item, reason="Retired from the mapping review.")

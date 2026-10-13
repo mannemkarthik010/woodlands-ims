@@ -10,8 +10,9 @@ from django.core.management import CommandError, call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from apps.core.invites import OWNER_GROUP, invite_owner
+from apps.core.invites import OWNER_GROUP, invite_owner, invite_tablet
 from apps.core.models import Role, User
+from apps.core.pins import set_pin
 
 
 @override_settings(SITE_URL="https://woodlands.example.com")
@@ -118,3 +119,72 @@ class HealthTests(TestCase):
     def test_the_health_check_answers_without_a_login(self):
         response = self.client.get("/healthz")
         self.assertEqual((response.status_code, response.content), (200, b"ok"))
+
+
+@override_settings(SITE_URL="https://woodlands.example.com")
+class TabletLoginTests(TestCase):
+    """The restaurant's own login: staff screens only, and never a person."""
+
+    def signed_in_tablet(self):
+        tablet, _, _ = invite_tablet()
+        tablet.set_password("a long kitchen phrase 42")
+        tablet.save()
+        self.client.force_login(tablet)
+        return tablet
+
+    def test_it_has_no_password_admin_or_pin_until_an_owner_chooses_one(self):
+        tablet, link, created = invite_tablet()
+        self.assertTrue(created)
+        self.assertEqual((tablet.username, tablet.role), ("kitchen", Role.KITCHEN))
+        self.assertTrue(tablet.is_shared_login)
+        self.assertFalse(tablet.is_staff or tablet.is_superuser or tablet.is_active_staff)
+        self.assertFalse(tablet.has_usable_password())
+        self.assertFalse(tablet.pin)
+        self.assertTrue(link.startswith("https://woodlands.example.com/welcome/"))
+
+    def test_it_cannot_take_over_somebodys_account(self):
+        User.objects.create_user("kitchen", role=Role.KITCHEN)
+        with self.assertRaises(ValueError):
+            invite_tablet()
+
+    def test_it_reaches_the_staff_screens_and_none_of_the_owners(self):
+        self.signed_in_tablet()
+        self.assertEqual(self.client.get(reverse("hours_start")).status_code, 200)
+        for name in (
+            "sales_home",
+            "hours_pay",
+            "hours_report",
+            "hours_payments",
+            "team_plan",
+            "mapping_queue",
+        ):
+            with self.subTest(name):
+                self.assertIn(self.client.get(reverse(name)).status_code, (302, 403, 404))
+        admin = self.client.get(reverse("admin:index"))
+        self.assertEqual(admin.status_code, 302)
+        self.assertIn("/admin/login/", admin["Location"])
+
+    def test_it_is_not_on_the_name_list(self):
+        self.signed_in_tablet()
+        anderson = User.objects.create_user("anderson", role=Role.HEAD_CHEF, display_name="Anderson")
+        set_pin(anderson, "4821")
+        page = self.client.get(reverse("hours_start")).content.decode()
+        self.assertIn("Anderson", page)
+        self.assertNotIn(">Kitchen tablet</option>", page)
+
+    def test_an_owner_makes_its_password_link_in_the_admin(self):
+        pj, _, _ = invite_owner("pj")
+        tablet, _, _ = invite_tablet()
+        self.client.force_login(pj)
+        page = self.client.post(
+            reverse("admin:core_user_changelist"),
+            {"action": "password_link", "_selected_action": [tablet.pk]},
+            follow=True,
+        )
+        self.assertEqual(page.content.decode().count("/welcome/"), 1)
+
+    def test_the_command_prints_the_link(self):
+        out = StringIO()
+        call_command("invite_tablet", stdout=out)
+        self.assertIn("https://woodlands.example.com/welcome/", out.getvalue())
+        self.assertIn("Created the tablet login kitchen", out.getvalue())

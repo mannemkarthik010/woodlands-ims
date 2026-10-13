@@ -195,7 +195,7 @@ class ScreenTests(TestCase):
         self.each = Unit.objects.create(
             code="each", name="Each", kind=UnitKind.COUNT, to_canonical=Decimal("1")
         )
-        self.user = get_user_model().objects.create_user("owner", password="pw")
+        self.user = get_user_model().objects.create_user("owner", password="pw", role="OWNER")
         self.client.force_login(self.user)
         pos("Masala Dosa")
         pos("$10 Masala Dosa")
@@ -287,7 +287,7 @@ class ReviewTests(TestCase):
         self.each = Unit.objects.create(
             code="each", name="Each", kind=UnitKind.COUNT, to_canonical=Decimal("1")
         )
-        self.user = get_user_model().objects.create_user("owner", password="pw")
+        self.user = get_user_model().objects.create_user("owner", password="pw", role="OWNER")
         self.client.force_login(self.user)
 
     def _dish(self, code, name):
