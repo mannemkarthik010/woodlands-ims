@@ -132,6 +132,7 @@ class Command(BaseCommand):
         self.load_watch()
         self.load_pots()
         self.load_weekly_plan()
+        self.load_made_sections()
 
     def item(self, name: str, code: str) -> Item | None:
         found = find_by_name(name)
@@ -329,6 +330,23 @@ class Command(BaseCommand):
                 f"{row['code']}: plan for the week of {week:%-d %b}: {item.name} "
                 f"{row.get('as_written', '')} = {quantity.normalize():f} {item.base_unit.code}"
             )
+
+    def load_made_sections(self):
+        """The headings the "Made today" buttons sit under, in the kitchen's order."""
+        from apps.catalog.models import ItemCategory
+
+        for order, row in enumerate(self.visit.get("made_sections", []), start=1):
+            section, _ = ItemCategory.objects.get_or_create(name=row["section"])
+            if section.sort_order != order:
+                section.sort_order = order
+                section.save(update_fields=["sort_order", "updated_at"])
+            for name in row["items"]:
+                item = self.item(name, row["section"])
+                if item is None or item.category_id == section.pk:
+                    continue
+                item.category = section
+                item.save(update_fields=["category", "updated_at"])
+                self.changes.append(f"Made today: {item.name} under {section.name}")
 
     def load_watch(self):
         for row in self.visit.get("watch", []):

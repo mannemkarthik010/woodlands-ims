@@ -3,7 +3,7 @@
 {% block content %}
 <h1>What did you make?</h1>
 
-{% for pot in pots %}{% if pot.status != "closed" %}
+{% for pot in pots %}{% if pot.status in "ok enough unknown" %}
   <p class="nudge">{{ pot.sentence }}{% if pot.basis %} <small class="muted">({{ pot.basis }})</small>{% endif %}</p>
 {% endif %}{% endfor %}
 
@@ -16,8 +16,11 @@
   </ul>
 {% endif %}
 
+{% regroup items by category as sections %}
+{% for section in sections %}
+<h2 class="h2">{{ section.grouper.name|default:"Other" }}</h2>
 <div class="names">
-  {% for item in items %}
+  {% for item in section.list %}
     {% if item.cook_minutes %}
       <form method="post" action="{% url 'pot_cooked' item.pk %}">
         {% csrf_token %}
@@ -30,10 +33,11 @@
         <button class="names__btn" type="submit">{{ item.name }}</button>
       </form>
     {% endif %}
-  {% empty %}
-    <p class="muted">Nothing is listed as made in the kitchen yet.</p>
   {% endfor %}
 </div>
+{% empty %}
+  <p class="muted">Nothing is listed as made in the kitchen yet.</p>
+{% endfor %}
 
 <h2 class="h2">Made today</h2>
 {% if made %}

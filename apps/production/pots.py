@@ -198,7 +198,9 @@ def _clock(moment: datetime) -> str:
 
 def _minutes(gap: timedelta) -> str:
     m = round(gap.total_seconds() / 60)
-    return f"{m} min" if m < 90 else f"{m // 60} h {m % 60} min"
+    if m < 90:
+        return f"{m} min"
+    return f"{m // 60} h" if m % 60 == 0 else f"{m // 60} h {m % 60} min"
 
 
 def pot_for(item: Item, now: datetime | None = None) -> Pot:

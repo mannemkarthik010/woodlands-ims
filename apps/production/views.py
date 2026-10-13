@@ -55,7 +55,9 @@ def made_today(request):
         request,
         "production/made_today.html",
         {
-            "items": Item.objects.filter(is_active=True, kind=ItemKind.PREPARED).order_by("name"),
+            "items": Item.objects.filter(is_active=True, kind=ItemKind.PREPARED)
+            .select_related("category")
+            .order_by("category__sort_order", "category__name", "name"),
             "pots": all_pots(),
             "open": batches.filter(status=BatchStatus.IN_PROGRESS).order_by("-started_at"),
             "made": batches.exclude(status=BatchStatus.IN_PROGRESS)
