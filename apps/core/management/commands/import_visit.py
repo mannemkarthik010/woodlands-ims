@@ -22,6 +22,9 @@ WHAT IS LOADED
   recipes           how a batch is made: the batters, from scoops and pounds
   watch             what must never run out, and how long more takes
   positions         the jobs people do, for the team plan
+  suppliers         who the restaurant buys from
+  set_kind          an item recorded as the wrong kind (bought, not made)
+  packs             how an item is bought, from whom, and the last price paid
   plates            what one plate of a dish uses -- a recipe for the dish,
                     so a day's sales take batter and chutney out of stock
 
@@ -113,7 +116,10 @@ class Command(BaseCommand):
     def load(self):
         self.load_vessels()
         self.load_positions()
+        self.load_suppliers()
         self.load_new_items()
+        self.load_set_kind()
+        self.load_packs()
         self.load_containers()
         self.load_measures()
         self.load_count_every()
@@ -254,6 +260,71 @@ class Command(BaseCommand):
                 f"{row['code']}: watch {item.name} for running out (more takes {row['lead_days']} day)"
             )
 
+    def load_suppliers(self):
+        from apps.core.models import Supplier
+
+        for row in self.visit.get("suppliers", []):
+            supplier, made = Supplier.objects.get_or_create(
+                name=row["name"], defaults={"notes": row.get("notes", "")}
+            )
+            if made:
+                self.changes.append(f"supplier: {supplier.name}")
+
+    def load_set_kind(self):
+        for row in self.visit.get("set_kind", []):
+            item = self.item(row["item"], row["code"])
+            if item is None or item.kind == row["kind"]:
+                continue
+            item.kind = row["kind"]
+            item.save(update_fields=["kind", "updated_at"])
+            self.changes.append(f"{row['code']}: {item.name} is {item.get_kind_display().lower()}")
+
+    def load_packs(self):
+        """
+        How an item is bought, from whom, and the last price paid. A pack of the
+        same name and size already there is given its supplier rather than
+        duplicated. The price per base unit becomes the item's cost when the
+        item has none yet -- deliveries keep it up to date after that.
+        """
+        from apps.core.models import Supplier
+
+        latest: dict[int, tuple] = {}
+        for row in self.visit.get("packs", []):
+            item = self.item(row["item"], row["code"])
+            if item is None:
+                continue
+            supplier = Supplier.objects.filter(name=row["supplier"]).first()
+            qty = Decimal(str(row["qty"]))
+            measure = (
+                item.measures.filter(name=row["pack"], is_active=True, quantity_in_base_units=qty)
+                .order_by("supplier_id")
+                .first()
+            )
+            if measure is None:
+                measure = ItemMeasure.objects.create(
+                    item=item,
+                    name=row["pack"],
+                    kind=MeasureKind.PURCHASE,
+                    quantity_in_base_units=qty,
+                    supplier=supplier,
+                    created_by=self.user,
+                )
+                self.changes.append(
+                    f"{row['code']}: {item.name} comes as a {row['pack']} of {qty.normalize():f} {item.base_unit.code}"
+                )
+            elif measure.supplier_id is None and supplier is not None:
+                measure.supplier = supplier
+                measure.save(update_fields=["supplier", "updated_at"])
+            if "price" in row:
+                when = row.get("date", "")
+                if item.pk not in latest or when >= latest[item.pk][0]:
+                    latest[item.pk] = (when, item, Decimal(str(row["price"])) / qty)
+        for _, item, per_unit in latest.values():
+            if item.current_unit_cost is None:
+                item.current_unit_cost = per_unit.quantize(Decimal("0.0001"))
+                item.save(update_fields=["current_unit_cost", "updated_at"])
+                self.changes.append(f"price: {item.name} ${per_unit:.2f} per {item.base_unit.code}")
+
     def load_containers(self):
         for row in self.visit.get("containers", []):
             item = self.item(row["item"], row["code"])
@@ -295,9 +366,8 @@ class Command(BaseCommand):
             if par and par.quantity == quantity:
                 continue
             ParLevel.objects.update_or_create(item=item, location=location, defaults={"quantity": quantity})
-            self.changes.append(
-                f"{row['code']}: make more {item.name} below {row['quantity']} {row['measure']}"
-            )
+            verb = "make more" if item.kind == ItemKind.PREPARED else "order more"
+            self.changes.append(f"{row['code']}: {verb} {item.name} below {row['quantity']} {row['measure']}")
 
     def load_sized_buttons(self):
         for row in self.visit.get("sized_buttons", []):

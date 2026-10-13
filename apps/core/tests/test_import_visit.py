@@ -188,6 +188,65 @@ class ImportVisitTests(TestCase):
         rice = Item.objects.get(name="Idly Rice")
         self.assertEqual(rice.measures.get().quantity_in_base_units, Decimal("20"))
 
+    def test_suppliers_packs_and_the_last_price_paid(self):
+        from apps.core.models import Supplier
+
+        yogurt = item("Yogurt")  # recorded as made; the receipts show it is bought
+        self.run_visit(
+            {
+                "suppliers": [{"name": "Restaurant Depot"}],
+                "set_kind": [{"code": "RD", "item": "Yogurt", "kind": "RAW"}],
+                "packs": [
+                    {
+                        "code": "RD",
+                        "item": "Yogurt",
+                        "supplier": "Restaurant Depot",
+                        "pack": "tub",
+                        "qty": 32,
+                        "price": 39.99,
+                        "date": "2026-04-21",
+                    },
+                    {
+                        "code": "RD",
+                        "item": "Yogurt",
+                        "supplier": "Restaurant Depot",
+                        "pack": "tub",
+                        "qty": 32,
+                        "price": 43.99,
+                        "date": "2026-03-03",
+                    },
+                ],
+            }
+        )
+        yogurt.refresh_from_db()
+        self.assertEqual(yogurt.kind, ItemKind.RAW)
+        tub = yogurt.measures.get()  # the same pack twice is one pack
+        self.assertEqual((tub.name, tub.supplier.name), ("tub", "Restaurant Depot"))
+        self.assertEqual(yogurt.current_unit_cost, Decimal("1.2497"))  # the later receipt, per lb
+        self.assertEqual(Supplier.objects.count(), 1)
+
+    def test_a_pack_already_there_gets_its_supplier_rather_than_a_copy(self):
+        from apps.catalog.models import ItemMeasure, MeasureKind
+
+        ItemMeasure.objects.create(
+            item=self.sambar, name="bucket", kind=MeasureKind.KITCHEN, quantity_in_base_units=Decimal("32")
+        )
+        self.run_visit(
+            {
+                "suppliers": [{"name": "Restaurant Depot"}],
+                "packs": [
+                    {
+                        "code": "x",
+                        "item": "Sambar",
+                        "supplier": "Restaurant Depot",
+                        "pack": "bucket",
+                        "qty": 32,
+                    }
+                ],
+            }
+        )
+        self.assertEqual(self.sambar.measures.get().supplier.name, "Restaurant Depot")
+
     def test_a_dry_run_keeps_nothing(self):
         self.run_visit(self.plate({"Dosa Batter": 5, "sides": 1}), dry_run=True)
         self.assertFalse(Recipe.objects.exists())

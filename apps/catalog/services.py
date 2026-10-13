@@ -160,6 +160,7 @@ ADDABLE = {
     "RAW": ("Grocery", ItemKind.RAW, "", "raw"),
     "VEGETABLE": ("Vegetable or herb", ItemKind.RAW, "Fresh produce", "veg"),
     "PACKAGING": ("Packaging or disposable", ItemKind.PACKAGING, "Packaging", "pack"),
+    "CONSUMABLE": ("Cleaning or supplies", ItemKind.CONSUMABLE, "Cleaning and consumables", "supply"),
 }
 
 

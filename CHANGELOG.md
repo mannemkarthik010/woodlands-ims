@@ -5,6 +5,11 @@ Notable changes per release. Newest first.
 ## [Unreleased]
 
 ### Added
+- The owners' DoorDash receipts (Restaurant Depot, Smart & Final, El Super, Ralphs; March–April
+  2026), loaded: six suppliers, how about 40 items are bought and from whom, with the last
+  price paid; 27 new items (dairy, drinks, vegetables, cups and lids, cleaning supplies);
+  yogurt corrected to bought, and yogurt and paneer on the run-out watch. `import_visit` learns
+  `suppliers`, `packs` and `set_kind`; supplies can be added as their own kind
 - The kitchen assistant (menu: Assistant): staff say what happened in English or Spanish — a batch
   made, a delivery, a count — and Claude turns it into records with tools; it can read stock and
   the run-out watch, but every change is only proposed, shown as a card, and saved by the
