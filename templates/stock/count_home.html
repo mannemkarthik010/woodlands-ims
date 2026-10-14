@@ -2,7 +2,7 @@
 {% block title %}Count stock{% endblock %}
 {% block content %}
 <h1>Count stock</h1>
-<p class="muted">Each count has only its own items. Count what is on the shelf; blank means not counted.</p>
+<p class="muted">The weekly count is the whole kitchen checklist: it includes the daily items, so on the day it is done there is no daily count. Count what is on the shelf; blank means not counted.</p>
 
 <div class="counts">
   {% for c in cards %}
@@ -16,6 +16,12 @@
       <div class="countcard__what">{{ c.what }}{% if c.location.kind != "RESTAURANT" %} · <strong>{{ c.location.name }}</strong>{% endif %}</div>
       <div class="muted small">{{ c.items }} item{{ c.items|pluralize }} ·
         {% if c.last %}last counted {{ c.last.counted_at|date:"D j M" }}{% if c.last.created_by %} by {{ c.last.created_by }}{% endif %}{% else %}never counted{% endif %}</div>
+      {% if c.names %}
+        <details class="countcard__list">
+          <summary>What's on it</summary>
+          <ul>{% for name, daily in c.names %}<li>{{ name }}{% if daily %} <span class="muted small">· daily too</span>{% endif %}</li>{% endfor %}</ul>
+        </details>
+      {% endif %}
       {% if c.draft %}
         <a class="btn btn--primary btn--wide" href="{% url 'count_sheet' c.draft.pk %}">Continue</a>
       {% elif c.items %}

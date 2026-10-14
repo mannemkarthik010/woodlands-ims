@@ -240,3 +240,32 @@ class StaleDraftTests(LayerTestCase):
     def test_an_unknown_kind_of_count_becomes_ad_hoc(self):
         self.client.post(reverse("count_new"), {"cadence": "HOURLY", "location": self.restaurant.pk})
         self.assertEqual(StockCount.objects.get().cadence, StockCount.Cadence.ADHOC)
+
+
+class OpenSheetFollowsTheListTests(LayerTestCase):
+    """A sheet started before an item moved lists keeps up when it is opened."""
+
+    def test_an_item_moved_to_weekly_leaves_the_open_daily_sheet_and_joins_the_weekly(self):
+        daily = self.sheet(StockCount.Cadence.DAILY)
+        weekly = self.sheet(StockCount.Cadence.WEEKLY)
+        self.dal.count_every = CountEvery.WEEKLY
+        self.dal.save()
+        self.sambar.count_every = CountEvery.WEEKLY
+        self.sambar.save()
+        self.client.get(reverse("count_sheet", args=[daily.pk]))
+        self.client.get(reverse("count_sheet", args=[weekly.pk]))
+        self.assertEqual(self.names(daily), ["Dosa batter"])
+        self.assertEqual(self.names(weekly), ["Dosa batter", "Onions", "Sambar", "Toor dal"])
+
+    def test_a_line_already_counted_is_never_taken_away(self):
+        daily = self.sheet(StockCount.Cadence.DAILY)
+        record_counted(daily.lines.get(item=self.sambar), quantity=Decimal("2"))
+        self.sambar.count_every = CountEvery.WEEKLY
+        self.sambar.save()
+        self.client.get(reverse("count_sheet", args=[daily.pk]))
+        self.assertIn("Sambar", self.names(daily))
+
+    def test_the_count_page_says_what_is_on_each_list(self):
+        page = self.client.get(reverse("count_home"))
+        self.assertContains(page, "What's on it")
+        self.assertContains(page, "daily too")

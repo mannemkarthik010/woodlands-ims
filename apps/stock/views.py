@@ -47,11 +47,13 @@ from apps.stock.services import (
     _due,
     add_receipt_line,
     count_due,
+    items_for,
     on_hand,
     post_count,
     post_receipt,
     post_transfer,
     record_counted,
+    refresh_count_sheet,
     start_count,
 )
 
@@ -270,6 +272,7 @@ class CountCard:
     last: StockCount | None
     draft: StockCount | None
     due: bool
+    names: list = None  # (name, also on the daily count)
 
 
 # Implements: FR-701, FR-703.
@@ -285,7 +288,6 @@ def count_home(request):
     storage = Location.objects.filter(kind=Location.Kind.STORAGE, is_active=True).first()
     if restaurant is None:
         return render(request, "stock/no_locations.html", status=400)
-    counted = Item.objects.filter(is_active=True, is_stocked=True)
     plan = [
         (
             StockCount.Cadence.DAILY,
@@ -308,7 +310,7 @@ def count_home(request):
             (StockCount.Cadence.MONTHLY, CountEvery.MONTHLY, "Monthly", "Groceries and packaging", storage)
         )
     cards = []
-    for cadence, every, label, what, location in plan:
+    for cadence, _every, label, what, location in plan:
         of_this = StockCount.objects.filter(cadence=cadence, location=location).select_related("created_by")
         last = of_this.filter(status=DocumentStatus.POSTED).order_by("-counted_at").first()
         # Only a sheet from this day, week or month is carried on. An older
@@ -323,9 +325,11 @@ def count_home(request):
                 label=label,
                 what=what,
                 location=location,
-                items=counted.filter(
-                    count_every__in=[every, CountEvery.DAILY] if every == CountEvery.WEEKLY else [every]
-                ).count(),
+                items=len(on_it := list(items_for(cadence))),
+                names=[
+                    (i.name, cadence == StockCount.Cadence.WEEKLY and i.count_every == CountEvery.DAILY)
+                    for i in on_it
+                ],
                 last=last,
                 draft=draft,
                 due=count_due(cadence, location, today),
@@ -363,6 +367,7 @@ def count_sheet(request, pk):
     if count.status != DocumentStatus.DRAFT:
         return redirect("count_review", pk=count.pk)
 
+    refresh_count_sheet(count)
     lines = list(count.lines.select_related("item", "item__base_unit", "item__category", "entered_measure"))
     _attach_measures(lines)
     done = sum(1 for line in lines if line.counted_quantity is not None)

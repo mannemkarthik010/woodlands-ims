@@ -293,6 +293,54 @@ def post_count(count, *, user=None) -> list[StockMovement]:
 
 
 # Implements: FR-701, FR-703.
+def items_for(cadence: str):
+    """
+    What is on a count. Daily: what is counted daily. Weekly: the whole
+    kitchen checklist -- its own items and the daily ones, so on the day it is
+    done no daily count is needed (count_due). Monthly: groceries and
+    packaging. Anything else (ad hoc, opening): everything that is counted.
+    """
+    from apps.catalog.models import CountEvery, Item
+    from apps.stock.models import StockCount
+
+    items = Item.objects.filter(is_active=True, is_stocked=True).exclude(count_every=CountEvery.NEVER)
+    lists = {
+        StockCount.Cadence.DAILY: [CountEvery.DAILY],
+        StockCount.Cadence.WEEKLY: [CountEvery.WEEKLY, CountEvery.DAILY],
+        StockCount.Cadence.MONTHLY: [CountEvery.MONTHLY],
+    }.get(cadence)
+    if lists:
+        items = items.filter(count_every__in=lists)
+    return items.select_related("base_unit", "category").order_by("category__sort_order", "name")
+
+
+@transaction.atomic
+def refresh_count_sheet(count) -> tuple[int, int]:
+    """
+    Bring an unfinished sheet up to the list as it is now. A sheet started
+    before an item moved from the daily to the weekly list would otherwise
+    keep asking for it on the wrong count, and miss what was added. Lines
+    already counted are never removed. Returns (added, removed).
+    """
+    from apps.stock.models import StockCount, StockCountLine
+
+    if count.cadence not in (StockCount.Cadence.DAILY, StockCount.Cadence.WEEKLY, StockCount.Cadence.MONTHLY):
+        return 0, 0
+    wanted = {item.pk: item for item in items_for(count.cadence)}
+    have = set(count.lines.values_list("item_id", flat=True))
+    removed, _ = count.lines.filter(counted_quantity__isnull=True).exclude(item_id__in=wanted).delete()
+    missing = [item for pk, item in wanted.items() if pk not in have]
+    if missing:
+        balances = {b.item_id: b.quantity for b in StockBalance.objects.filter(location=count.location)}
+        StockCountLine.objects.bulk_create(
+            [
+                StockCountLine(count=count, item=item, expected_quantity=balances.get(item.pk, Decimal("0")))
+                for item in missing
+            ]
+        )
+    return len(missing), removed
+
+
 def build_count_sheet(count, *, items=None) -> int:
     """
     Fill a count sheet with the items to be counted, and snapshot what the
@@ -303,27 +351,10 @@ def build_count_sheet(count, *, items=None) -> int:
     shelves, not against what it drifted to while the sheet sat half-finished
     in a pocket.
     """
-    from apps.catalog.models import CountEvery, Item
-    from apps.stock.models import StockCount, StockCountLine
+    from apps.stock.models import StockCountLine
 
     if items is None:
-        # Each count holds only its own items: the daily count is what the
-        # kitchen makes, not every sack in the building. An ad hoc count
-        # takes everything that is counted at all.
-        items = Item.objects.filter(is_active=True, is_stocked=True).exclude(count_every=CountEvery.NEVER)
-        on_this_count = {
-            StockCount.Cadence.DAILY: CountEvery.DAILY,
-            StockCount.Cadence.WEEKLY: CountEvery.WEEKLY,
-            StockCount.Cadence.MONTHLY: CountEvery.MONTHLY,
-        }.get(count.cadence)
-        if on_this_count == CountEvery.WEEKLY:
-            # The weekly count is the whole kitchen's checklist: it also takes
-            # the daily items, so on the day it is done no daily count is
-            # needed (count_due).
-            items = items.filter(count_every__in=[CountEvery.WEEKLY, CountEvery.DAILY])
-        elif on_this_count:
-            items = items.filter(count_every=on_this_count)
-        items = items.select_related("base_unit", "category").order_by("category__sort_order", "name")
+        items = items_for(count.cadence)
 
     balances = {b.item_id: b.quantity for b in StockBalance.objects.filter(location=count.location)}
 

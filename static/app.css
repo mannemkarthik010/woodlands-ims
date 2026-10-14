@@ -671,3 +671,8 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 .pot form { margin: 0; }
 @keyframes pot-pulse { 50% { background: #F6D9D1; } }
 @media (prefers-reduced-motion: reduce) { .pot--late { animation: none; } }
+
+.countcard__list { margin: 6px 0 10px; font-size: 15px; }
+.countcard__list summary { cursor: pointer; color: var(--green); font-weight: 600; min-height: 36px; display: flex; align-items: center; }
+.countcard__list ul { margin: 4px 0 0; padding-left: 18px; columns: 2; column-gap: 18px; }
+.countcard__list li { break-inside: avoid; }
