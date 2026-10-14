@@ -44,7 +44,9 @@ from apps.stock.models import DocumentStatus, GoodsReceipt, StockCount, StockCou
 from apps.stock.services import (
     RECEIVABLE_KINDS,
     StockError,
+    _due,
     add_receipt_line,
+    count_due,
     on_hand,
     post_count,
     post_receipt,
@@ -270,17 +272,6 @@ class CountCard:
     due: bool
 
 
-def _due(cadence: str, last: StockCount | None, today) -> bool:
-    if last is None:
-        return True
-    done = timezone.localdate(last.counted_at)
-    if cadence == StockCount.Cadence.DAILY:
-        return done < today
-    if cadence == StockCount.Cadence.WEEKLY:
-        return (today - done).days >= 7
-    return (done.year, done.month) != (today.year, today.month)
-
-
 # Implements: FR-701, FR-703.
 @login_required
 def count_home(request):
@@ -303,7 +294,13 @@ def count_home(request):
             "Batters, sambar, chutneys — what the kitchen makes",
             restaurant,
         ),
-        (StockCount.Cadence.WEEKLY, CountEvery.WEEKLY, "Weekly", "Vegetables", restaurant),
+        (
+            StockCount.Cadence.WEEKLY,
+            CountEvery.WEEKLY,
+            "Weekly",
+            "The whole kitchen checklist — includes the daily items, so no daily count that day",
+            restaurant,
+        ),
         (StockCount.Cadence.MONTHLY, CountEvery.MONTHLY, "Monthly", "Groceries and packaging", restaurant),
     ]
     if storage:
@@ -326,10 +323,12 @@ def count_home(request):
                 label=label,
                 what=what,
                 location=location,
-                items=counted.filter(count_every=every).count(),
+                items=counted.filter(
+                    count_every__in=[every, CountEvery.DAILY] if every == CountEvery.WEEKLY else [every]
+                ).count(),
                 last=last,
                 draft=draft,
-                due=_due(cadence, last, today),
+                due=count_due(cadence, location, today),
             )
         )
     return render(request, "stock/count_home.html", {"cards": cards, "can_manage": is_owner(request.user)})

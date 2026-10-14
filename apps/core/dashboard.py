@@ -155,26 +155,15 @@ def _stock(board: Dashboard) -> None:
 
 
 def _counts(board: Dashboard, location) -> None:
-    from apps.stock.models import DocumentStatus, StockCount
+    from apps.stock.models import StockCount
+    from apps.stock.services import count_due
 
     for cadence, label in (
         (StockCount.Cadence.DAILY, "Daily"),
         (StockCount.Cadence.WEEKLY, "Weekly"),
         (StockCount.Cadence.MONTHLY, "Monthly"),
     ):
-        last = (
-            StockCount.objects.filter(cadence=cadence, location=location, status=DocumentStatus.POSTED)
-            .order_by("-counted_at")
-            .first()
-        )
-        if last is None:
-            due = True
-        else:
-            done = timezone.localdate(last.counted_at)
-            due = {
-                StockCount.Cadence.DAILY: done < board.today,
-                StockCount.Cadence.WEEKLY: (board.today - done).days >= 7,
-            }.get(cadence, (done.year, done.month) != (board.today.year, board.today.month))
+        due = count_due(cadence, location, board.today)
         if due and (cadence != StockCount.Cadence.DAILY or board.is_open):
             board.todos.append(Todo(f"{label} stock count is due", reverse("count_home")))
 

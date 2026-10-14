@@ -316,7 +316,12 @@ def build_count_sheet(count, *, items=None) -> int:
             StockCount.Cadence.WEEKLY: CountEvery.WEEKLY,
             StockCount.Cadence.MONTHLY: CountEvery.MONTHLY,
         }.get(count.cadence)
-        if on_this_count:
+        if on_this_count == CountEvery.WEEKLY:
+            # The weekly count is the whole kitchen's checklist: it also takes
+            # the daily items, so on the day it is done no daily count is
+            # needed (count_due).
+            items = items.filter(count_every__in=[CountEvery.WEEKLY, CountEvery.DAILY])
+        elif on_this_count:
             items = items.filter(count_every=on_this_count)
         items = items.select_related("base_unit", "category").order_by("category__sort_order", "name")
 
@@ -360,6 +365,36 @@ def record_counted(line, *, quantity: Decimal | None, measure=None) -> None:
 
 # Implements: FR-701.
 @transaction.atomic
+def count_due(cadence: str, location: Location, today) -> bool:
+    """
+    Whether this count should be done today. Daily: not yet done today -- and
+    a weekly count done today counts, because it holds the daily items too.
+    Weekly: seven days since the last. Monthly: not yet this month.
+    """
+    from apps.stock.models import DocumentStatus, StockCount
+
+    posted = StockCount.objects.filter(location=location, status=DocumentStatus.POSTED)
+    if cadence == StockCount.Cadence.DAILY:
+        posted = posted.filter(cadence__in=[StockCount.Cadence.DAILY, StockCount.Cadence.WEEKLY])
+    else:
+        posted = posted.filter(cadence=cadence)
+    last = posted.order_by("-counted_at").first()
+    return _due(cadence, last, today)
+
+
+def _due(cadence: str, last, today) -> bool:
+    from apps.stock.models import StockCount
+
+    if last is None:
+        return True
+    done = timezone.localdate(last.counted_at)
+    if cadence == StockCount.Cadence.DAILY:
+        return done < today
+    if cadence == StockCount.Cadence.WEEKLY:
+        return (today - done).days >= 7
+    return (done.year, done.month) != (today.year, today.month)
+
+
 def start_count(*, location: Location, cadence: str, user: User | None = None):
     """
     A new count sheet for one place and one rhythm. An earlier sheet of the

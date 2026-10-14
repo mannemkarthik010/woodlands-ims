@@ -280,12 +280,18 @@ class Command(BaseCommand):
                     )
                     first.name = container
                     first.save(update_fields=["name", "updated_at"])
-            wanted = {"cook_minutes": row["cook_minutes"], "pot_every_minutes": row.get("every_minutes")}
+            # cook_minutes null switches the reminder off: cooked ahead in batches, not through service.
+            wanted = {"cook_minutes": row.get("cook_minutes"), "pot_every_minutes": row.get("every_minutes")}
             if all(getattr(item, f) == v for f, v in wanted.items()):
                 continue
             for field, value in wanted.items():
                 setattr(item, field, value)
             item.save(update_fields=[*wanted, "updated_at"])
+            if row.get("cook_minutes") is None:
+                self.changes.append(
+                    f"{row['code']}: no cook-the-next reminder for {item.name} (cooked ahead)"
+                )
+                continue
             every = (
                 f", a {container} lasts about {row['every_minutes']} min" if row.get("every_minutes") else ""
             )

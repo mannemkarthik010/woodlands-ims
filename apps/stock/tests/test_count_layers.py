@@ -88,7 +88,10 @@ class WhatIsOnEachCountTests(LayerTestCase):
 
     def test_each_count_holds_only_its_own_items(self):
         self.assertEqual(self.names(self.sheet(StockCount.Cadence.DAILY)), ["Dosa batter", "Sambar"])
-        self.assertEqual(self.names(self.sheet(StockCount.Cadence.WEEKLY)), ["Onions"])
+        # The weekly count is the whole kitchen checklist: its own items and the daily ones.
+        self.assertEqual(
+            self.names(self.sheet(StockCount.Cadence.WEEKLY)), ["Dosa batter", "Onions", "Sambar"]
+        )
         self.assertEqual(self.names(self.sheet(StockCount.Cadence.MONTHLY)), ["Aluminium tray", "Toor dal"])
         # Everything that is counted at all; never a dish.
         self.assertEqual(
@@ -99,7 +102,9 @@ class WhatIsOnEachCountTests(LayerTestCase):
     def test_an_owner_can_move_an_item_to_another_count(self):
         self.dal.count_every = CountEvery.WEEKLY
         self.dal.save()
-        self.assertEqual(self.names(self.sheet(StockCount.Cadence.WEEKLY)), ["Onions", "Toor dal"])
+        self.assertEqual(
+            self.names(self.sheet(StockCount.Cadence.WEEKLY)), ["Dosa batter", "Onions", "Sambar", "Toor dal"]
+        )
 
 
 class KitchenUnitsTests(LayerTestCase):
@@ -159,8 +164,18 @@ class CountHomeTests(LayerTestCase):
         cards = self.cards()
         self.assertEqual(
             [(c.label, c.items, c.due) for c in cards.values()],
-            [("Daily", 2, True), ("Weekly", 1, True), ("Monthly", 2, True)],
+            [("Daily", 2, True), ("Weekly", 3, True), ("Monthly", 2, True)],
         )
+
+    def test_a_weekly_count_done_today_means_no_daily_count_today(self):
+        post_count(self.sheet(StockCount.Cadence.WEEKLY), user=self.user)
+        cards = self.cards()
+        self.assertFalse(cards["Weekly"].due)
+        self.assertFalse(cards["Daily"].due)
+
+    def test_a_daily_count_does_not_stand_in_for_the_weekly(self):
+        post_count(self.sheet(StockCount.Cadence.DAILY), user=self.user)
+        self.assertTrue(self.cards()["Weekly"].due)
 
     def test_a_count_done_today_is_done_and_one_left_open_continues(self):
         daily = self.sheet(StockCount.Cadence.DAILY)
