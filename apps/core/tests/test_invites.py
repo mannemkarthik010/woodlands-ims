@@ -120,6 +120,12 @@ class HealthTests(TestCase):
         response = self.client.get("/healthz")
         self.assertEqual((response.status_code, response.content), (200, b"ok"))
 
+    def test_the_ai_check_says_yes_or_no_and_never_a_value(self):
+        response = self.client.get("/healthz?ai", HTTP_X_VERCEL_OIDC_TOKEN="eyJ.secret")
+        text = response.content.decode()
+        self.assertIn("vercel sign-in token on this request: yes", text)
+        self.assertNotIn("eyJ", text)
+
 
 @override_settings(SITE_URL="https://woodlands.example.com")
 class TabletLoginTests(TestCase):

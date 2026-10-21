@@ -53,6 +53,21 @@ def healthz(request):
             cursor.execute("SELECT 1")
     except Exception:  # noqa: BLE001 -- any failure means "not healthy", which is the answer
         return HttpResponse("database unreachable", status=503, content_type="text/plain")
+    if "ai" in request.GET:
+        # Setting up the AI: yes/no answers only, never a value.
+        from django.conf import settings
+
+        from apps.core import ai
+
+        def yes(flag):
+            return "yes" if flag else "no"
+
+        lines = [
+            f"vercel sign-in token on this request: {yes(request.headers.get('x-vercel-oidc-token'))}",
+            f"keyless google settings: {yes(settings.GCP_WORKLOAD_PROVIDER and settings.GCP_SERVICE_ACCOUNT_EMAIL)}",
+            f"ai switched on: {yes(ai.available())} (provider {ai.provider()})",
+        ]
+        return HttpResponse("\n".join(lines), content_type="text/plain")
     return HttpResponse("ok", content_type="text/plain")
 
 
