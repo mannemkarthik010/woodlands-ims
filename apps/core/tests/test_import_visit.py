@@ -265,3 +265,60 @@ class FindByNameTests(TestCase):
             base_unit=Unit.objects.get(code="lb"),
         )
         self.assertEqual(find_by_name("chana masala"), live)
+
+
+class PaperCountTests(TestCase):
+    """A count done on paper, loaded days later, is compared with what was believed then."""
+
+    setUp = ImportVisitTests.setUp
+    run_visit = ImportVisitTests.run_visit
+
+    def test_it_is_dated_when_counted_and_corrects_against_the_ledger_then(self):
+        from datetime import datetime
+
+        from django.utils import timezone
+
+        from apps.stock.models import MovementType, StockCount
+        from apps.stock.services import on_hand, post_movement
+
+        sambar = self.sambar
+        here = Location.objects.get(code="restaurant")
+        tz = timezone.get_current_timezone()
+        post_movement(
+            item=sambar,
+            location=here,
+            quantity=Decimal("10"),
+            movement_type=MovementType.PRODUCTION_YIELD,
+            occurred_at=datetime(2026, 10, 18, 12, tzinfo=tz),
+        )
+        # Sold after the count: must not change what the count corrects.
+        post_movement(
+            item=sambar,
+            location=here,
+            quantity=Decimal("-4"),
+            movement_type=MovementType.SALE_DEPLETION,
+            occurred_at=datetime(2026, 10, 20, 12, tzinfo=tz),
+        )
+        visit = {
+            "paper_count": {
+                "counted_at": "2026-10-19T22:00:00",
+                "counted_by": "JK",
+                "lines": [
+                    {
+                        "item": "Sambar",
+                        "quantity": 0.5,
+                        "measure": "bucket",
+                        "measure_size": 32,
+                        "made": "Oct 18",
+                    }
+                ],
+            }
+        }
+        self.run_visit(visit)
+        self.run_visit(visit)  # loaded once only
+        count = StockCount.objects.get()
+        self.assertEqual(timezone.localtime(count.counted_at).date().isoformat(), "2026-10-19")
+        line = count.lines.get()
+        self.assertEqual((line.expected_quantity, line.counted_quantity), (Decimal("10"), Decimal("16")))
+        self.assertIn("made Oct 18", line.note)
+        self.assertEqual(on_hand(sambar, here), Decimal("12"))  # 16 counted, less 4 sold since

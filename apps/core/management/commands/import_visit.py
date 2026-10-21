@@ -133,6 +133,7 @@ class Command(BaseCommand):
         self.load_pots()
         self.load_weekly_plan()
         self.load_made_sections()
+        self.load_paper_count()
 
     def item(self, name: str, code: str) -> Item | None:
         found = find_by_name(name)
@@ -353,6 +354,80 @@ class Command(BaseCommand):
                 item.category = section
                 item.save(update_fields=["category", "updated_at"])
                 self.changes.append(f"Made today: {item.name} under {section.name}")
+
+    def load_paper_count(self):
+        """
+        A count done on paper and photographed: each line as it was written
+        ("2 buckets", "11 heads"), dated when it was counted. It is compared
+        with what the ledger said at that moment -- not now -- so the
+        corrections are right even when the sheet arrives days later. Lines
+        left out were not counted, exactly as on the tablet. Loaded once.
+        """
+        from django.db.models import Sum
+        from django.utils import timezone
+        from django.utils.dateparse import parse_datetime
+
+        from apps.stock.models import StockCount, StockCountLine, StockMovement
+        from apps.stock.services import post_count, record_counted
+
+        sheet = self.visit.get("paper_count")
+        if not sheet:
+            return
+        note = f"Paper count of {sheet['counted_at'][:10]} by {sheet['counted_by']}, photographed"
+        if StockCount.objects.filter(note=note).exists():
+            return
+        at = timezone.make_aware(parse_datetime(sheet["counted_at"]))
+        location = Location.objects.get(code="restaurant")
+        count = StockCount.objects.create(
+            location=location,
+            cadence=sheet.get("cadence", "WEEKLY"),
+            counted_at=at,
+            note=note,
+            created_by=self.user,
+        )
+        for row in sheet["lines"]:
+            item = self.item(row["item"], "count")
+            if item is None:
+                continue
+            if not item.is_stocked:
+                self.skipped.append(f"count: {item.name} is a menu dish, not stock -- skipped")
+                continue
+            measure = None
+            if "measure" in row:
+                measure = ItemMeasure.objects.filter(
+                    item=item, name__iexact=row["measure"], is_active=True
+                ).first()
+                if measure is None and "measure_size" in row:
+                    measure = ItemMeasure.objects.create(
+                        item=item,
+                        name=row["measure"],
+                        kind=MeasureKind.KITCHEN if item.kind == ItemKind.PREPARED else MeasureKind.PURCHASE,
+                        quantity_in_base_units=Decimal(str(row["measure_size"])),
+                        created_by=self.user,
+                    )
+                    self.changes.append(
+                        f"count: a {measure.name} of {item.name} = {row['measure_size']} {item.base_unit.code}"
+                    )
+                if measure is None:
+                    self.skipped.append(f"count: {item.name} has no {row['measure']} -- skipped")
+                    continue
+            quantity = ounces(item, row["oz"]) if "oz" in row else Decimal(str(row["quantity"]))
+            then = StockMovement.objects.filter(item=item, location=location, occurred_at__lte=at).aggregate(
+                total=Sum("quantity")
+            )["total"] or Decimal("0")
+            line = StockCountLine.objects.create(count=count, item=item, expected_quantity=then)
+            record_counted(line, quantity=quantity, measure=measure)
+            if row.get("made") or row.get("as_written"):
+                line.note = "; ".join(
+                    x
+                    for x in (f"made {row['made']}" if row.get("made") else "", row.get("as_written", ""))
+                    if x
+                )[:160]
+                line.save(update_fields=["note"])
+            shown = f"{row.get('quantity', row.get('oz'))} {row.get('measure', 'oz' if 'oz' in row else item.base_unit.code)}"
+            self.changes.append(f"count: {item.name} {shown}")
+        post_count(count, user=self.user)
+        self.changes.append(f"count posted: {count.lines.count()} lines, dated {at:%a %-d %b %-I:%M %p}")
 
     def load_watch(self):
         for row in self.visit.get("watch", []):
