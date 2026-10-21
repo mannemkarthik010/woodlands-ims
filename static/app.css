@@ -692,3 +692,6 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 }
 .fill__chip input:checked + span { background: var(--brand); border-color: var(--brand); color: #fff; }
 .fill__chip input:focus-visible + span { outline: 3px solid var(--gold); outline-offset: 2px; }
+.hit--fill .hit__name { flex-basis: 100%; }
+.hit--fill { row-gap: 8px; }
+.hit--fill .hit__measure { margin-left: auto; }

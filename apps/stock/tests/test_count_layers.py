@@ -309,3 +309,14 @@ class FillLevelTests(LayerTestCase):
 
         self.assertTrue(all(is_container(n) for n in ["case", "case (25 lb)", "Bucket", "hotel pan", "tray"]))
         self.assertFalse(any(is_container(n) for n in ["scoop", "can", "bunch", "caseload"]))
+
+    def test_a_fresh_line_opens_in_its_container_and_one_counted_in_pounds_stays_in_pounds(self):
+        count = self.sheet(StockCount.Cadence.DAILY)
+        page = self.client.get(reverse("count_sheet", args=[count.pk]))
+        sambar = next(li for li in page.context["lines"] if li.item_id == self.sambar.pk)
+        self.assertEqual(sambar.container, self.bucket)
+        line = count.lines.get(item=self.sambar)
+        self.post(line, counted="40", measure="")
+        page = self.client.get(reverse("count_sheet", args=[count.pk]))
+        sambar = next(li for li in page.context["lines"] if li.item_id == self.sambar.pk)
+        self.assertIsNone(sambar.container)

@@ -404,7 +404,14 @@ def _attach_measures(lines) -> None:
     )
     for line in lines:
         line.measures = measures.get(line.item_id, [])
-        line.default_measure_id = line.entered_measure_id or previous.get(line.item_id)
+        # Never counted before: start in its container (bucket, case, tray), if it has one.
+        first_container = next((m.pk for m in line.measures if m.is_container), None)
+        if line.entered_quantity is not None:
+            line.default_measure_id = (
+                line.entered_measure_id
+            )  # exactly what it was counted in; None is the base unit
+        else:
+            line.default_measure_id = line.entered_measure_id or previous.get(line.item_id) or first_container
         chosen = next((m for m in line.measures if m.pk == line.default_measure_id), None)
         line.container = chosen if chosen and chosen.is_container else None
         if line.container and line.entered_quantity is not None:
@@ -454,6 +461,9 @@ def count_save_line(request, pk, line_pk):
         )
 
     _attach_measures([line])
+    if measure is None:
+        # The base unit was chosen on purpose: keep it, not the container.
+        line.default_measure_id, line.container = None, None
     remaining = count.lines.filter(counted_quantity__isnull=True).count()
     return render(
         request,
