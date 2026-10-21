@@ -68,3 +68,49 @@ class ProviderTests(SimpleTestCase):
     def test_a_refusal_is_an_error_so_the_caller_works_without_ai(self):
         with self.assertRaises(RuntimeError):
             ai.text_of(SimpleNamespace(stop_reason="refusal", content=[]))
+
+
+PROVIDER = "projects/123/locations/global/workloadIdentityPools/vercel/providers/vercel"
+
+
+@override_settings(
+    KNOWLEDGE_CONSENT=True,
+    AI_PROVIDER="vertex",
+    GCP_PROJECT_ID="woodlands-ims",
+    GCP_SERVICE_ACCOUNT_JSON="",
+    GCP_WORKLOAD_PROVIDER=PROVIDER,
+    GCP_SERVICE_ACCOUNT_EMAIL="woodlands-ai@woodlands-ims.iam.gserviceaccount.com",
+)
+class KeylessTests(SimpleTestCase):
+    """No key file: Vercel's own token is exchanged for Google access."""
+
+    def test_the_credentials_exchange_vercels_token_for_the_service_account(self):
+        creds = ai._google_credentials()
+        info = creds.info
+        self.assertEqual(info["audience"], f"//iam.googleapis.com/{PROVIDER}")
+        self.assertEqual(info["token_url"], "https://sts.googleapis.com/v1/token")
+        self.assertTrue(
+            info["service_account_impersonation_url"].endswith(
+                "serviceAccounts/woodlands-ai@woodlands-ims.iam.gserviceaccount.com:generateAccessToken"
+            )
+        )
+
+    def test_the_token_is_the_one_vercel_sent_with_this_request(self):
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+
+        seen = []
+
+        def view(request):
+            seen.append(ai.VercelToken().get_subject_token(None, None))
+            return HttpResponse()
+
+        request = RequestFactory().get("/", HTTP_X_VERCEL_OIDC_TOKEN="eyJ.request.token")
+        ai.VercelTokenMiddleware(view)(request)
+        self.assertEqual(seen, ["eyJ.request.token"])
+
+    def test_without_a_token_it_fails_so_the_screen_carries_on_without_ai(self):
+        from google.auth import exceptions
+
+        with patch.dict("os.environ", {"VERCEL_OIDC_TOKEN": ""}), self.assertRaises(exceptions.RefreshError):
+            ai.VercelToken().get_subject_token(None, None)

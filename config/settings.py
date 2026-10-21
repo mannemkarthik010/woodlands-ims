@@ -100,6 +100,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Keeps Vercel's per-request identity token for the AI's keyless Google sign-in.
+    "apps.core.ai.VercelTokenMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -250,6 +252,14 @@ GCP_REGION = os.environ.get("GCP_REGION", "global")
 # A service account's JSON key, pasted whole into the host's settings. Not
 # needed on a laptop signed in with `gcloud auth application-default login`.
 GCP_SERVICE_ACCOUNT_JSON = os.environ.get("GCP_SERVICE_ACCOUNT_JSON", "")
+# Keyless instead (workload identity federation): Vercel proves who it is to
+# Google on every request with its own short-lived token, so no key file
+# exists to leak -- and an organisation that forbids keys still works. The
+# provider's full name, projects/<number>/locations/global/
+# workloadIdentityPools/<pool>/providers/<provider>, and the service account
+# it may act as.
+GCP_WORKLOAD_PROVIDER = os.environ.get("GCP_WORKLOAD_PROVIDER", "")
+GCP_SERVICE_ACCOUNT_EMAIL = os.environ.get("GCP_SERVICE_ACCOUNT_EMAIL", "")
 KNOWLEDGE_MODEL = os.environ.get("KNOWLEDGE_MODEL", "claude-opus-5-5")
 
 
