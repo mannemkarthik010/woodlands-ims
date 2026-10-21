@@ -22,4 +22,15 @@
 <a class="btn btn--primary btn--big" href="{% url 'count_review' count.pk %}">
   Finish and review
 </a>
+<script>
+  // − and + beside a container count: one full case (tray, bucket…) more or fewer.
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest(".fill__step");
+    if (!b) return;
+    var n = b.parentNode.querySelector(".fill__n");
+    var v = Math.max(0, (parseInt(n.value, 10) || 0) + parseInt(b.dataset.step, 10));
+    n.value = v;
+    n.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+</script>
 {% endblock %}

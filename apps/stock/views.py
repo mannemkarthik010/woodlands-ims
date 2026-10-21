@@ -374,8 +374,12 @@ def count_sheet(request, pk):
     return render(
         request,
         "stock/count_sheet.html",
-        {"count": count, "lines": lines, "done": done, "total": len(lines)},
+        {"count": count, "lines": lines, "done": done, "total": len(lines), "fill_parts": FILL_PARTS},
     )
+
+
+# How full the open container is. Quarters: what anyone can see at a glance.
+FILL_PARTS = [("0", "0"), ("0.25", "¼"), ("0.5", "½"), ("0.75", "¾")]
 
 
 def _attach_measures(lines) -> None:
@@ -401,6 +405,13 @@ def _attach_measures(lines) -> None:
     for line in lines:
         line.measures = measures.get(line.item_id, [])
         line.default_measure_id = line.entered_measure_id or previous.get(line.item_id)
+        chosen = next((m for m in line.measures if m.pk == line.default_measure_id), None)
+        line.container = chosen if chosen and chosen.is_container else None
+        if line.container and line.entered_quantity is not None:
+            line.whole = int(line.entered_quantity)
+            line.part = str((line.entered_quantity - line.whole).quantize(Decimal("0.01")).normalize())
+        else:
+            line.whole, line.part = None, None
 
 
 # Implements: FR-702, NFR-04.
@@ -419,18 +430,35 @@ def count_save_line(request, pk, line_pk):
         else None
     )
     try:
-        quantity = Decimal(raw) if raw else None
+        filled = "whole" in request.POST or "part" in request.POST
+        if filled != bool(measure and measure.is_container):
+            # The unit was just changed between a container and a weight: the
+            # number typed was in the other one, so the line starts again.
+            quantity = None
+        elif filled:
+            # A container: so many full ones, and how full the open one is.
+            whole = (request.POST.get("whole") or "").strip()
+            part = (request.POST.get("part") or "").strip()
+            quantity = None if not whole and not part else Decimal(whole or "0") + Decimal(part or "0")
+        else:
+            quantity = Decimal(raw) if raw else None
         record_counted(line, quantity=quantity, measure=measure)
+        if quantity is None and measure is not None:
+            # Remember the unit just chosen, so the line comes back in it.
+            line.entered_measure = measure
+            line.save(update_fields=["entered_measure"])
     except (InvalidOperation, ValueError, StockError):
         _attach_measures([line])
-        return render(request, "stock/_count_line.html", {"line": line, "bad": True})
+        return render(
+            request, "stock/_count_line.html", {"line": line, "bad": True, "fill_parts": FILL_PARTS}
+        )
 
     _attach_measures([line])
     remaining = count.lines.filter(counted_quantity__isnull=True).count()
     return render(
         request,
         "stock/_count_line.html",
-        {"line": line, "saved": True, "remaining": remaining},
+        {"line": line, "saved": True, "remaining": remaining, "fill_parts": FILL_PARTS},
     )
 
 

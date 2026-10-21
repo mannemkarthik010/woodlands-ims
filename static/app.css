@@ -676,3 +676,19 @@ h1 { font-size: 22px; margin: 4px 0 18px; }
 .countcard__list summary { cursor: pointer; color: var(--green); font-weight: 600; min-height: 36px; display: flex; align-items: center; }
 .countcard__list ul { margin: 4px 0 0; padding-left: 18px; columns: 2; column-gap: 18px; }
 .countcard__list li { break-inside: avoid; }
+
+/* Counting in containers: whole ones, and how full the open one is */
+.hit--fill { flex-wrap: wrap; }
+.fill { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.fill__whole { display: inline-flex; align-items: center; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.fill__step { width: 44px; min-height: 48px; border: 0; background: var(--tint); font-size: 22px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.fill__step:active { background: var(--rule); }
+.fill__n { width: 52px; min-height: 48px; border: 0; text-align: center; font-size: 20px; font-weight: 700; }
+.fill__part { display: inline-flex; gap: 6px; }
+.fill__chip input { position: absolute; opacity: 0; pointer-events: none; }
+.fill__chip span {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 46px; min-height: 48px;
+  border: 1px solid var(--rule); border-radius: 8px; font-size: 19px; font-weight: 700; cursor: pointer; background: #fff;
+}
+.fill__chip input:checked + span { background: var(--brand); border-color: var(--brand); color: #fff; }
+.fill__chip input:focus-visible + span { outline: 3px solid var(--gold); outline-offset: 2px; }

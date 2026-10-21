@@ -2,22 +2,42 @@
   Expected quantity is deliberately absent. Showing it turns counting into
   confirming, and a sheet that agrees with itself tells you nothing.
   The measure is offered (bucket, bag, case…); the number never is.
+
+  Counted in a container (case, tray, bucket…), the line asks what the
+  kitchen can actually see: how many full ones, and how full the open one
+  is -- 0, ¼, ½ or ¾. Nobody has to know what a case weighs.
 {% endcomment %}
-<form class="hit {% if saved %}hit--saved{% endif %} {% if bad %}hit--bad{% endif %}"
+<form class="hit {% if saved %}hit--saved{% endif %} {% if bad %}hit--bad{% endif %}{% if line.container %} hit--fill{% endif %}"
       hx-post="{% url 'count_save_line' line.count_id line.pk %}"
-      hx-trigger="change from:find input, change from:find select"
+      hx-trigger="change"
       hx-target="closest li"
       hx-swap="innerHTML">
   {% csrf_token %}
   <span class="hit__name">{{ line.item.name }}
-    {% if saved and line.entered_measure %}<small class="muted">= {{ line.counted_quantity|floatformat:"-2" }} {{ line.item.base_unit.code }}</small>{% endif %}
+    {% if saved and line.entered_measure and not line.container %}<small class="muted">= {{ line.counted_quantity|floatformat:"-2" }} {{ line.item.base_unit.code }}</small>{% endif %}
     {% if bad %}<small class="field__error">Please type a number.</small>{% endif %}
   </span>
-  <input class="hit__qty" type="text" name="counted"
-         inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*"
-         value="{{ line.entered_quantity|default_if_none:''|floatformat:'-2' }}"
-         placeholder="—"
-         aria-label="How many of {{ line.item.name }}">
+  {% if line.container %}
+    <span class="fill" role="group" aria-label="How many {{ line.container.name }}s of {{ line.item.name }}">
+      <span class="fill__whole">
+        <button type="button" class="fill__step" data-step="-1" aria-label="One fewer">−</button>
+        <input class="fill__n" type="text" name="whole" inputmode="numeric" pattern="[0-9]*"
+               value="{{ line.whole|default_if_none:'' }}" placeholder="—" aria-label="Full {{ line.container.name }}s">
+        <button type="button" class="fill__step" data-step="1" aria-label="One more">+</button>
+      </span>
+      <span class="fill__part">
+        {% for value, label in fill_parts %}
+          <label class="fill__chip"><input type="radio" name="part" value="{{ value }}" {% if line.part == value %}checked{% endif %}><span>{{ label }}</span></label>
+        {% endfor %}
+      </span>
+    </span>
+  {% else %}
+    <input class="hit__qty" type="text" name="counted"
+           inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*"
+           value="{{ line.entered_quantity|default_if_none:''|floatformat:'-2' }}"
+           placeholder="—"
+           aria-label="How many of {{ line.item.name }}">
+  {% endif %}
   {% if line.measures %}
     <select class="hit__measure" name="measure" aria-label="Counted in">
       {% for m in line.measures %}

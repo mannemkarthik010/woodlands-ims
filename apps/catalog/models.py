@@ -273,6 +273,17 @@ class MeasureKind(models.TextChoices):
     KITCHEN = "KITCHEN", "How the kitchen measures it"
 
 
+# Things the kitchen counts by how full they are, not by weight: "2 cases and
+# a half", "three-quarters of a bucket". Nobody at the restaurant knows what a
+# case of eggplant weighs, and they should not have to.
+CONTAINERS = ("case", "tray", "bucket", "tub", "bag", "box", "pan", "hotel pan", "sack", "crate", "carton")
+
+
+def is_container(name: str) -> bool:
+    name = (name or "").strip().lower()
+    return any(name == c or name.startswith(c + " ") or name.startswith(c + "(") for c in CONTAINERS)
+
+
 class ItemMeasure(TimeStamped):
     """
     Any named quantity of an item that is not its base unit, and what that is
@@ -318,6 +329,11 @@ class ItemMeasure(TimeStamped):
         default=False,
         help_text="A handful of curry leaves, where the weight is nominal rather than measured.",
     )
+
+    @property
+    def is_container(self) -> bool:
+        return is_container(self.name)
+
     measured_on = models.DateField(null=True, blank=True, help_text="When this was last put on a scale.")
     is_active = models.BooleanField(default=True)
 

@@ -269,3 +269,43 @@ class OpenSheetFollowsTheListTests(LayerTestCase):
         page = self.client.get(reverse("count_home"))
         self.assertContains(page, "What's on it")
         self.assertContains(page, "daily too")
+
+
+class FillLevelTests(LayerTestCase):
+    """Counted in a container: so many full ones, and a quarter, half or three-quarters of the open one."""
+
+    def post(self, line, **data):
+        return self.client.post(reverse("count_save_line", args=[line.count_id, line.pk]), data)
+
+    def test_two_buckets_and_a_half(self):
+        count = self.sheet(StockCount.Cadence.DAILY)
+        line = count.lines.get(item=self.sambar)
+        page = self.post(line, whole="2", part="0.5", measure=self.bucket.pk)
+        line.refresh_from_db()
+        self.assertEqual((line.entered_quantity, line.counted_quantity), (Decimal("2.5"), Decimal("80")))
+        self.assertContains(page, 'value="0.5" checked')
+
+    def test_just_a_quarter_and_empty_means_not_counted(self):
+        count = self.sheet(StockCount.Cadence.DAILY)
+        line = count.lines.get(item=self.sambar)
+        self.post(line, whole="", part="0.25", measure=self.bucket.pk)
+        line.refresh_from_db()
+        self.assertEqual(line.entered_quantity, Decimal("0.25"))
+        self.post(line, whole="", measure=self.bucket.pk)
+        line.refresh_from_db()
+        self.assertIsNone(line.counted_quantity)
+
+    def test_switching_from_buckets_to_pounds_starts_the_line_again(self):
+        count = self.sheet(StockCount.Cadence.DAILY)
+        line = count.lines.get(item=self.sambar)
+        self.post(line, whole="2", measure=self.bucket.pk)
+        page = self.post(line, whole="2", measure="")
+        line.refresh_from_db()
+        self.assertIsNone(line.counted_quantity)
+        self.assertContains(page, 'name="counted"')
+
+    def test_a_container_is_known_by_its_name(self):
+        from apps.catalog.models import is_container
+
+        self.assertTrue(all(is_container(n) for n in ["case", "case (25 lb)", "Bucket", "hotel pan", "tray"]))
+        self.assertFalse(any(is_container(n) for n in ["scoop", "can", "bunch", "caseload"]))

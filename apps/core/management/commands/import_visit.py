@@ -133,6 +133,8 @@ class Command(BaseCommand):
         self.load_pots()
         self.load_weekly_plan()
         self.load_made_sections()
+        self.load_aliases()
+        self.load_rough_containers()
         self.load_paper_count()
 
     def item(self, name: str, code: str) -> Item | None:
@@ -354,6 +356,43 @@ class Command(BaseCommand):
                 item.category = section
                 item.save(update_fields=["category", "updated_at"])
                 self.changes.append(f"Made today: {item.name} under {section.name}")
+
+    def load_aliases(self):
+        """Another name the kitchen uses for an item: maida is all-purpose flour."""
+        from apps.catalog.models import ItemAlias
+
+        for row in self.visit.get("aliases", []):
+            item = self.item(row["item"], "alias")
+            if item is None:
+                continue
+            _, made = ItemAlias.objects.get_or_create(
+                item=item, alias=row["alias"], defaults={"source": "owner"}
+            )
+            if made:
+                self.changes.append(f"alias: {row['alias']} is {item.name}")
+
+    def load_rough_containers(self):
+        """
+        A case, tray or bucket nobody has weighed. The kitchen counts and
+        receives it as a case; the size is only a rough figure kept for the
+        sums, marked approximate. Whatever it is, as long as an item comes in
+        and is counted in the same case, the run-out sums come out right.
+        """
+        for row in self.visit.get("rough_containers", []):
+            item = self.item(row["item"], "container")
+            if item is None or item.measures.filter(name__iexact=row["name"], is_active=True).exists():
+                continue
+            ItemMeasure.objects.create(
+                item=item,
+                name=row["name"],
+                kind=MeasureKind.KITCHEN if item.kind == ItemKind.PREPARED else MeasureKind.PURCHASE,
+                quantity_in_base_units=Decimal(str(row["about"])),
+                is_approximate=True,
+                created_by=self.user,
+            )
+            self.changes.append(
+                f"container: {item.name} counted in {row['name']}s (about {row['about']} {item.base_unit.code})"
+            )
 
     def load_paper_count(self):
         """
